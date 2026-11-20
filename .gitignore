@@ -1,0 +1,11 @@
+node_modules/
+# Stores, copies and exports hold conversations. They never belong in a repository.
+*.sqlite
+*.sqlite-*
+exports/
+backups/
+.env
+test-results/
+*.tgz
+*.log
+dist-dsh/

@@ -1,0 +1,52 @@
+name: release
+# A tag vX.Y.Z on a green commit makes a draft release: tested on three systems, the plugin built and packed, the text taken from the changelog.
+# A person reads the draft and publishes it; this never publishes by itself.
+# Run by hand (Actions, "Run workflow") it does everything but the release: the packed plugin and the notes are kept with the run, to be looked at. That is the way to try it.
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  test:
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm test
+  draft:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: The tag and the version agree
+        if: github.event_name == 'push'
+        run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
+      - run: npm run bundle
+      - name: Pack the plugin
+        run: cd dist-dsh && npm pack --pack-destination ..
+      - name: This version's part of the changelog
+        run: awk -v v="## $(node -p "require('./package.json').version.split('-')[0]")" '$0==v{on=1;next} /^## /{on=0} on' CHANGELOG.md > notes.md && test -s notes.md
+      - name: Keep what was made (a run by hand)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-dry-run
+          path: |
+            dsh-asteme-*.tgz
+            notes.md
+      - name: Draft the release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dsh-asteme-*.tgz --draft --title "$GITHUB_REF_NAME" --notes-file notes.md ${{ contains(github.ref_name, '-') && '--prerelease' || '' }}

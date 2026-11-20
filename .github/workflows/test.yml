@@ -1,0 +1,30 @@
+name: tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: [22, 24]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      # The suite needs no dependencies: it scripts the model and uses node:sqlite.
+      - run: npm test
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # The panel is committed built, so the bundle needs no install either.
+      - run: npm run bundle
+      - run: test -f dist-dsh/client/dist/client.js && test -f dist-dsh/plugin/index.mjs && test -f dist-dsh/package.json && test -f dist-dsh/brain/page/shell.html && test -f dist-dsh/brain/page.mjs && test -f dist-dsh/.gitattributes

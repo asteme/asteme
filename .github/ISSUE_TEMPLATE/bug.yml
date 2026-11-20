@@ -1,0 +1,28 @@
+name: Something is wrong
+description: It did something it should not, or did not do something it should.
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes: { label: Version, description: "Shown in the panel's status page, or in package.json.", placeholder: "0.11.0" }
+    validations: { required: true }
+  - type: dropdown
+    id: where
+    attributes: { label: Where it runs, options: ["Inside DSH", "Standalone (brain/cli)", "MCP server", "Library"] }
+    validations: { required: true }
+  - type: input
+    id: system
+    attributes: { label: System, placeholder: "Windows 11, Node 24, DSH desktop 1.2" }
+    validations: { required: true }
+  - type: textarea
+    id: did
+    attributes: { label: What you did }
+    validations: { required: true }
+  - type: textarea
+    id: expected
+    attributes: { label: What you expected }
+    validations: { required: true }
+  - type: textarea
+    id: happened
+    attributes: { label: What happened, description: "A line from the screen or the console helps. Please do not attach your store, a report or an evidence file: they hold what you said." }
+    validations: { required: true }

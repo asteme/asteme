@@ -1,0 +1,23 @@
+{
+  "name": "asteme-core",
+  "version": "0.11.0",
+  "description": "Host-independent experience, attention and reflection.",
+  "type": "module",
+  "exports": {
+    ".": "./core.mjs",
+    "./log": "./log.mjs",
+    "./embedding": "./embedding.mjs",
+    "./policy": "./policy.mjs"
+  },
+  "files": [
+    "*.mjs",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "3.8.1"
+  },
+  "license": "Apache-2.0"
+}

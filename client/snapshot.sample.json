@@ -1,0 +1,141 @@
+{
+  "projectId": "workspace:default",
+  "projects": [
+    {
+      "id": "workspace:default",
+      "label": "default-workspace"
+    }
+  ],
+  "memory": {
+    "state": {
+      "items": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "kind": "understanding",
+          "status": "active",
+          "certainty": "explicit",
+          "text": "Lead with the decision for this reader",
+          "reason": "Explicit correction with a reason",
+          "concrete": "Writing a decision memo for this reader",
+          "general": "A document for a reader with little time",
+          "tested": "One memo",
+          "hypothesis": "Other readers are not yet tested",
+          "entities": [
+            "reader"
+          ],
+          "paused": false,
+          "revision": 3,
+          "lastCheckedAt": "2026-11-17T06:00:00.000Z",
+          "evidence": [
+            {
+              "id": "raw-1",
+              "quote": "the reader only reads the first three lines"
+            }
+          ]
+        }
+      ],
+      "sources": [
+        "raw-1"
+      ]
+    },
+    "delivery": {
+      "scene": {
+        "scene": "Writing a decision memo",
+        "need": "audience constraint",
+        "entities": []
+      },
+      "decisions": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "use": "silent",
+          "reason": "Changes the opening line",
+          "anchor": "memo"
+        }
+      ],
+      "delivered": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "use": "silent",
+          "text": "Lead with the decision for this reader"
+        }
+      ],
+      "text": "Selected experience for this reply:\n\n- silent: \"Lead with the decision for this reader\"",
+      "error": null,
+      "at": "2026-11-17T06:01:00.000Z"
+    }
+  },
+  "profile": {
+    "name": "",
+    "userName": "",
+    "style": {
+      "tone": ""
+    },
+    "habits": {},
+    "commitments": [],
+    "commitmentRules": []
+  },
+  "learning": {
+    "habits": [
+      {
+        "key": "lead-with-conclusion",
+        "text": "When writing for a busy reader, state the conclusion first",
+        "reason": "Worked in a memo and a mail",
+        "at": "2026-11-16T09:00:00.000Z",
+        "from": [
+          "00000000-0000-4000-8000-000000000001"
+        ],
+        "tested": "Memos and mails",
+        "hypothesis": "Other formats are untested",
+        "active": true
+      }
+    ],
+    "history": [],
+    "candidates": [
+      {
+        "id": "00000000-0000-4000-8000-000000000002",
+        "text": "Lead with the decision",
+        "basis": "helped in distinct scenes",
+        "helped": 2,
+        "corrections": 0
+      }
+    ],
+    "demotions": [],
+    "outcomes": {
+      "pending": 1,
+      "last": {
+        "at": "2026-11-17T06:02:00.000Z",
+        "applied": [
+          {
+            "op": "feedback",
+            "item": "00000000-0000-4000-8000-000000000001",
+            "kind": "helped"
+          }
+        ],
+        "rejected": []
+      }
+    }
+  },
+  "prompt": "You are the user's companion in conversation and work.\nEstablished habits (confirmed by repeated experience; follow them unless the current request says otherwise):\n- When writing for a busy reader, state the conclusion first",
+  "settings": {
+    "enabled": true,
+    "learningProvider": "",
+    "learningModel": ""
+  },
+  "usage": {
+    "key": "local.assistant",
+    "day": "2026-11-17",
+    "calls": 12,
+    "tokens": 24000
+  },
+  "models": [
+    {
+      "provider": "example-provider",
+      "id": "example-model",
+      "label": "Example Model — Example Provider"
+    }
+  ],
+  "modelErrors": [],
+  "pending": 0,
+  "notice": "",
+  "error": ""
+}

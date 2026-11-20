@@ -1,0 +1,63 @@
+{
+  "name": "dsh-asteme",
+  "version": "0.11.0",
+  "description": "Asteme: someone to talk to whose memory does not fade. It recalls by situation, learns from how each use turned out, and every memory can be traced to words you said.",
+  "type": "module",
+  "main": "./plugin/index.mjs",
+  "exports": {
+    ".": "./plugin/index.mjs",
+    "./core": "./src/core.mjs",
+    "./client": "./client/dist/client.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./log": "./src/log.mjs"
+  },
+  "files": [
+    "plugin",
+    "src",
+    "eval",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "client/dist",
+    "client/copy.mjs",
+    "client/icon.mjs",
+    "client/locales",
+    "brain",
+    "locale/*.json",
+    "icon.svg"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/asteme/asteme.git",
+    "directory": "packages/dsh-asteme"
+  },
+  "homepage": "https://github.com/asteme/asteme",
+  "bugs": {
+    "url": "https://github.com/asteme/asteme/issues"
+  },
+  "engines": {
+    "node": ">=22.5.0",
+    "dsh": ">=0.2.2-rc.1"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "3.8.1"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-sidebar",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-connection"
+      ]
+    }
+  }
+}

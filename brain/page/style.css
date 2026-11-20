@@ -1,0 +1,369 @@
+  /* The page is a sky. Nothing on it is decoration: each star is one memory
+     in the store, as bright as it comes to mind; a line is a lesson joined to
+     its cases, or a memory being used for the reply in front of you; a moving
+     point is work that is out with a worker. Night by default, a star chart
+     on paper in a light theme. */
+  /* The page and the text are the colours of DSH's two themes, so that inside
+     DSH or alone it stands on the same ground. Everything on that ground is
+     Asteme's own and is worked out from those two: the surfaces under what is
+     said, the field, the hairline, and a send button in the colour of the text. */
+  :root { color-scheme: dark light; --bg: #151517; --ink: #f9fafb; --danger: #f25a5a; --its: color-mix(in srgb, var(--ink) 8%, var(--bg)); --yours: color-mix(in srgb, var(--ink) 19%, var(--bg)); --field: color-mix(in srgb, var(--ink) 9%, var(--bg)); --lift: 0 4px 16px rgba(0, 0, 0, .12); }
+  @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --bg: #ffffff; --ink: #0f1115; --danger: #c81e1e; --its: color-mix(in srgb, var(--ink) 5%, var(--bg)); --yours: color-mix(in srgb, var(--ink) 13%, var(--bg)); --field: var(--bg); --lift: 0 4px 16px rgba(0, 0, 0, .05), 0 1px 2px rgba(0, 0, 0, .04); } }
+  :root[data-theme="light"] { color-scheme: light; --bg: #ffffff; --ink: #0f1115; --danger: #c81e1e; --its: color-mix(in srgb, var(--ink) 5%, var(--bg)); --yours: color-mix(in srgb, var(--ink) 13%, var(--bg)); --field: var(--bg); --lift: 0 4px 16px rgba(0, 0, 0, .05), 0 1px 2px rgba(0, 0, 0, .04); }
+  :root[data-theme="dark"] { color-scheme: dark; --bg: #151517; --ink: #f9fafb; --danger: #f25a5a; --its: color-mix(in srgb, var(--ink) 8%, var(--bg)); --yours: color-mix(in srgb, var(--ink) 19%, var(--bg)); --field: color-mix(in srgb, var(--ink) 9%, var(--bg)); --lift: 0 4px 16px rgba(0, 0, 0, .12); }
+  :root { --soft: color-mix(in srgb, var(--ink) 64%, transparent); --edge: color-mix(in srgb, var(--ink) 12%, transparent); --hover: color-mix(in srgb, var(--ink) 8%, transparent); --go: var(--ink); --go-ink: var(--bg); }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.75 system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", sans-serif; display: flex; flex-direction: column; overflow: hidden; }
+  /* A picture of the user's own may stand behind the sky, darkened and blurred as they like. */
+  #wall { position: fixed; inset: -2rem; z-index: 0; background: center / cover no-repeat; display: none; }
+  #wall::after { content: ""; position: absolute; inset: 0; background: var(--bg); opacity: var(--dim, .45); }
+  body.walled #wall { display: block; }
+  .you .bubble { background: var(--mine, var(--yours)) !important; color: var(--mine-ink, inherit); }
+  .it .bubble { background: var(--its-own, var(--its)); color: var(--its-ink, inherit); }
+  header .name[hidden] { display: none; }
+  header .name { min-width: 0; flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* On a narrow screen the top keeps to one line: its state is the dot alone (the word is what the dot is called), and its name gives way before anything is cut. */
+  @media (max-width: 32rem) { body header { gap: .2rem; padding-inline: .9rem; } header .state .word { display: none; } body header .bare, body header .skyset { padding: 0 .4rem; } body header .state { margin-left: .1rem; } }
+  #sheet input[type="range"] { border: 0; padding: 0; } #sheet input[type="color"] { width: 3rem; height: 2rem; padding: 0; border: 0; }
+  #sky { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; transition: opacity 2.5s ease; }
+  body.asleep #sky { opacity: .62; }
+  header, main, form { position: relative; z-index: 1; }
+  .muted { color: var(--soft); }
+  .column { width: min(40rem, 100% - 2.5rem); margin-inline: auto; }
+  header { padding: .9rem 1.25rem .4rem; display: flex; align-items: center; gap: .6rem; min-height: 3.6rem; }
+  .name { font-weight: 600; letter-spacing: .16em; font-size: .8rem; }
+  .state { font-size: .8rem; margin-left: .35rem; }
+  .count { margin-left: auto; font-size: .8rem; }
+  .count.bare { text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--ink) 30%, transparent); text-underline-offset: .2em; }
+  header .bare, header .skyset { height: 1.9rem; padding: 0 .65rem; border-radius: 999px; border: 0; background: none; font-size: .8rem; line-height: 1.9rem; text-decoration: none; white-space: nowrap; }
+  header .bare:hover, header .skyset:hover { background: color-mix(in srgb, var(--ink) 10%, transparent); }
+  header .count.bare { margin-left: auto; text-decoration: none; } header .fresh + .count.bare { margin-left: .5rem; }
+  header .name.bare { padding: 0 .35rem; font-size: 1rem; }
+  header .state.bare { padding: 0 .35rem; display: inline-flex; align-items: center; }
+  header .soon.bare { padding: 0 .45rem; font-variant-numeric: tabular-nums; text-decoration: none; }
+  header .soon.bare:hover { color: var(--ink); }
+  .skyset { border: 0; padding: .1rem .2rem; font-size: .8rem; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--ink) 30%, transparent); text-underline-offset: .2em; }
+  body.sky-off #sky { display: none; }
+  /* Among the stars: the conversation falls back and the sky is all there is. */
+  main, form { transition: opacity .7s ease, transform 1s cubic-bezier(.2, .7, .2, 1), filter .7s ease; }
+  body.space main, body.space form { opacity: 0; transform: scale(.93); filter: blur(3px); pointer-events: none; }
+  body.space #sky { display: block; opacity: 1; }
+  body.space { cursor: grab; user-select: none; -webkit-user-select: none; } body.space.panning { cursor: grabbing; }
+  body.space #wall::after { opacity: calc(var(--dim, .45) + .25); transition: opacity 1s ease; }
+  #spacebar { position: fixed; left: 0; right: 0; bottom: 1.25rem; z-index: 2; display: flex; justify-content: center; align-items: center; gap: 1rem; padding: 0 1rem; opacity: 0; pointer-events: none; transform: translateY(.5rem); transition: opacity .5s ease, transform .6s cubic-bezier(.2, .7, .2, 1); }
+  body.space #spacebar { opacity: 1; pointer-events: auto; transform: none; transition-delay: .45s; }
+  #spacebar #find { width: min(22rem, 46vw); height: 2.75rem; padding: 0 1.125rem; font: inherit; color: inherit; background: var(--field); border: 0; border-radius: 1.375rem; box-shadow: 0 0 0 .5px var(--edge), var(--lift); outline: none; }
+  #spacebar #find:focus { box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 34%, transparent), var(--lift); }
+  #spacebar #find::-webkit-search-cancel-button { filter: grayscale(1); opacity: .55; cursor: pointer; }
+  #spacebar #find::placeholder { color: color-mix(in srgb, var(--soft) 78%, transparent); }
+  #spacebar .bare, #spacebar span { font-size: .84rem; white-space: nowrap; } #spacebar .bare { padding: .45rem .7rem; border-radius: 999px; }
+  #spacebar span { min-width: 6rem; }
+  /* The very beginning: nobody is there yet. One thing is asked at a time in the dark, and with each answer one star of its mark is lit and the light around it grows.
+     Then it is woken: the lines between its stars are drawn, a ring goes out from it like a first breath, its name is said, and it goes to its place at the top. */
+  #birth { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 2rem 1.5rem 6rem; background: var(--bg); text-align: center; overflow: hidden; transition: opacity 1.1s ease, background-color 1.6s ease; --lit: 0; }
+  #birth[hidden] { display: none; } #birth.leaving { opacity: 0; pointer-events: none; } #birthfoot, .birthmark { transition: opacity 1.2s ease; } #birth.opening #birthfoot, #birth.opening .birthmark { opacity: 0; } #birth.clear { background-color: transparent; }
+  body.birthing main, body.birthing form, body.birthing #newestwrap { opacity: 0; pointer-events: none; }
+  .birthcore { display: flex; flex-direction: column; align-items: center; width: min(36rem, 100%); transform: translateY(-4vh); transition: transform 1.8s cubic-bezier(.45, 0, .2, 1); }
+  /* Woken, it has the middle of the screen to itself. */
+  #birth.waking .birthcore { transform: translateY(13vh); }
+  .birthmark { position: relative; width: 7rem; height: 7rem; margin-bottom: 1.5rem; color: var(--ink); }
+  /* The light that gathers as it is given things: a fifth for each star that is lit. */
+  .birthmark::before { content: ""; position: absolute; inset: -11rem; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--ink) 15%, transparent), color-mix(in srgb, var(--ink) 4%, transparent) 45%, transparent 72%); opacity: calc(var(--lit) * .9); transform: scale(calc(.6 + var(--lit) * .4)); transition: opacity 1.6s ease, transform 2s cubic-bezier(.2, .7, .2, 1); pointer-events: none; }
+  .birthmark svg { position: relative; width: 100%; height: 100%; overflow: visible; stroke-width: .7; }
+  /* Not yet anyone: the lines are a faint dotting, the stars are rings. They come one after another, and the dotting after them. */
+  .birthmark path { opacity: .22; stroke-dasharray: .012 .03; transition: opacity 1.2s ease; } .birthmark.arriving path { opacity: 0; }
+  .birthmark .star { fill: var(--bg); opacity: .4; transform-box: fill-box; transform-origin: center; transition: opacity .6s ease, fill .6s ease; }
+  .birthmark.arriving .star { animation: birthcome 1s cubic-bezier(.2, .7, .2, 1) both; } @keyframes birthcome { from { opacity: 0; transform: scale(.2); } }
+  /* While the thing a star stands for is being written, the star is half lit, and it stirs with each letter. */
+  .birthmark .star.near { opacity: .9; fill: color-mix(in srgb, currentColor 42%, var(--bg)); } .birthmark .star.near.tick { animation: birthtick .3s ease-out; } @keyframes birthtick { 40% { transform: scale(1.24); } }
+  /* Given: it is lit, and a ring goes out from it. */
+  .birthmark .star.lit { fill: currentColor; opacity: 1; animation: birthlit 1s cubic-bezier(.2, 1.5, .4, 1); filter: drop-shadow(0 0 .22rem color-mix(in srgb, var(--ink) 70%, transparent)); }
+  @keyframes birthlit { 0% { transform: scale(.4); } 55% { transform: scale(1.55); } 100% { transform: scale(1); } }
+  /* Nothing was given for it: the line that reaches it fills it, quietly. */
+  .birthmark .star.eased { fill: currentColor; opacity: 1; transition-duration: 1.3s; }
+  .birthmark .ripple { fill: none; stroke: currentColor; stroke-width: 1px; vector-effect: non-scaling-stroke; opacity: 0; transform-box: fill-box; transform-origin: center; pointer-events: none; animation: birthripple 1.15s cubic-bezier(.2, .6, .2, 1) forwards; }
+  .birthmark .ripple.wide { animation: birthripplewide 1.9s cubic-bezier(.2, .6, .2, 1) forwards; }
+  @keyframes birthripple { 0% { opacity: .8; transform: scale(1); } 100% { opacity: 0; transform: scale(4.4); } } @keyframes birthripplewide { 0% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(11); } }
+  /* Woken: the lines are drawn from star to star. */
+  .birthmark.waking path { opacity: 1; stroke-dasharray: 1; stroke-dashoffset: 1; animation: birthdraw 2.3s cubic-bezier(.55, 0, .25, 1) .25s forwards; }
+  @keyframes birthdraw { to { stroke-dashoffset: 0; } }
+  .birthmark.alive svg { animation: birthbreath 3.4s ease-in-out .1s 1; filter: drop-shadow(0 0 .7rem color-mix(in srgb, var(--ink) 50%, transparent)); transition: filter 1.4s ease; }
+  @keyframes birthbreath { 0%, 100% { scale: 1; } 40% { scale: 1.1; } }
+  .birthring { position: absolute; inset: .6rem; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--ink) 55%, transparent); opacity: 0; pointer-events: none; }
+  .birthmark.alive .birthring { animation: birthout 2.8s cubic-bezier(.2, .6, .2, 1) forwards; } .birthmark.alive .birthring.late { animation-delay: .75s; }
+  @keyframes birthout { 0% { opacity: .75; inset: .6rem; } 100% { opacity: 0; inset: -27rem; } }
+  .birthmark.placed { transition: transform 1.25s cubic-bezier(.6, 0, .2, 1), opacity .5s ease 1s; opacity: 0; } .birthmark.placed::before { opacity: 0; transition-duration: .6s; }
+  .birthname { min-height: 2.9rem; margin: 0 0 .5rem; font-size: 2rem; font-weight: 600; letter-spacing: .06em; line-height: 1.4; transition: opacity .7s ease, letter-spacing 1.6s cubic-bezier(.2, .7, .2, 1), filter .9s ease; }
+  .birthname.unsaid { opacity: .3; } .birthname.said { animation: birthsaid 1.5s cubic-bezier(.2, .7, .2, 1); } @keyframes birthsaid { from { opacity: 0; letter-spacing: .32em; filter: blur(6px); } }
+  .birthask { display: flex; flex-direction: column; align-items: center; width: 100%; }
+  .birthline { margin: 0; min-height: 2.4rem; font-size: 1.42rem; font-weight: 500; line-height: 1.6; letter-spacing: .01em; } .birthnote { margin: .45rem 0 0; min-height: 3.3rem; max-width: 29rem; font-size: .9rem; line-height: 1.8; }
+  /* One thing gives way to the next: each line a little after the one above it. */
+  .birthask > * { transition: opacity .5s ease, transform .6s cubic-bezier(.2, .7, .2, 1), filter .5s ease; } .birthask > :nth-child(2) { transition-delay: .07s; } .birthask > :nth-child(3) { transition-delay: .14s; } .birthask > :nth-child(4) { transition-delay: .21s; }
+  #birth.turning .birthask > * { opacity: 0; transform: translateY(.55rem); filter: blur(5px); transition-delay: 0s; transition-duration: .32s; }
+  .birthfield { position: relative; width: min(24rem, 100%); height: 3.4rem; margin-top: .5rem; display: flex; align-items: flex-end; }
+  .birthfield input { width: 100%; padding: .65rem .2rem .7rem; font: inherit; font-size: 1.3rem; text-align: center; color: inherit; background: none; border: 0; border-radius: 0; outline: none; }
+  .birthfield:not(:empty)::before, .birthfield:not(:empty)::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: color-mix(in srgb, var(--ink) 22%, transparent); } .birthfield:not(:empty)::after { background: var(--ink); transform: scaleX(0); transition: transform .5s cubic-bezier(.2, .7, .2, 1); } .birthfield:focus-within::after { transform: scaleX(1); }
+  /* What can be done at each step is always in the same two places: the way on in the middle with the way back beside it, and the way out at the foot. */
+  .birthacts { position: relative; display: flex; justify-content: center; align-items: center; min-height: 3rem; margin-top: 1.6rem; }
+  .birthacts .birthgo { min-width: 8.5rem; padding: .72rem 1.9rem; border: 0; border-radius: 999px; font: inherit; font-size: 1rem; font-weight: 500; color: var(--bg); background: var(--ink); cursor: pointer; transition: transform .2s ease, opacity .2s ease; } .birthacts .birthgo:hover { opacity: .88; } .birthacts .birthgo:active { transform: scale(.97); }
+  .birthacts .birthback { position: absolute; right: calc(50% + 4.25rem + .4rem); padding: .72rem 1.1rem; border: 0; border-radius: 999px; background: none; font: inherit; font-size: .95rem; color: var(--soft); cursor: pointer; white-space: nowrap; } .birthacts .birthback:hover { color: var(--ink); }
+  .birthacts button:focus-visible, #birthfoot button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+  #birthfoot { position: absolute; left: 0; right: 0; bottom: 1.3rem; display: flex; flex-direction: column; align-items: center; gap: .15rem; font-size: .8rem; } #birth.waking #birthfoot { opacity: 0; pointer-events: none; }
+  #birthfoot button { font-size: inherit; padding: .45rem .9rem; border-radius: 999px; opacity: .6; transition: opacity .3s ease; } #birthfoot button:hover { opacity: 1; }
+  #birthmove { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; padding: 0 1rem; } #birthmove[hidden] { display: none; } #birthmove button { text-decoration: underline; text-underline-offset: .2em; }
+  @media (max-width: 30rem) { .birthmark { width: 5.6rem; height: 5.6rem; } .birthline { font-size: 1.2rem; } .birthname { font-size: 1.6rem; } .birthacts { flex-direction: column-reverse; gap: .2rem; } .birthacts .birthback { position: static; } }
+  /* Where less movement is asked for, the scene keeps its time and its order, and only fades: nothing flies, grows or goes out in rings. */
+  html.calm #birth, html.calm #birth *, html.calm .birthmark::before { animation-duration: .01s !important; animation-delay: 0s !important; transition-property: opacity, background-color, fill !important; transition-duration: .6s !important; transition-delay: 0s !important; }
+  html.calm .birthring, html.calm .birthmark .ripple { display: none; } html.calm #birth.waking .birthcore { transform: translateY(-4vh); } html.calm #birth.turning .birthask > * { transform: none; filter: none; }
+  .fontlist { max-height: 15rem; overflow: auto; margin: .6rem 0 .2rem; padding: .25rem; border-radius: .8rem; box-shadow: inset 0 0 0 .5px var(--edge); } .fontlist[hidden] { display: none; }
+  .fontlist button { display: block; width: 100%; padding: .42rem .65rem; border: 0; border-radius: .55rem; background: none; color: inherit; font-size: 1rem; line-height: 1.35; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; content-visibility: auto; contain-intrinsic-size: auto 2.2rem; }
+  .fontlist button:hover { background: var(--hover); } .fontlist button.on { background: color-mix(in srgb, var(--ink) 14%, transparent); }
+  /* Shown only while the sky is turned away from how it was found: one press puts it the right way up. */
+  #spacelevel { position: absolute; right: 1.25rem; opacity: 0; pointer-events: none; transition: opacity .3s ease; } body.space.turned #spacelevel { opacity: 1; pointer-events: auto; }
+  @media (max-width: 46rem) { #spacelevel { right: 1rem; bottom: 3.4rem; } }
+  /* How the sky is held, said once on the way in and then out of the way. */
+  #spacehint { position: fixed; left: 0; right: 0; bottom: 4.6rem; z-index: 2; text-align: center; font-size: .78rem; opacity: 0; pointer-events: none; transition: opacity .8s ease; }
+  body.space #spacehint.on { opacity: .85; transition-delay: 1.6s; }
+  @media (prefers-reduced-motion: reduce) { main, form, #spacebar { transition-duration: .01s; } body.space main, body.space form { transform: none; filter: none; } }
+
+  .mark { display: inline-flex; transition: opacity 2.5s ease; }
+  body.asleep .mark { opacity: .4; }
+  @media (prefers-reduced-motion: no-preference) {
+    body.thinking .mark .star { animation: glint 1.5s ease-in-out infinite; }
+    body.thinking .mark .s1 { animation-delay: .25s; } body.thinking .mark .s2 { animation-delay: .5s; } body.thinking .mark .s3 { animation-delay: .75s; } body.thinking .mark .s4 { animation-delay: 1s; }
+    @keyframes glint { 0%, 100% { opacity: 1; } 50% { opacity: .15; } }
+    .entry.new { animation: arrive .7s ease-out both; }
+    @keyframes arrive { from { opacity: 0; filter: blur(6px); } }
+  }
+  /* What is said comes out of the sky at the top and goes back into it at the
+     bottom. Nothing is cut by an edge: a face cut in half above the box is
+     what an edge there looked like. The newest words stop clear of the fade. */
+  main { flex: 1 1 auto; overflow-y: auto; padding: 2rem 0 2.75rem; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--ink) 25%, transparent) transparent;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 3.5rem, #000 calc(100% - 2.5rem), transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, #000 3.5rem, #000 calc(100% - 2.5rem), transparent 100%); }
+  #thread { display: flex; flex-direction: column; min-height: 100%; justify-content: flex-end; }
+  /* A conversation between two people: a face, a name, what was said. Each
+     side has its picture, set by the user; what was said sits on a surface the
+     sky does not show through, so it reads the same over any number of stars. */
+  .entry { display: flex; gap: .65rem; align-items: flex-start; margin: 0 0 .25rem; }
+  .entry.first { margin-top: 1rem; }
+  .entry.first:first-child { margin-top: 0; }
+  .you { flex-direction: row-reverse; }
+  .face { flex: none; width: 2.1rem; height: 2.1rem; border-radius: 50%; display: grid; place-items: center; overflow: hidden; font-size: .82rem; font-weight: 600; background: color-mix(in srgb, var(--ink) 16%, var(--bg)); align-self: flex-start; }
+  .face img { width: 100%; height: 100%; object-fit: cover; }
+  .entry:not(.first) .face { visibility: hidden; height: 0; }
+  .said { display: flex; flex-direction: column; align-items: flex-start; max-width: min(34rem, 80%); }
+  .you .said { align-items: flex-end; }
+  .meta { font-size: .74rem; margin: 0 .3rem .2rem; color: var(--soft); }
+  .entry:not(.first) .meta { display: none; }
+  .bubble { padding: .55rem .95rem; border-radius: 1.2rem; background: var(--its); box-shadow: 0 0 0 .5px var(--edge), var(--lift); }
+  .it.first .bubble { border-top-left-radius: .35rem; } .you.first .bubble { border-top-right-radius: .35rem; }
+  .you .bubble { background: var(--yours); box-shadow: none; }
+  .text { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.65; }
+  .text code { font: .86em/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; padding: .1em .34em; border-radius: .35em; -webkit-box-decoration-break: clone; box-decoration-break: clone; background: color-mix(in srgb, var(--ink) 9%, transparent); }
+  .text pre.code { margin: .45rem 0; padding: .6rem .8rem; border-radius: .7rem; background: color-mix(in srgb, var(--ink) 7%, transparent); font: .82rem/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre; overflow-x: auto; scrollbar-width: thin; }
+  .text pre.code:first-child { margin-top: .15rem; } .text pre.code:last-child { margin-bottom: .15rem; }
+  .text strong { font-weight: 650; }
+  .text a.link { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em; text-decoration-color: color-mix(in srgb, var(--ink) 38%, transparent); transition: text-decoration-color .15s ease; }
+  .text a.link:hover { text-decoration-color: currentColor; }
+  .bubble.folded .text { max-height: 9.9em; overflow: hidden; -webkit-mask-image: linear-gradient(#000 62%, transparent); mask-image: linear-gradient(#000 62%, transparent); }
+  .bubble .more { display: block; margin: .45rem 0 0; padding: 0; font-size: .86em; font-weight: 600; opacity: .85; } .bubble .more:hover { opacity: 1; text-decoration: underline; text-underline-offset: .2em; }
+  .typing .said { flex-direction: row; align-items: center; gap: .6rem; max-width: none; } #state .took { margin-left: .45rem; } .took { font-size: .76rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .typing .bubble { display: flex; align-items: center; gap: .3rem; height: calc(1.65em + 1.1rem + 2px); padding: 0 .95rem; }
+  .typing i { width: .4rem; height: .4rem; border-radius: 50%; background: currentColor; opacity: .35; }
+  @media (prefers-reduced-motion: no-preference) { .typing i { animation: dot 1.2s ease-in-out infinite; } .typing i:nth-child(2) { animation-delay: .2s; } .typing i:nth-child(3) { animation-delay: .4s; }
+    @keyframes dot { 0%, 100% { opacity: .25; transform: none; } 40% { opacity: .9; transform: translateY(-.18rem); } } }
+  .reaction { position: absolute; left: -.55rem; bottom: -.7rem; min-width: 1.6rem; height: 1.6rem; padding: 0 .3rem; border-radius: 999px; display: grid; place-items: center; font-size: .92rem; line-height: 1; background: var(--field); box-shadow: 0 0 0 .5px var(--edge), 0 .2rem .6rem rgba(0, 0, 0, .16); }
+  @media (prefers-reduced-motion: no-preference) { .entry.new .reaction, .reaction.new { animation: swap .3s cubic-bezier(.2, 1.3, .4, 1); } }
+  .expression { display: block; max-width: 9rem; max-height: 9rem; margin: .45rem 0 0 .2rem; border-radius: .9rem; }
+  .readmark, .seenmark { font-size: .7rem; margin: .2rem .35rem 0; font-variant-numeric: tabular-nums; }
+  .it .reaction { left: auto; right: -.55rem; cursor: pointer; }
+  .quote { display: flex; flex-direction: column; align-items: flex-start; gap: .05rem; width: 100%; margin: .1rem 0 .4rem; padding: .3rem .6rem; border: 0; border-left: 2px solid color-mix(in srgb, currentColor 45%, transparent); border-radius: .35rem; background: color-mix(in srgb, currentColor 8%, transparent); color: inherit; font-size: .78rem; line-height: 1.45; text-align: left; cursor: pointer; }
+  .quote b { font-weight: 600; font-size: .72rem; opacity: .8; } .quote span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; opacity: .85; overflow-wrap: anywhere; }
+  @media (prefers-reduced-motion: no-preference) { .entry.found .bubble { animation: found 1.2s ease-out; } }
+  @keyframes found { 0%, 30% { box-shadow: 0 0 0 2px color-mix(in srgb, var(--ink) 55%, transparent); } }
+  #replying { display: flex; align-items: baseline; gap: .5rem; padding: .4rem .75rem .1rem 1rem; font-size: .78rem; } #replying:empty { display: none; } #replying b { flex: none; font-weight: 600; color: var(--soft); } #replying span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--soft); } #replying button { flex: none; padding: 0 .3rem; }
+  .entry.gone .bubble { background: none !important; box-shadow: inset 0 0 0 1px var(--edge); } .entry.gone .text { font-size: .86rem; font-style: italic; } .entry.gone .tools, .entry.gone .reaction { display: none; }
+  .vow { font-size: .76rem; margin: .3rem .3rem 0; overflow-wrap: anywhere; }
+  /* The small tools for what was said stand beside its bubble, level with its middle, in the room that side of the column leaves. There they cover nothing: not the bubble above or below, not the name and hour, not the lines kept under it. They are there when the pointer is, when the keys reach them, and while it is being read aloud. Where the column is too narrow to have a side (a phone), a touch on the words brings them in a row under the bubble, and another puts them away. */
+  .bubble { position: relative; }
+  .tools { position: absolute; z-index: 2; top: 50%; left: 100%; margin-left: .4rem; display: flex; gap: .0625rem; padding: .125rem; border-radius: .7rem; background: var(--field); box-shadow: 0 0 0 .5px var(--edge), 0 .25rem .9rem rgba(0, 0, 0, .18); opacity: 0; pointer-events: none; transform: translate(-.2rem, -50%); transition: opacity .14s ease, transform .14s ease; }
+  .you .tools { left: auto; right: 100%; margin: 0 .4rem 0 0; transform: translate(.2rem, -50%); }
+  .entry:hover .tools, .tools:focus-within, .tools.on, .entry.picked .tools { opacity: 1; pointer-events: auto; transform: translate(0, -50%); }
+  .tools .signs { display: none; gap: .0625rem; } .tools.choosing .signs { display: flex; } .tools.choosing > .tool2 { display: none; }
+  .tools .signs button { width: 1.75rem; height: 1.625rem; padding: 0; border: 0; border-radius: .55rem; background: none; font-size: .95rem; line-height: 1; cursor: pointer; } .tools .signs button:hover { background: var(--hover); }
+  @media (max-width: 34rem), (hover: none) { .tools, .you .tools { position: static; margin: .35rem 0 -.2rem -.35rem; padding: 0; transform: none; width: max-content; display: none; background: none; box-shadow: none; } .you .tools { margin-left: auto; } .entry.picked .tools, .tools.on, .tools:focus-within { display: flex; transform: none; } .entry:hover .tools { transform: none; } }
+  .tool2 { width: 1.625rem; height: 1.625rem; margin: 0; padding: 0; border: 0; border-radius: .55rem; background: none; color: color-mix(in srgb, var(--soft) 80%, transparent); display: grid; place-items: center; cursor: pointer; transition: background .15s ease, color .15s ease; }
+  .tool2:hover { background: var(--hover); color: var(--ink); }
+  .tool2:focus-visible { outline: 2px solid color-mix(in srgb, var(--ink) 70%, transparent); outline-offset: 1px; }
+  .tool2.on { color: var(--ink); }
+  .tool2.waiting svg { opacity: .45; }
+  @media (prefers-reduced-motion: no-preference) { .tool2.waiting svg { animation: glint 1s ease-in-out infinite; } }
+  .used { font: inherit; font-size: .76rem; padding: 0; margin: .3rem .3rem 0; background: none; border: 0; cursor: pointer; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--ink) 30%, transparent); text-underline-offset: .2em; }
+  .used-list { margin: .3rem 0 0; padding: 0; list-style: none; font-size: .84rem; }
+  /* Work that is out: what was asked, held to two lines, and under it how it stands, which is never cut. */
+  #viewer { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .9rem; padding: 2.5rem 1.5rem 1.2rem; background: color-mix(in srgb, #000 82%, transparent); backdrop-filter: blur(6px); animation: viewin .18s ease-out; } @keyframes viewin { from { opacity: 0; } }
+  #viewer img { max-width: 100%; max-height: calc(100% - 3rem); object-fit: contain; border-radius: .5rem; box-shadow: 0 1rem 3rem rgba(0, 0, 0, .5); }
+  #viewer .viewbar { display: flex; align-items: center; gap: 1.2rem; max-width: 100%; font-size: .84rem; color: #eee; } #viewer .viewbar span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #bbb; } #viewer .viewbar a, #viewer .viewbar button { color: #eee; font-size: inherit; text-decoration: underline; text-underline-offset: .2em; white-space: nowrap; }
+  #thread .before { display: none; } body.showbefore #thread .before { display: revert; opacity: .55; }
+  .newpage { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: .2rem .7rem; margin: 1.6rem 0 1rem; padding-top: 1rem; border-top: 1px solid color-mix(in srgb, var(--ink) 14%, transparent); font-size: .78rem; text-align: center; } .newpage button { font-size: inherit; text-decoration: underline; text-underline-offset: .2em; padding: .2rem .1rem; }
+  header .fresh { display: inline-flex; align-items: center; margin-left: auto; padding: .35rem; border-radius: 999px; opacity: .7; } header .fresh:hover { opacity: 1; background: color-mix(in srgb, var(--ink) 8%, transparent); } body.fresh header .fresh, body.birthing header .fresh { visibility: hidden; }
+  .day { font-size: .74rem; text-align: center; margin: 1.5rem 0 .6rem; letter-spacing: .02em; } .day:first-child { margin-top: 0; }
+  .line { font-size: .8rem; margin: .7rem auto; text-align: center; max-width: 30rem; }
+  .line .what { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .line .how { display: block; margin-top: .1rem; color: var(--ink); }
+  .ask .asker { font-size: .76rem; margin-bottom: .2rem; } .ask .asked { margin: .1rem 0 .55rem; }
+  .ask .options { display: flex; flex-direction: column; gap: .4rem; margin-bottom: .7rem; }
+  .ask .option { display: flex; flex-direction: column; align-items: flex-start; gap: .1rem; text-align: left; border-radius: .8rem; padding: .5rem .8rem; width: 100%; } .ask .option b { font-weight: 600; } .ask .option span { font-size: .8rem; }
+  .ask .option.on { background: color-mix(in srgb, var(--ink) 15%, transparent); border-color: color-mix(in srgb, var(--ink) 50%, transparent); }
+  .ask .buttons .note { font-size: .76rem; align-self: center; }
+  .ask { border: 1px solid var(--edge); background: var(--its); box-shadow: var(--lift); border-radius: 1.2rem; padding: .9rem 1.05rem 1rem; margin: 1rem 0 .25rem; }
+  .ask pre { margin: .4rem 0 .7rem; font: .8rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .ask .buttons { display: flex; gap: .5rem; }
+  .ask p { margin: .3rem 0 .6rem; }
+  .empty { margin: 0 0 16vh; max-width: 28rem; font-size: 1.07rem; }
+  .problem { color: var(--danger); font-size: .86rem; margin: 0 0 1.4rem; }
+  form { padding: 0 0 1.25rem; }
+  /* Reading further up: one button brings the newest words back, and carries a dot when something was said meanwhile. */
+  #newestwrap { position: relative; height: 0; z-index: 2; }
+  #newest { position: absolute; left: 50%; bottom: .75rem; width: 2.25rem; height: 2.25rem; margin: 0 0 0 -1.125rem; padding: 0; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--field) 84%, var(--ink)); color: var(--ink); box-shadow: 0 0 0 .5px color-mix(in srgb, var(--ink) 26%, transparent), 0 .375rem 1.125rem rgba(0, 0, 0, .28); display: grid; place-items: center; opacity: 0; transform: translateY(.5rem) scale(.9); pointer-events: none; transition: opacity .2s ease, transform .25s cubic-bezier(.2, .7, .2, 1), color .15s ease; }
+  #newest.on { opacity: 1; transform: none; pointer-events: auto; }
+  #newest:hover { background: color-mix(in srgb, var(--field) 74%, var(--ink)); }
+  #newest:active { transform: scale(.94); }
+  #newest:focus-visible { outline: 2px solid color-mix(in srgb, var(--ink) 70%, transparent); outline-offset: 2px; }
+  #newest.fresh::after { content: ""; position: absolute; top: -.0625rem; right: -.0625rem; width: .5rem; height: .5rem; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 2px var(--bg); }
+  body.space #newest { opacity: 0; pointer-events: none; }
+  body.voiceless .tool2.speak { display: none; }
+  /* The button on the right changes between listening and sending: the one that arrives grows into place. */
+  @media (prefers-reduced-motion: no-preference) { #send:not([hidden]), #mic:not([hidden]) { animation: swap .18s cubic-bezier(.2, .7, .2, 1); } #newest { will-change: transform; } }
+  @keyframes swap { from { opacity: 0; transform: scale(.7); } }
+  @media (prefers-reduced-motion: reduce) { #newest { transition: none; } }
+  /* The box and its button share one centre: the button is a circle 0.375rem inside a field whose corner radius is that much larger (1.25 + 0.375). */
+  .composer { display: block; padding: .375rem; border-radius: 1.625rem; background: var(--field); box-shadow: 0 0 0 .5px var(--edge), var(--lift); transition: box-shadow .15s ease; }
+  .composer:focus-within { box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 34%, transparent), var(--lift); }
+  .composer.over { box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--ink) 60%, transparent), var(--lift); }
+  /* Everything in the row is 2.5rem tall and sits on the bottom line, so one line of text, the buttons and the field's curve share one centre. */
+  .composer .row, .composer .rec { display: flex; gap: .125rem; align-items: flex-end; }
+  textarea { flex: 1 1 auto; display: block; resize: none; min-width: 0; min-height: 2.5rem; max-height: 12rem; margin: 0; padding: .5rem .375rem; font: inherit; font-size: 1rem; line-height: 1.5rem; color: inherit; background: transparent; border: 0; outline: none; }
+  textarea::placeholder { color: color-mix(in srgb, var(--soft) 78%, transparent); }
+  [hidden] { display: none !important; }
+  .tool { border: 0; width: 2.5rem; height: 2.5rem; margin: 0; padding: 0; border-radius: 50%; background: transparent; color: var(--soft); display: grid; place-items: center; flex: none; cursor: pointer; transition: background .15s ease, color .15s ease, transform .12s ease; }
+  .tool:hover { background: var(--hover); color: var(--ink); }
+  .tool:active { transform: scale(.94); }
+  .tool:focus-visible, #send:focus-visible, #recok:focus-visible { outline: 2px solid color-mix(in srgb, var(--ink) 70%, transparent); outline-offset: 2px; }
+  /* What is about to be handed over waits above the words. */
+  #files { display: flex; flex-wrap: wrap; gap: .5rem; padding: .375rem .375rem .5rem; }
+  #files:empty { display: none; }
+  .chip { position: relative; display: flex; align-items: center; height: 3.25rem; max-width: 13rem; padding: 0 .8rem; border: 1px solid var(--edge); border-radius: .9rem; background: color-mix(in srgb, var(--ink) 4%, transparent); font-size: .8rem; line-height: 1.3; transition: opacity .2s ease; }
+  .chip.pic { width: 3.25rem; padding: 0; border: 0; background: none; }
+  .chip.pic img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; border: 1px solid var(--edge); }
+  .chip.loading { opacity: .45; }
+  .chip .what { display: flex; flex-direction: column; min-width: 0; }
+  .chip b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip .x { position: absolute; top: -.375rem; right: -.375rem; width: 1.25rem; height: 1.25rem; padding: 0; border: 0; border-radius: 50%; background: var(--ink); color: var(--bg); display: grid; place-items: center; cursor: pointer; }
+  .hint { min-height: 0; font-size: .78rem; padding: 0 1.125rem; margin: 0 0 .4rem; }
+  .hint:empty { display: none; }
+  .choose { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; font-size: .8rem; padding: 0 1.125rem; margin: 0 0 .5rem; } .choose:empty { display: none; } .choose span { flex: 1 1 14rem; color: var(--soft); } .choose button { padding: .35rem .8rem; font-size: .8rem; }
+  .faces { display: flex; flex-wrap: wrap; gap: .7rem; margin: .6rem 0 0; padding: .5rem; border-radius: 1rem; box-shadow: inset 0 0 0 1px transparent; transition: box-shadow .15s ease, background .15s ease; }
+  .faces.over { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ink) 55%, transparent); background: color-mix(in srgb, var(--ink) 5%, transparent); }
+  #sheet .faceadd { width: 4rem; height: 4rem; padding: 0; border: 0; border-radius: .8rem; background: none; color: var(--soft); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 26%, transparent); display: grid; place-items: center; } #sheet .faceadd:hover { color: var(--ink); background: var(--hover); }
+  #sheet .facename { max-width: 4.5rem; padding: 0; border: 0; background: none; font-size: .72rem; color: var(--soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } #sheet .facename:hover { color: var(--ink); text-decoration: underline; }
+  #sheet .faceone input { width: 4.5rem; margin: 0; padding: .1rem 0; font-size: .72rem; text-align: center; }
+  .faceone { position: relative; display: inline-flex; flex-direction: column; align-items: center; gap: .15rem; font-size: .72rem; max-width: 4.5rem; } .faceone img { width: 4rem; height: 4rem; object-fit: cover; border-radius: .8rem; box-shadow: 0 0 0 .5px var(--edge); } .faceone span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+  #sheet .tonerow .seg { flex: none; } #sheet .tonerow > button.plain { flex: none; font-size: .8rem; padding: .35rem .8rem; }
+  /* While it listens: stop on the right where send was, a level that is measured, the time. */
+  .composer .rec { align-items: center; }
+  #level { flex: 1 1 auto; min-width: 0; height: 1.5rem; margin: 0 .5rem 0 .25rem; }
+  #rectime { font-size: .86rem; font-variant-numeric: tabular-nums; margin-right: .625rem; }
+  button { font: inherit; font-size: .86rem; line-height: 1.2; color: inherit; background: color-mix(in srgb, var(--ink) 12%, transparent); border: 1px solid color-mix(in srgb, var(--ink) 28%, transparent); border-radius: 999px; padding: .5rem 1rem; cursor: pointer; transition: background .15s ease; }
+  button:hover { background: color-mix(in srgb, var(--ink) 18%, transparent); }
+  button.plain, #send { background: transparent; }
+  #halt { color: var(--ink); background: var(--hover); } #halt:disabled { opacity: .4; }
+  @media (prefers-reduced-motion: no-preference) { #halt:not([hidden]) { animation: swap .18s cubic-bezier(.2, .7, .2, 1); } }
+  #send, #recok { border: 0; width: 2.5rem; height: 2.5rem; margin: 0; padding: 0; border-radius: 50%; background: var(--go); color: var(--go-ink); display: grid; place-items: center; flex: none; transition: transform .12s ease, opacity .2s ease, filter .15s ease; }
+  #send:active, #recok:active { transform: scale(.94); }
+  #send.idle { opacity: .35; }
+  #send:hover, #recok:hover { background: color-mix(in srgb, var(--go) 84%, var(--go-ink)); }
+  /* Files in the conversation: a picture is shown, anything else is named. */
+  .handed { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .4rem; margin: 0 0 .3rem; max-width: 100%; }
+  .you .handed { justify-content: flex-end; }
+  .handed .pic { flex: 0 1 auto; max-width: 13rem; line-height: 0; }
+  .handed .pic img { display: block; width: auto; height: auto; max-width: 100%; max-height: 13rem; border-radius: 1rem; box-shadow: 0 0 0 .5px var(--edge); }
+  .handed .doc { display: flex; flex-direction: column; min-width: 0; max-width: 16rem; padding: .5rem .9rem; border-radius: 1rem; background: var(--yours); border: 1px solid var(--edge); box-shadow: var(--lift); color: inherit; text-decoration: none; font-size: .86rem; line-height: 1.4; }
+  .handed .doc b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .handed .doc span { font-size: .74rem; }
+  .line .go { font: inherit; margin-left: .5rem; padding: 0; border: 0; background: none; color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--ink) 35%, transparent); text-underline-offset: .2em; cursor: pointer; }
+  #sheet select { font: inherit; color: inherit; background: var(--its); border: 1px solid var(--edge); border-radius: .6rem; padding: .4rem .6rem; max-width: 100%; }
+  button:disabled { opacity: .5; cursor: default; }
+  button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  /* Everything else is reached from what is already on the page: its name
+     (who it is), its state (what it has been doing), the count and the stars
+     (what it remembers). Each opens beside the conversation, never instead of it. */
+  .bare { background: none; border: 0; padding: .1rem .15rem; border-radius: 4px; font: inherit; color: inherit; cursor: pointer; }
+  .bare:hover { background: color-mix(in srgb, var(--ink) 10%, transparent); }
+  .name.bare { font-weight: 600; font-size: .95rem; letter-spacing: .02em !important; }
+  header .face { width: 2.2rem; height: 2.2rem; cursor: pointer; }
+  .presence { width: .5rem; height: .5rem; border-radius: 50%; background: #3fb46b; margin-right: .35rem; display: inline-block; }
+  body.asleep .presence { background: transparent; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ink) 55%, transparent); } .state.bare, .count.bare { font-size: .8rem; }
+  #sheet { position: fixed; z-index: 2; top: 0; right: 0; bottom: 0; width: min(25rem, 100%); padding: 0 1.4rem 2rem; overflow-y: auto; background: color-mix(in srgb, var(--bg) 94%, transparent); backdrop-filter: blur(10px); border-left: 1px solid color-mix(in srgb, var(--ink) 16%, transparent); transform: translateX(102%); visibility: hidden; transition: transform .28s ease, visibility .28s; }
+  #sheet.on { transform: none; visibility: visible; }
+  @media (max-width: 69.99rem) { body.sheet-on:not(.space) main, body.sheet-on:not(.space) form { opacity: .4; } }
+  @media (prefers-reduced-motion: reduce) { #sheet { transition: none; } }
+  @media (min-width: 70rem) { body.sheet-on header, body.sheet-on main, body.sheet-on form { margin-right: 25rem; } }
+  #sheet .sheethead { position: sticky; top: 0; z-index: 3; margin: 0 -1.4rem .5rem; padding: 1.1rem 1.4rem .7rem; background: color-mix(in srgb, var(--bg) 90%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  #sheet h2 { font-size: .8rem; font-weight: 600; letter-spacing: .06em; margin: 0; display: flex; align-items: center; }
+  #sheet h2 button { margin-left: auto; font-weight: 400; letter-spacing: 0; }
+  #sheet h4.group { margin: 2.2rem 0 0; padding-top: 1.3rem; border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent); font-size: 1.02rem; font-weight: 600; letter-spacing: .01em; } #sheet h4.group:first-of-type { margin-top: 1.3rem; padding-top: 0; border-top: 0; } #sheet h4.group + h3 { margin-top: .9rem; }
+  #sheet h3 { font-size: .78rem; font-weight: 600; margin: 1.4rem 0 .4rem; color: color-mix(in srgb, var(--ink) 62%, transparent); }
+  #sheet p, #sheet li { font-size: .92rem; margin: 0 0 .5rem; }
+  #sheet ul { margin: 0; padding: 0; list-style: none; }
+  #sheet .big { font-size: 1.08rem; line-height: 1.8; margin-bottom: .8rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+  #sheet blockquote { margin: 0 0 .6rem; padding: 0; font-size: .88rem; color: color-mix(in srgb, var(--ink) 74%, transparent); }
+  #sheet blockquote::before { content: "\201C"; } #sheet blockquote::after { content: "\201D"; }
+  #sheet .acts { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.1rem; }
+  #sheet .places { display: grid; grid-template-columns: 1fr 1fr; gap: .45rem; margin: .9rem 0 1.1rem; } #sheet .places[hidden] { display: none; } #sheet .places > :only-child { grid-column: 1 / -1; } #sheet .places .row.place { padding: .7rem .75rem; border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent); border-radius: .7rem; } #sheet .places .row.place:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); } #sheet .places .row.place:hover b { text-decoration: none; }
+  #sheet .row.place { display: flex; flex-direction: column; gap: .15rem; padding: .8rem .4rem; } #sheet .row.place b { font-weight: 600; font-size: .95rem; } #sheet .row.place span { font-size: .82rem; line-height: 1.5; } #sheet .row.place:hover b { text-decoration: underline; text-underline-offset: .2em; }
+  #sheet .row { display: block; width: 100%; text-align: left; padding: .5rem .4rem; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--ink) 10%, transparent); border-radius: 0; background: none; font-size: .92rem; }
+  #sheet .row:hover { background: color-mix(in srgb, var(--ink) 7%, transparent); }
+  #sheet input { width: 100%; font: inherit; color: inherit; background: transparent; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--ink) 40%, transparent); padding: .4rem 0; margin-bottom: .9rem; outline: none; }
+  #sheet input:focus { border-color: var(--ink); }
+  #sheet .vowrow { display: flex; align-items: flex-start; gap: .75rem; padding: .5rem 0; border-bottom: 1px solid color-mix(in srgb, var(--ink) 10%, transparent); font-size: .92rem; }
+  #sheet .vowrow > div { flex: 1 1 auto; min-width: 0; } #sheet .vowrow b { display: block; font-weight: 600; font-size: .8rem; font-variant-numeric: tabular-nums; } #sheet .vowrow span { overflow-wrap: anywhere; }
+  #sheet .vowrow button { flex: none; }
+  #sheet label { display: block; font-size: .78rem; color: color-mix(in srgb, var(--ink) 62%, transparent); }
+  /* Choosing one of a few, in every sheet: one track, the chosen one filled. */
+  .seg { display: inline-flex; flex-wrap: wrap; max-width: 100%; padding: .1875rem; gap: .125rem; border-radius: 1.2rem; background: color-mix(in srgb, var(--ink) 7%, transparent); }
+  #sheet .seg button { border: 0; background: none; padding: .4rem .95rem; border-radius: 999px; font-size: .84rem; color: var(--soft); white-space: nowrap; transition: background .18s ease, color .18s ease, box-shadow .18s ease; }
+  #sheet .seg button:hover { color: var(--ink); }
+  #sheet .seg button.on { background: color-mix(in srgb, var(--ink) 15%, transparent); box-shadow: 0 0 0 .5px color-mix(in srgb, var(--ink) 24%, transparent); color: var(--ink); }
+  #sheet .tabs { display: flex; flex-wrap: nowrap; margin: .8rem 0 0; border-radius: 999px; } #sheet .tabs button { flex: 1 1 0; min-width: 0; padding-inline: .5rem; text-align: center; overflow: hidden; text-overflow: ellipsis; }
+  #sheet p.note { font-size: .82rem; line-height: 1.6; margin: .65rem 0 0; }
+  #sheet h3 + .acts { margin-top: 0; }
+  #sheet input:not([type="range"]):not([type="color"]):not([type="file"]) { color: var(--ink); } #sheet input + .acts { margin-top: .1rem; }
+  #sheet .acts button.bare { font-size: .8rem; } #sheet input[type="range"] { accent-color: var(--ink); }
+  #sheet label.slide { margin-top: .9rem; } #sheet label.slide input { margin: .2rem 0 0; }
+  .tones { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; padding: .15rem; }
+  #sheet .tone.letters { background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 30%, transparent); font-size: .92rem; font-weight: 650; line-height: 1; }
+  #sheet .tone.letters.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--ink); }
+  .tonerow { display: flex; align-items: center; gap: .75rem; padding: .3rem .15rem; font-size: .9rem; } .tonerow span { flex: 1 1 auto; min-width: 0; } .tonerow button { flex: none; font-size: .8rem; }
+  .looks { display: flex; flex-wrap: wrap; gap: .5rem; }
+  #sheet .lookchip { display: inline-flex; align-items: center; gap: .5rem; padding: .35rem .8rem .35rem .4rem; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--ink) 7%, transparent); font-size: .84rem; color: var(--soft); transition: background .15s ease, color .15s ease, box-shadow .15s ease; }
+  #sheet .lookchip i { width: 1.25rem; height: 1.25rem; border-radius: 50%; box-shadow: inset 0 0 0 .5px color-mix(in srgb, var(--ink) 34%, transparent); flex: none; }
+  #sheet .lookchip:hover { color: var(--ink); } #sheet .lookchip.on { background: color-mix(in srgb, var(--ink) 15%, transparent); box-shadow: 0 0 0 .5px color-mix(in srgb, var(--ink) 24%, transparent); color: var(--ink); }
+  /* The small cross that takes a saved look or a face away is there when the pointer or the keys are on its owner, and always on a screen that is touched. */
+  .lookwrap { position: relative; display: inline-flex; } #sheet .lookdrop { position: absolute; z-index: 1; top: -.35rem; right: -.35rem; width: 1.25rem; height: 1.25rem; padding: 0; border: 0; border-radius: 50%; background: var(--ink); color: var(--bg); font-size: .75rem; line-height: 1; display: grid; place-items: center; opacity: 0; transition: opacity .12s ease; box-shadow: 0 0 0 2px var(--bg); }
+  #sheet .lookwrap:hover .lookdrop, #sheet .lookwrap:focus-within .lookdrop, #sheet .faceone:hover .lookdrop, #sheet .faceone:focus-within .lookdrop, #sheet .lookdrop:focus-visible { opacity: 1; }
+  @media (hover: none) { #sheet .lookdrop { opacity: 1; } }
+  .keeprow { display: flex; align-items: center; gap: .6rem; margin-top: .7rem; } #sheet .keeprow input { flex: 1 1 auto; margin: 0; } #sheet .keeprow button { flex: none; }
+  #sheet label.sized { display: flex; align-items: center; gap: .9rem; margin-top: 0; } #sheet label.sized b { flex: none; width: 3.4rem; font-weight: 500; font-size: .84rem; color: var(--ink); font-variant-numeric: tabular-nums; } #sheet label.sized input { margin: 0; }
+  #sheet .tone { position: relative; display: grid; place-items: center; width: 1.75rem; height: 1.75rem; margin: 0; padding: 0; border: 0; border-radius: 50%; background: var(--tone, var(--yours)); color: var(--soft); box-shadow: inset 0 0 0 .5px color-mix(in srgb, var(--ink) 30%, transparent); cursor: pointer; transition: transform .12s ease, box-shadow .15s ease; }
+  #sheet .tone:hover { transform: scale(1.08); }
+  #sheet .tone.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--ink); }
+  #sheet .tone.pick:not(.on) { background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 34%, transparent); }
+  #sheet .tone.pick input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: 0; opacity: 0; cursor: pointer; }
+  #sheet .tone:focus-visible, #sheet .tone.pick:focus-within, #sheet .seg button:focus-visible { outline: 2px solid color-mix(in srgb, var(--ink) 70%, transparent); outline-offset: 2px; }
+  .warn { color: var(--danger); }
+  .used-list button { font: inherit; text-align: left; background: none; border: 0; padding: .1rem 0; color: inherit; cursor: pointer; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--ink) 25%, transparent); text-underline-offset: .2em; }
+  #tip { position: fixed; z-index: 3; max-width: 22rem; font-size: .82rem; line-height: 1.6; padding: .55rem .7rem; border-radius: 8px; border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent); background: var(--bg); pointer-events: none; opacity: 0; transition: opacity .15s ease; }
+  #tip.on { opacity: 1; }
+  #tip b { font-weight: 600; font-size: .74rem; letter-spacing: .04em; display: block; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }

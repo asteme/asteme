@@ -1,0 +1,31 @@
+name: publish
+# When a person publishes a release, the two packages go to npm at that version: `asteme` (the library and the command) and `dsh-asteme` (what DSH installs
+# and updates from). They are published with provenance, which npm gives only to a public repository: the repository is made public before the release is
+# published, in that order. Nothing here decides to publish: it follows the release, which a person published. A pre-release goes out under the tag "next", never "latest".
+on:
+  release:
+    types: [published]
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  npm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - name: The release and the version agree
+        run: test "v$(node -p "require('./package.json').version")" = "${{ github.event.release.tag_name }}"
+      - run: npm test
+      - run: npm run bundle
+      - name: Publish asteme
+        run: npm publish --provenance --access public --tag ${{ github.event.release.prerelease && 'next' || 'latest' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish dsh-asteme
+        run: cd dist-dsh && npm publish --provenance --access public --tag ${{ github.event.release.prerelease && 'next' || 'latest' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

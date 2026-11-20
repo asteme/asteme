@@ -1,0 +1,40 @@
+// Words for the diary. This file and client/locales/ are the only places in
+// the package where text in a language other than English belongs.
+export const DIARY = {
+  en: {
+    title: "ASTEME diary", knows: "What it knows now", you: "You", assistant: "Assistant", tools: "{n} tool steps",
+    took: "What it took from the day", remembered: "Remembered", changed: "Changed", setAside: "Set aside",
+    recalled: "What it brought to mind", forMessage: "For “{message}”",
+    went: "How that went", youSaid: "you said so", stood: "What stood out",
+    use: { silent: "used quietly", mention: "mentioned", check: "asked about" },
+    outcome: { helped: "It helped", irrelevant: "It did not belong there", wrong: "It was wrong", missed: "It should have been used", unused: "It went unused", judgment: "A judgment call" },
+    signal: { correction: "you corrected it", surprise: "a surprise", failure: "something failed", explicit: "you asked it to remember", commitment: "a promise", recurrence: "this came up before" },
+    always: "Always on", lessons: "Lessons", noted: "Noted", open: "Open matters", past: "No longer in use",
+    reason: { "Stated by the user": "you said so", "Confirmed by the user": "you confirmed it", "Closed by the user": "you closed it", "User pause": "you paused it",
+      "User resume": "you put it back in use", "Put back in use by the user": "you put it back in use", "The user said it no longer holds": "you said it no longer holds" },
+  },
+  ja: {
+    title: "ASTEME 日記", knows: "いま知っていること", you: "あなた", assistant: "アシスタント", tools: "ツール実行 {n} 回",
+    took: "この日に受け取ったこと", remembered: "覚えた", changed: "書き換えた", setAside: "使わなくなった",
+    recalled: "思い出したこと", forMessage: "「{message}」に対して",
+    went: "その結果", youSaid: "あなたの判定", stood: "印象に残ったこと",
+    use: { silent: "黙って活かした", mention: "口に出した", check: "確認した" },
+    outcome: { helped: "役に立った", irrelevant: "その場には合わなかった", wrong: "間違っていた", missed: "使うべきだった", unused: "使われなかった", judgment: "判断が分かれる" },
+    signal: { correction: "訂正された", surprise: "予想と違った", failure: "うまくいかなかった", explicit: "覚えてと言われた", commitment: "約束", recurrence: "前にもあった場面" },
+    always: "いつも守ること", lessons: "教訓", noted: "覚えていること", open: "まだ終わっていないこと", past: "いまは使っていないもの",
+    reason: { "Stated by the user": "あなたがそう言った", "Confirmed by the user": "あなたが確認した", "Closed by the user": "あなたが閉じた", "User pause": "あなたが休止した",
+      "User resume": "あなたが戻した", "Put back in use by the user": "あなたが戻した", "The user said it no longer holds": "あなたがもう違うと言った" },
+  },
+  zh: {
+    title: "ASTEME 日记", knows: "现在知道的事", you: "你", assistant: "助手", tools: "工具调用 {n} 次",
+    took: "这一天记下的事", remembered: "记住了", changed: "改写了", setAside: "不再使用",
+    recalled: "想起来的事", forMessage: "针对“{message}”",
+    went: "结果如何", youSaid: "你的判定", stood: "印象深的事",
+    use: { silent: "默默用上", mention: "说了出来", check: "向你确认" },
+    outcome: { helped: "帮上了忙", irrelevant: "不适合那个场合", wrong: "记错了", missed: "本该用上", unused: "没有用上", judgment: "见仁见智" },
+    signal: { correction: "被你纠正", surprise: "出乎意料", failure: "没做成", explicit: "你让它记住", commitment: "约定", recurrence: "以前也遇到过" },
+    always: "始终遵守", lessons: "教训", noted: "记下的事", open: "还没了结的事", past: "已不再使用",
+    reason: { "Stated by the user": "你这样说过", "Confirmed by the user": "你确认过", "Closed by the user": "你关闭了它", "User pause": "你暂停了它",
+      "User resume": "你恢复了它", "Put back in use by the user": "你恢复了它", "The user said it no longer holds": "你说它已经不对了" },
+  },
+};

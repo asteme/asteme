@@ -1,0 +1,776 @@
+/*
+ * ASTEME panel styles. Reads roles from tokens.css; holds no raw theme
+ * values. Every selector is scoped under .asteme-page so nothing leaks into
+ * the host and host element styles cannot outrank these.
+ *
+ *   1. Root and reset
+ *   2. Shell         (header, tabs, back bar, body, save bar)
+ *   3. Controls      (button, field, switch, disclosure, confirm)
+ *   4. Text pieces   (section, chip, notice, facts, quote, lists)
+ *   5. The star and the trace: the two marks that carry meaning
+ *   6. Views         (rows, verdict, questions, account, activity, charter)
+ *   7. Width and motion
+ */
+
+/* 1. Root and reset ------------------------------------------------------ */
+
+.asteme-page {
+  container: asteme / inline-size;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  color: inherit;
+  font-family: var(--ast-font);
+  font-size: var(--ast-text-md);
+  line-height: var(--ast-leading);
+  text-align: start;
+}
+.asteme-page *,
+.asteme-page *::before,
+.asteme-page *::after { box-sizing: border-box; }
+.asteme-page :where(h2, h3, p, ul, ol, dl, dd, blockquote, pre) { margin: 0; padding: 0; }
+.asteme-page :where(ul, ol) { list-style: none; }
+.asteme-page :where(button, input, select, textarea) { margin: 0; font: inherit; color: inherit; }
+.asteme-page [hidden] { display: none !important; }
+.asteme-page :focus-visible { outline: var(--ast-focus-width) solid var(--ast-focus); outline-offset: 2px; }
+.asteme-page .ast-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.asteme-page .ast-soft { color: var(--ast-text-muted); font-size: var(--ast-text-sm); }
+.asteme-page .ast-hint { color: var(--ast-text-muted); font-size: var(--ast-text-sm); }
+.asteme-page .ast-empty { color: var(--ast-text-muted); }
+
+/* 2. Shell --------------------------------------------------------------- */
+
+/* The top and the save bar never scroll, so where you are, what just
+   happened and unsaved work stay in view. All three regions reserve the same
+   scrollbar gutter so their columns line up. */
+.asteme-page .ast-top,
+.asteme-page .ast-body,
+.asteme-page .ast-foot {
+  padding-inline: var(--ast-gutter);
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ast-line-strong) transparent;
+}
+.asteme-page .ast-top { flex: none; padding-block-start: var(--ast-space-3); }
+.asteme-page .ast-body { flex: 1 1 auto; min-height: 0; padding-block: var(--ast-space-5) var(--ast-space-6); }
+.asteme-page .ast-top > *,
+.asteme-page .ast-body > *,
+.asteme-page .ast-foot > * { max-width: var(--ast-measure); margin-inline: auto; }
+
+.asteme-page .ast-header { display: flex; align-items: center; gap: var(--ast-space-2); min-height: var(--ast-control-h); }
+.asteme-page .ast-brand { display: flex; align-items: center; gap: var(--ast-space-2); margin-inline-end: auto; }
+.asteme-page--section { padding: 0; min-height: 0; background: none; }
+.asteme-page--section .ast-account__head { display: none; }
+.asteme-page .ast-home { padding: var(--ast-space-1) var(--ast-space-2); margin-inline-start: calc(var(--ast-space-2) * -1); border: 0; border-radius: var(--ast-radius-md); background: none; color: inherit; font: inherit; cursor: pointer; }
+.asteme-page .ast-home:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
+.asteme-page .ast-home:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.asteme-page .ast-home__word { font-size: var(--ast-text-sm); opacity: .62; margin-inline-start: var(--ast-space-1); }
+.asteme-page .ast-brand h2 {
+  font-size: var(--ast-text-md);
+  font-weight: var(--ast-weight-strong);
+  letter-spacing: var(--ast-wordmark-tracking);
+  line-height: 1;
+}
+/* What just happened. It appears at the bottom edge, outside the scrolling
+   area, so nothing being read moves when it comes and goes. */
+.asteme-page .ast-said {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--ast-space-2);
+  padding: var(--ast-space-2) var(--ast-gutter);
+  border-block-start: 1px solid var(--ast-line);
+  font-size: var(--ast-text-sm);
+}
+.asteme-page .ast-said:empty { display: none; }
+.asteme-page .ast-said__mark { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--ast-positive); }
+
+/* On or off, always visible, and the way into settings. */
+.asteme-page .ast-power {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  min-height: 24px;
+  padding: 0 var(--ast-space-2);
+  border: 0;
+  border-radius: var(--ast-radius-sm);
+  background: none;
+  font-size: var(--ast-text-xs);
+  font-weight: var(--ast-weight-medium);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.asteme-page .ast-power:hover { background: var(--ast-fill-hover); }
+.asteme-page .ast-power__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ast-positive); }
+.asteme-page .ast-power--off { color: var(--ast-warning); }
+.asteme-page .ast-power--off .ast-power__dot { border: var(--ast-stroke) solid var(--ast-warning); background: none; }
+
+.asteme-page .ast-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--ast-control-h);
+  height: var(--ast-control-h);
+  border: 0;
+  border-radius: var(--ast-radius-md);
+  background: none;
+  color: var(--ast-text-muted);
+  cursor: pointer;
+  transition: background-color var(--ast-dur) var(--ast-ease), color var(--ast-dur) var(--ast-ease);
+}
+.asteme-page .ast-icon-btn:hover:not(:disabled),
+.asteme-page .ast-icon-btn[aria-pressed="true"] { background: var(--ast-fill-hover); color: currentColor; }
+.asteme-page .ast-icon-btn:disabled { cursor: default; }
+.asteme-page .ast-glyph { flex: none; }
+
+.asteme-page .ast-tabs {
+  display: flex;
+  gap: var(--ast-space-5);
+  margin-block-start: var(--ast-space-2);
+  border-block-end: 1px solid var(--ast-line);
+}
+.asteme-page .ast-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-block-end: -1px;
+  padding: var(--ast-space-2) 0;
+  border: 0;
+  border-block-end: 2px solid transparent;
+  background: none;
+  color: var(--ast-text-muted);
+  font-weight: var(--ast-weight-medium);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--ast-dur) var(--ast-ease), border-color var(--ast-dur) var(--ast-ease);
+}
+.asteme-page .ast-tab:hover { color: currentColor; }
+.asteme-page .ast-tab[aria-selected="true"] { border-block-end-color: var(--ast-accent); color: currentColor; font-weight: var(--ast-weight-strong); }
+.asteme-page .ast-tab__count {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--ast-warning-fill);
+  /* Sits inside a tab whose text may be muted, so it leans further toward the
+     text color than --ast-warning does to stay readable in both themes. */
+  color: color-mix(in oklab, var(--ast-warning-hue) 50%, currentColor);
+  font-size: var(--ast-text-xs);
+  font-weight: var(--ast-weight-strong);
+  font-variant-numeric: tabular-nums;
+  line-height: 18px;
+  text-align: center;
+}
+.asteme-page .ast-tab__flag { width: 6px; height: 6px; border-radius: 50%; background: var(--ast-warning); }
+.asteme-page .ast-panel:focus { outline: none; }
+
+.asteme-page .ast-backbar { margin-block-start: var(--ast-space-2); border-block-end: 1px solid var(--ast-line); padding-block-end: var(--ast-space-1); }
+.asteme-page .ast-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ast-space-1);
+  min-height: var(--ast-control-h);
+  margin-inline-start: -6px;
+  padding: 0 var(--ast-space-2) 0 var(--ast-space-1);
+  border: 0;
+  border-radius: var(--ast-radius-md);
+  background: none;
+  font-weight: var(--ast-weight-medium);
+  cursor: pointer;
+}
+.asteme-page .ast-back:hover { background: var(--ast-fill-hover); }
+
+.asteme-page .ast-scope {
+  display: flex;
+  align-items: center;
+  gap: var(--ast-space-3);
+  margin-block-start: var(--ast-space-3);
+  color: var(--ast-text-muted);
+  font-size: var(--ast-text-sm);
+}
+.asteme-page .ast-scope .ast-select { flex: 1 1 auto; max-width: 20rem; color: currentColor; }
+.asteme-page .ast-top > .ast-notice { margin-block-start: var(--ast-space-3); }
+
+.asteme-page .ast-foot {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ast-space-2);
+  padding-block: var(--ast-space-3);
+  border-block-start: 1px solid var(--ast-line);
+}
+.asteme-page .ast-foot > * { margin-inline: 0; }
+.asteme-page .ast-foot__text { margin-inline-end: auto; color: var(--ast-text-muted); font-size: var(--ast-text-sm); }
+
+/* Vertical rhythm of a view. */
+.asteme-page .ast-panel > * + *,
+.asteme-page .ast-account > * + *,
+.asteme-page .ast-form > * + * { margin-block-start: var(--ast-space-6); }
+.asteme-page .ast-panel > .ast-notice + *,
+.asteme-page .ast-panel > .ast-search + *,
+.asteme-page .ast-panel > .ast-summary + * { margin-block-start: var(--ast-space-2); }
+.asteme-page .ast-panel > .ast-legend + * { margin-block-start: var(--ast-space-5); }
+.asteme-page .ast-panel > .ast-section + .ast-disc,
+.asteme-page .ast-panel > .ast-form + .ast-disc,
+.asteme-page .ast-account > .ast-section + .ast-disc { margin-block-start: var(--ast-space-5); }
+
+.asteme-page .ast-loading { display: flex; align-items: center; gap: var(--ast-space-2); color: var(--ast-text-muted); }
+.asteme-page .ast-blank { padding-block: var(--ast-space-6); }
+.asteme-page .ast-blank__title { font-weight: var(--ast-weight-strong); margin-block-end: var(--ast-space-1); }
+.asteme-page .ast-blank .ast-soft { max-width: 34rem; }
+
+/* 3. Controls ------------------------------------------------------------ */
+
+.asteme-page .ast-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--ast-control-h);
+  padding: 3px var(--ast-space-3);
+  border: 1px solid var(--ast-control-line);
+  border-radius: var(--ast-radius-md);
+  background: transparent;
+  font-size: var(--ast-text-sm);
+  font-weight: var(--ast-weight-medium);
+  line-height: var(--ast-leading-tight);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--ast-dur) var(--ast-ease), border-color var(--ast-dur) var(--ast-ease);
+}
+.asteme-page .ast-btn:hover:not(:disabled) { background: var(--ast-fill-hover); }
+.asteme-page .ast-btn:active:not(:disabled) { background: var(--ast-fill-press); }
+.asteme-page .ast-btn:disabled { opacity: var(--ast-disabled-opacity); cursor: default; }
+.asteme-page .ast-btn[aria-busy="true"] { opacity: 1; }
+.asteme-page .ast-btn--primary { border-color: var(--ast-primary-line); background: var(--ast-primary-bg); color: var(--ast-primary-fg); font-weight: var(--ast-weight-strong); }
+.asteme-page .ast-btn--primary:hover:not(:disabled) { background: var(--ast-primary-bg-hover); }
+.asteme-page .ast-btn--danger { border-color: var(--ast-danger-line); background: var(--ast-danger-fill); color: var(--ast-danger); font-weight: var(--ast-weight-strong); }
+.asteme-page .ast-btn--danger:hover:not(:disabled) { background: var(--ast-danger-fill-hover); }
+.asteme-page .ast-btn--ghost { border-color: transparent; }
+/* Opens a confirmation. Reads as destructive without shouting; the danger
+   fill is kept for the button that actually does it. */
+.asteme-page .ast-btn--quiet-danger { color: var(--ast-danger); }
+.asteme-page .ast-btn--quiet-danger:hover:not(:disabled) { background: var(--ast-danger-fill); }
+/* An answer to a question: lighter than an action, so three fit on one line. */
+.asteme-page .ast-btn--choice { min-height: 26px; padding-inline: var(--ast-space-2); }
+
+.asteme-page .ast-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ast-space-2); }
+.asteme-page .ast-actions + .ast-actions { margin-block-start: var(--ast-space-2); }
+.asteme-page .ast-actions--quiet { margin-inline-start: calc(var(--ast-space-3) * -1); }
+.asteme-page .ast-actions--quiet .ast-btn { border-color: transparent; }
+.asteme-page .ast-actions + .ast-hint { margin-block-start: var(--ast-space-3); }
+
+.asteme-page .ast-link {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-weight: inherit;
+  text-align: start;
+  text-decoration: underline;
+  text-decoration-color: var(--ast-line-strong);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.asteme-page .ast-link:hover:not(:disabled) { text-decoration-color: currentColor; }
+.asteme-page .ast-link:disabled { cursor: default; opacity: var(--ast-disabled-opacity); }
+
+.asteme-page .ast-field { display: flex; flex-direction: column; gap: 6px; }
+.asteme-page .ast-field + .ast-field { margin-block-start: var(--ast-space-4); }
+.asteme-page .ast-field__head { display: flex; align-items: center; gap: var(--ast-space-2); }
+.asteme-page .ast-field__label { display: flex; align-items: center; gap: var(--ast-space-2); font-size: var(--ast-text-sm); font-weight: var(--ast-weight-medium); }
+.asteme-page .ast-input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--ast-control-h);
+  padding: 5px 10px;
+  border: 1px solid var(--ast-control-line);
+  border-radius: var(--ast-radius-md);
+  background: var(--ast-field-bg);
+  line-height: var(--ast-leading-tight);
+  transition: border-color var(--ast-dur) var(--ast-ease);
+}
+.asteme-page .ast-input:hover:not(:disabled) { border-color: var(--ast-control-line-hover); }
+.asteme-page .ast-input:focus-visible { outline-offset: 0; }
+.asteme-page .ast-input:disabled { opacity: var(--ast-disabled-opacity); }
+.asteme-page .ast-input::placeholder { color: var(--ast-text-muted); }
+.asteme-page textarea.ast-input { min-height: 3.5rem; padding-block: 7px; line-height: var(--ast-leading); resize: vertical; }
+.asteme-page .ast-select { position: relative; display: block; }
+.asteme-page .ast-select select { appearance: none; padding-inline-end: 30px; color-scheme: inherit; cursor: pointer; text-overflow: ellipsis; }
+/* The opened list is the browser's own surface. Its rows take the system's
+   pair for the scheme in force, so text and background always differ. */
+.asteme-page .ast-select select option, .asteme-page .ast-select select optgroup { background-color: Canvas; color: CanvasText; }
+.asteme-page .ast-select::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-end: 12px;
+  width: 6px;
+  height: 6px;
+  border: solid currentColor;
+  border-width: 0 var(--ast-stroke) var(--ast-stroke) 0;
+  opacity: 0.7;
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+
+/* Switch: a hollow point that slides across and fills when on. */
+.asteme-page .ast-switch-row { display: flex; align-items: flex-start; gap: var(--ast-space-4); }
+.asteme-page .ast-switch-row + .ast-switch-row { margin-block-start: var(--ast-space-4); }
+.asteme-page .ast-switch-row__text { flex: 1 1 auto; min-width: 0; }
+.asteme-page .ast-switch-row__label { display: block; font-weight: var(--ast-weight-medium); cursor: pointer; }
+.asteme-page .ast-switch {
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: 36px;
+  height: 20px;
+  border: var(--ast-stroke) solid var(--ast-control-line);
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color var(--ast-dur) var(--ast-ease), border-color var(--ast-dur) var(--ast-ease);
+}
+.asteme-page .ast-switch::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 3px;
+  width: 11px;
+  height: 11px;
+  border: var(--ast-stroke) solid var(--ast-control-line-hover);
+  border-radius: 50%;
+  transform: translateY(-50%);
+  transition: transform var(--ast-dur) var(--ast-ease), background-color var(--ast-dur) var(--ast-ease);
+}
+.asteme-page .ast-switch:checked { border-color: var(--ast-accent); background: var(--ast-fill-press); }
+.asteme-page .ast-switch:checked::before { border-color: var(--ast-accent); background: var(--ast-accent); transform: translate(16px, -50%); }
+.asteme-page .ast-switch:disabled { opacity: var(--ast-disabled-opacity); cursor: default; }
+
+.asteme-page .ast-disc { border-block-start: 1px solid var(--ast-line); }
+.asteme-page .ast-disc + .ast-disc { margin-block-start: 0; }
+.asteme-page .ast-disc:last-child { border-block-end: 1px solid var(--ast-line); }
+.asteme-page .ast-disc__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--ast-space-2);
+  width: 100%;
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-weight: var(--ast-weight-medium);
+  text-align: start;
+  cursor: pointer;
+}
+.asteme-page .ast-chevron {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-inline: 2px 3px;
+  border: solid currentColor;
+  border-width: 0 var(--ast-stroke) var(--ast-stroke) 0;
+  opacity: 0.7;
+  transform: rotate(-45deg);
+  transition: transform var(--ast-dur) var(--ast-ease);
+}
+.asteme-page [aria-expanded="true"] > .ast-chevron { transform: translateY(-2px) rotate(45deg); }
+.asteme-page .ast-disc__body { padding-block: 0 var(--ast-space-4); }
+.asteme-page .ast-disc__body > * + * { margin-block-start: var(--ast-space-3); }
+.asteme-page .ast-section .ast-disc { margin-block-start: var(--ast-space-4); }
+.asteme-page .ast-section .ast-disc:last-child { border-block-end: 0; }
+.asteme-page .ast-section .ast-disc:last-child > .ast-disc__body { padding-block-end: 0; }
+.asteme-page .ast-count { color: var(--ast-text-muted); font-weight: var(--ast-weight-regular); font-variant-numeric: tabular-nums; }
+
+/* Confirm: the destructive-action pattern. Opens in place of the buttons. */
+.asteme-page .ast-confirm { padding: var(--ast-space-3); border: 1px solid var(--ast-danger-line); border-radius: var(--ast-radius-md); }
+.asteme-page .ast-confirm__msg { font-size: var(--ast-text-sm); overflow-wrap: anywhere; }
+.asteme-page .ast-queue { margin-block-start: var(--ast-space-1); padding-inline-start: var(--ast-space-3); border-inline-start: 1px solid var(--ast-line, currentColor); }
+.asteme-page .ast-queue > li + li { margin-block-start: var(--ast-space-1); }
+.asteme-page .ast-confirm__sure { display: flex; align-items: center; gap: var(--ast-space-2); margin-block-start: var(--ast-space-2); font-size: var(--ast-text-sm); cursor: pointer; }
+.asteme-page .ast-confirm__msg + .ast-confirm__msg,
+.asteme-page .ast-confirm__list + .ast-confirm__msg { margin-block-start: var(--ast-space-2); }
+.asteme-page .ast-confirm__list { margin-block-start: var(--ast-space-1); padding-inline-start: var(--ast-space-4); font-size: var(--ast-text-sm); font-weight: var(--ast-weight-medium); list-style: disc; }
+.asteme-page .ast-confirm .ast-actions { margin-block-start: var(--ast-space-3); }
+
+.asteme-page .ast-spinner {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border: var(--ast-stroke) solid var(--ast-line-strong);
+  border-block-start-color: currentColor;
+  border-radius: 50%;
+  animation: ast-spin 700ms linear infinite;
+}
+@keyframes ast-spin { to { transform: rotate(360deg); } }
+
+/* 4. Text pieces --------------------------------------------------------- */
+
+.asteme-page .ast-section__head { display: flex; align-items: baseline; gap: var(--ast-space-2); }
+.asteme-page .ast-section__title { font-size: var(--ast-text-md); font-weight: var(--ast-weight-strong); line-height: var(--ast-leading-tight); }
+.asteme-page .ast-section__aside { margin-inline-start: auto; color: var(--ast-text-muted); font-size: var(--ast-text-sm); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.asteme-page .ast-section__lead { margin-block-start: 2px; color: var(--ast-text-muted); font-size: var(--ast-text-sm); max-width: 40rem; }
+.asteme-page .ast-section__head + :not(.ast-section__lead),
+.asteme-page .ast-section__lead + * { margin-block-start: var(--ast-space-3); }
+
+.asteme-page .ast-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  /* A state is said in words, set small. No pill, no fill. */
+  color: var(--ast-text-muted);
+  font-size: var(--ast-text-xs);
+  font-weight: var(--ast-weight-medium);
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.asteme-page .ast-chip--warning { color: var(--ast-warning); }
+.asteme-page .ast-chip--danger { color: var(--ast-danger); }
+/* Lit: the last reply drew on it. The same ring the star wears. */
+.asteme-page .ast-chip--lit { color: inherit; }
+
+.asteme-page .ast-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ast-space-3);
+  padding: var(--ast-space-2) var(--ast-space-3);
+  border: 1px solid var(--ast-line-strong);
+  border-radius: var(--ast-radius-sm);
+  font-size: var(--ast-text-sm);
+}
+.asteme-page .ast-notice > .ast-btn { flex: none; }
+.asteme-page .ast-notice__body { flex: 1 1 auto; min-width: 0; padding-block: 5px; overflow-wrap: anywhere; }
+.asteme-page .ast-notice__detail { color: var(--ast-text-muted); }
+.asteme-page .ast-notice--danger { border-color: var(--ast-danger-line); }
+.asteme-page .ast-notice--danger .ast-notice__body > :first-child { color: var(--ast-danger); }
+.asteme-page .ast-notice--warning { border-color: var(--ast-warning-line); }
+.asteme-page * + .ast-notice { margin-block-start: var(--ast-space-3); }
+
+.asteme-page .ast-facts { display: grid; row-gap: var(--ast-space-3); }
+.asteme-page .ast-facts dt { color: var(--ast-text-muted); font-size: var(--ast-text-sm); }
+.asteme-page .ast-facts dd { overflow-wrap: anywhere; white-space: pre-wrap; }
+
+/* The user's own words. Everything the panel claims ends at one of these. */
+.asteme-page .ast-quote { overflow-wrap: anywhere; white-space: pre-wrap; }
+.asteme-page .ast-quote::before { content: open-quote; }
+.asteme-page .ast-quote::after { content: close-quote; }
+.asteme-page .ast-quote--full::before,
+.asteme-page .ast-quote--full::after { content: none; }
+
+.asteme-page .ast-plain-list > li + li { margin-block-start: var(--ast-space-3); }
+.asteme-page .ast-plain-list.ast-soft > li + li { margin-block-start: var(--ast-space-1); }
+.asteme-page .ast-plain-list.ast-soft > li { padding-inline-start: var(--ast-space-3); position: relative; }
+.asteme-page .ast-plain-list.ast-soft > li::before { content: ""; position: absolute; inset-inline-start: 2px; inset-block-start: 0.7em; width: 3px; height: 3px; border-radius: 50%; background: currentColor; }
+.asteme-page * + .ast-plain-list { margin-block-start: var(--ast-space-2); }
+
+.asteme-page .ast-pre {
+  max-height: 320px;
+  padding: var(--ast-space-3);
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ast-line-strong) transparent;
+  border-radius: var(--ast-radius-md);
+  background: var(--ast-fill-1);
+  font-family: var(--ast-font-mono);
+  font-size: var(--ast-text-xs);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.asteme-page .ast-skeleton { display: grid; gap: var(--ast-space-2); }
+.asteme-page .ast-skeleton span { height: 0.8em; border-radius: var(--ast-radius-sm); background: var(--ast-fill-2); animation: ast-pulse 1.2s ease-in-out infinite; }
+.asteme-page .ast-skeleton span:nth-child(odd) { width: 82%; }
+.asteme-page .ast-skeleton span:nth-child(even) { width: 58%; }
+@keyframes ast-pulse { 50% { opacity: 0.45; } }
+
+/* 5. The star and the trace ----------------------------------------------- */
+
+/* A star's size says how easily a memory comes to mind. Hollow: not in use.
+   A ring around it: the last reply drew on it. */
+.asteme-page .ast-star-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--ast-star-box);
+  height: calc(var(--ast-leading) * 1em);
+}
+.asteme-page .ast-star { display: block; border-radius: 50%; background: currentColor; }
+.asteme-page .ast-star--easily { width: var(--ast-star-lg); height: var(--ast-star-lg); }
+.asteme-page .ast-star--sometimes { width: var(--ast-star-md); height: var(--ast-star-md); }
+.asteme-page .ast-star--rarely { width: var(--ast-star-sm); height: var(--ast-star-sm); }
+.asteme-page .ast-star--off { width: var(--ast-star-md); height: var(--ast-star-md); border: var(--ast-stroke) solid var(--ast-control-line); background: none; }
+.asteme-page .ast-star--warning { background: var(--ast-warning); }
+.asteme-page .ast-star--lit { outline: var(--ast-stroke) solid currentColor; outline-offset: 2px; }
+
+/* A trace is an account told in order: each point follows from the one
+   above it. No rail and no nodes; the order and the labels carry it. */
+.asteme-page .ast-trace__point {
+  position: relative;
+  padding-block-end: var(--ast-space-4);
+  --ast-mark-top: calc((var(--ast-leading) * 1em - var(--ast-node)) / 2);
+}
+.asteme-page .ast-trace__point:last-child { padding-block-end: 0; }
+.asteme-page .ast-trace__mark {
+  display: none;
+  justify-self: center;
+  width: var(--ast-node);
+  height: var(--ast-node);
+  margin-block-start: var(--ast-mark-top);
+  border: var(--ast-stroke) solid currentColor;
+  border-radius: 50%;
+}
+.asteme-page .ast-trace__mark--solid { background: currentColor; }
+.asteme-page .ast-trace__mark--hollow { border-color: var(--ast-control-line); }
+.asteme-page .ast-trace__mark--lit { background: currentColor; outline: var(--ast-stroke) solid currentColor; outline-offset: 2px; }
+.asteme-page .ast-trace__mark--dotted { border-style: dotted; border-color: var(--ast-control-line-hover); }
+.asteme-page .ast-trace__mark--cross { position: relative; border: 0; border-radius: 0; }
+.asteme-page .ast-trace__mark--cross::before,
+.asteme-page .ast-trace__mark--cross::after { content: ""; position: absolute; inset-block-start: 50%; inset-inline: -1px; height: var(--ast-stroke); margin-block-start: -0.8px; background: currentColor; transform: rotate(45deg); }
+.asteme-page .ast-trace__mark--cross::after { transform: rotate(-45deg); }
+.asteme-page .ast-trace__mark--danger { color: var(--ast-danger); }
+.asteme-page .ast-trace__body { min-width: 0; overflow-wrap: anywhere; }
+.asteme-page .ast-trace__body > * + * { margin-block-start: var(--ast-space-1); }
+.asteme-page .ast-trace__label { color: var(--ast-text-muted); font-size: var(--ast-text-sm); }
+.asteme-page .ast-trace + .ast-disc { margin-block-start: var(--ast-space-4); }
+.asteme-page .ast-trace + .ast-btn { margin-block-start: var(--ast-space-2); margin-inline-start: calc(-1 * var(--ast-space-3)); }
+
+/* 6. Views --------------------------------------------------------------- */
+
+/* Rows: a whole line that opens something. */
+.asteme-page .ast-rows { border-block-start: 1px solid var(--ast-line); }
+.asteme-page .ast-rows > li { border-block-end: 1px solid var(--ast-line); }
+.asteme-page .ast-rows > li:last-child { border-block-end: 0; }
+.asteme-page .ast-section > .ast-rows:last-child > li:last-child { border-block-end: 0; }
+.asteme-page .ast-row {
+  display: grid;
+  grid-template-columns: var(--ast-star-box) minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: var(--ast-space-3);
+  width: 100%;
+  padding: var(--ast-space-3) 0;
+  border: 0;
+  background: none;
+  text-align: start;
+}
+/* The hover area reaches past the text on both sides, so the row reads as one target. */
+.asteme-page button.ast-row {
+  width: calc(100% + 2 * var(--ast-space-2));
+  margin-inline: calc(var(--ast-space-2) * -1);
+  padding-inline: var(--ast-space-2);
+  border-radius: var(--ast-radius-md);
+  cursor: pointer;
+  transition: background-color var(--ast-dur) var(--ast-ease);
+}
+.asteme-page button.ast-row:hover { background: var(--ast-fill-hover); }
+.asteme-page button.ast-row > .ast-glyph { align-self: center; color: var(--ast-text-muted); }
+.asteme-page .ast-row--static > .ast-btn { align-self: center; }
+.asteme-page .ast-row__main { display: grid; gap: 2px; min-width: 0; }
+.asteme-page .ast-row__title {
+  font-weight: var(--ast-weight-medium);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+.asteme-page .ast-row__title--plain { font-weight: var(--ast-weight-regular); }
+.asteme-page .ast-row__detail {
+  color: var(--ast-text-muted);
+  font-size: var(--ast-text-sm);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.asteme-page .ast-row__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ast-space-1) var(--ast-space-2); margin-block-start: 2px; }
+.asteme-page .ast-row--closed .ast-row__title { color: var(--ast-text-muted); font-weight: var(--ast-weight-regular); }
+
+.asteme-page .ast-search { position: relative; }
+.asteme-page .ast-search .ast-glyph { position: absolute; inset-block-start: 50%; inset-inline-start: 10px; transform: translateY(-50%); color: var(--ast-text-muted); pointer-events: none; }
+.asteme-page .ast-search .ast-input { padding-inline-start: 34px; }
+.asteme-page .ast-summary { color: var(--ast-text-muted); font-size: var(--ast-text-sm); }
+.asteme-page .ast-legend { display: flex; flex-wrap: wrap; gap: 2px var(--ast-space-4); color: var(--ast-text-muted); font-size: var(--ast-text-xs); }
+.asteme-page .ast-legend span { display: inline-flex; align-items: center; gap: 2px; }
+.asteme-page .ast-footnote { display: flex; align-items: center; gap: var(--ast-space-1) var(--ast-space-2); flex-wrap: wrap; color: var(--ast-text-muted); font-size: var(--ast-text-sm); }
+
+/* Verdict: one question, answered in place. */
+.asteme-page .ast-verdict { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ast-space-1) var(--ast-space-3); margin-block-start: var(--ast-space-2); font-size: var(--ast-text-sm); }
+.asteme-page .ast-verdict__ask { color: var(--ast-text-muted); }
+.asteme-page .ast-verdict__choices { display: inline-flex; flex-wrap: wrap; gap: var(--ast-space-1); }
+.asteme-page .ast-verdict__why { color: var(--ast-text-muted); }
+.asteme-page .ast-verdict--given { font-weight: var(--ast-weight-medium); }
+.asteme-page .ast-verdict--given .ast-link,
+.asteme-page .ast-verdict--given .ast-verdict__why { font-weight: var(--ast-weight-regular); }
+
+.asteme-page .ast-used__text { font-weight: var(--ast-weight-medium); }
+.asteme-page .ast-used__facts { display: grid; row-gap: 2px; font-size: var(--ast-text-sm); }
+.asteme-page .ast-used__facts > div { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); column-gap: var(--ast-space-2); }
+.asteme-page .ast-used__facts dt { color: var(--ast-text-muted); }
+
+/* Questions waiting for the person. */
+.asteme-page .ast-questions { border-block: 1px solid var(--ast-line); }
+.asteme-page .ast-questions > li + li { border-block-start: 1px solid var(--ast-line); }
+.asteme-page .ast-question { padding-block: var(--ast-space-4); }
+.asteme-page .ast-question > * + * { margin-block-start: var(--ast-space-2); }
+.asteme-page .ast-question__ask { font-size: var(--ast-text-sm); color: var(--ast-text-muted); }
+.asteme-page .ast-question__text { font-weight: var(--ast-weight-medium); overflow-wrap: anywhere; }
+.asteme-page .ast-question__side { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--ast-space-3); }
+.asteme-page .ast-question__side .ast-btn { flex: none; }
+
+/* The account of one memory. */
+.asteme-page .ast-account__head > * + * { margin-block-start: var(--ast-space-2); }
+.asteme-page .ast-account__kind { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ast-space-2); color: var(--ast-text-muted); font-size: var(--ast-text-sm); }
+.asteme-page .ast-account__kind .ast-star-box { color: var(--ast-text-muted); height: auto; }
+.asteme-page .ast-account__kind .ast-chip { color: inherit; }
+.asteme-page .ast-account__kind .ast-chip--warning { color: var(--ast-warning); }
+.asteme-page .ast-account__claim { font-size: var(--ast-text-xl); font-weight: var(--ast-weight-strong); line-height: 1.35; overflow-wrap: anywhere; white-space: pre-wrap; }
+.asteme-page .ast-account__reason { color: var(--ast-text-muted); }
+.asteme-page .ast-account > .ast-section { padding-block-start: var(--ast-space-5); border-block-start: 1px solid var(--ast-line); }
+.asteme-page .ast-account > .ast-section + .ast-section { margin-block-start: var(--ast-space-5); }
+.asteme-page .ast-account > .ast-account__head + .ast-section { margin-block-start: var(--ast-space-5); }
+
+.asteme-page .ast-scenes > li { position: relative; padding-inline-start: calc(var(--ast-star-box) + var(--ast-space-3)); overflow-wrap: anywhere; }
+.asteme-page .ast-scenes > li + li { margin-block-start: var(--ast-space-2); }
+.asteme-page .ast-scenes__mark { position: absolute; inset-inline-start: calc((var(--ast-star-box) - 6px) / 2); inset-block-start: calc((var(--ast-leading) * 1em - 6px) / 2); width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.asteme-page .ast-scenes__out { color: var(--ast-text-muted); }
+.asteme-page .ast-scenes__out .ast-scenes__mark { border: 1px solid currentColor; background: none; }
+
+.asteme-page .ast-history { display: grid; row-gap: var(--ast-space-2); font-size: var(--ast-text-sm); }
+.asteme-page .ast-history li { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr); column-gap: var(--ast-space-3); }
+.asteme-page .ast-history time { color: var(--ast-text-muted); font-variant-numeric: tabular-nums; }
+
+/* Charter. */
+.asteme-page .ast-default { padding: var(--ast-space-3); border-radius: var(--ast-radius-md); background: var(--ast-fill-1); font-size: var(--ast-text-sm); }
+.asteme-page .ast-default > * + * { margin-block-start: var(--ast-space-2); }
+.asteme-page .ast-default__head { display: flex; align-items: center; justify-content: space-between; gap: var(--ast-space-2); }
+.asteme-page .ast-default ul { padding-inline-start: var(--ast-space-4); list-style: disc; color: var(--ast-text-muted); }
+.asteme-page .ast-default + .ast-field { margin-block-start: var(--ast-space-4); }
+
+/* Settings. */
+.asteme-page .ast-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ast-space-3) var(--ast-space-4); }
+.asteme-page .ast-stats dt { color: var(--ast-text-muted); font-size: var(--ast-text-sm); }
+.asteme-page .ast-stats dd { font-size: var(--ast-text-lg); font-weight: var(--ast-weight-strong); font-variant-numeric: tabular-nums; }
+.asteme-page .ast-stats + * { margin-block-start: var(--ast-space-3); }
+.asteme-page .ast-section > .ast-actions { margin-block-start: var(--ast-space-3); }
+
+/* Keeping it safe: one row per thing that can be saved or brought in. */
+.asteme-page .ast-keep { display: grid; gap: var(--ast-space-4); }
+.asteme-page .ast-keep__row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--ast-space-4); }
+.asteme-page .ast-keep__row > div { min-inline-size: 0; }
+.asteme-page .ast-keep__row > .ast-btn { flex: none; }
+.asteme-page .ast-keep__what { font-weight: var(--ast-weight-strong); }
+.asteme-page .ast-keep + .ast-notice { margin-block-start: var(--ast-space-3); }
+.asteme-page .ast-subhead { font-size: var(--ast-text-md); font-weight: var(--ast-weight-strong); margin-block: var(--ast-space-5) var(--ast-space-1); }
+.asteme-page .ast-backups > li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ast-space-2) var(--ast-space-3); }
+.asteme-page .ast-backups > li > .ast-confirm { flex-basis: 100%; }
+.asteme-page .ast-backups time { font-variant-numeric: tabular-nums; }
+.asteme-page .ast-path { overflow-wrap: anywhere; margin-block-start: var(--ast-space-3); }
+.asteme-page .ast-convo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ast-space-3); margin-block-start: var(--ast-space-3); }
+.asteme-page .ast-convo > p { margin: 0; flex: 1 1 14rem; }
+.asteme-page .ast-path-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ast-space-2); }
+.asteme-page .ast-notice .ast-path-actions { flex: none; }
+/* A number with its unit, or a field with a button beside it. */
+.asteme-page .ast-number { display: flex; align-items: center; gap: var(--ast-space-2); }
+.asteme-page .ast-number > .ast-input { flex: 1 1 auto; min-inline-size: 0; }
+.asteme-page .ast-pace .ast-number > .ast-input { flex: 0 0 6.5rem; font-variant-numeric: tabular-nums; }
+.asteme-page .ast-input[aria-invalid="true"] { border-color: var(--ast-danger); }
+
+/* 7. Width and motion ---------------------------------------------------- */
+
+@container asteme (min-width: 480px) {
+  .asteme-page .ast-facts > div { display: grid; grid-template-columns: var(--ast-label-col) minmax(0, 1fr); column-gap: var(--ast-space-3); }
+  .asteme-page .ast-facts dt { padding-block-start: 1px; }
+}
+@container asteme (min-width: 560px) {
+  .asteme-page .ast-top,
+  .asteme-page .ast-body,
+  .asteme-page .ast-foot { padding-inline: var(--ast-gutter-wide); }
+  .asteme-page .ast-top { padding-block-start: var(--ast-space-4); }
+}
+@container asteme (max-width: 420px) {
+  .asteme-page .ast-tabs { gap: var(--ast-space-4); }
+  .asteme-page .ast-history li { grid-template-columns: minmax(0, 1fr); }
+  .asteme-page .ast-question__side { flex-direction: column; align-items: stretch; gap: var(--ast-space-2); }
+  .asteme-page .ast-question__side .ast-btn { align-self: flex-start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .asteme-page *,
+  .asteme-page *::before,
+  .asteme-page *::after { transition: none !important; }
+  .asteme-page .ast-account,
+  .asteme-page .ast-skeleton span { animation: none; }
+  .asteme-page .ast-spinner { animation: none; border-color: currentColor; opacity: 0.6; }
+}
+@media (forced-colors: active) {
+  .asteme-page .ast-star,
+  .asteme-page .ast-trace__mark--solid,
+  .asteme-page .ast-switch:checked::before { background: CanvasText; }
+  .asteme-page .ast-star--off { background: none; }
+}
+
+/* Settings: rarely changed things sit folded under their own headings. */
+.asteme-page .ast-disc__aside { margin-inline-start: auto; color: var(--ast-text-muted); font-size: var(--ast-text-sm); font-weight: var(--ast-weight-normal, 400); }
+.asteme-page .ast-gap { margin-block-end: var(--ast-space-4); }
+.asteme-page .ast-disc__body > .ast-actions { margin-block-start: var(--ast-space-4); }
+.asteme-page .ast-gap-top { margin-block-start: var(--ast-space-3); }
+
+.ast-scope__one { font-weight: 500; }
+
+/* Talking with Asteme takes the whole pane: no header, no tabs, no border. */
+.asteme-page.asteme-page--talk { max-width: none; width: 100%; padding: 0; margin: 0; }
+.asteme-page.asteme-page--talk .ast-body { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+.asteme-page.asteme-page--talk .ast-body > *, .asteme-page.asteme-page--talk .ast-body > * > * { max-width: none; margin: 0; }
+.asteme-page.asteme-page--talk .ast-talk { display: flex; flex-direction: column; height: 100%; }
+/* The size is measured (client/talk.jsx); this is only where it starts from. */
+.asteme-page.asteme-page--talk .ast-talk__frame { height: 100%; min-height: 15rem; }
+.asteme-page .ast-talk__frame { display: block; width: 100%; height: calc(100vh - 2.6rem); min-height: 15rem; border: 0; background: transparent; }
+.asteme-page .ast-talk__foot { margin: 0; padding: .45rem 1rem; font-size: .8rem; display: flex; gap: 1.2rem; justify-content: flex-end; }
+.asteme-page .ast-talk__link { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: .2em; }
+.asteme-page .ast-talk__wait { padding: 2rem 1.4rem; display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
+
+/* The switch in the composer. Remembering is the constellation joined; not
+   remembering is its lines drawn back to the middle star, the stars apart.
+   Turning it on draws the lines out one after another and each star answers
+   as its line reaches it. Pointing at it says what a press would do: joined
+   stars glimmer in turn, parted ones reach half-way toward each other. */
+.asteme-composer { background: transparent; opacity: 1; transition: opacity .3s ease, transform .12s ease, background-color .15s ease; }
+.asteme-composer[aria-pressed="false"] { opacity: .62; }
+.asteme-composer:hover:not(:disabled) { background: color-mix(in srgb, currentColor 9%, transparent); opacity: 1; }
+.asteme-composer:active:not(:disabled) { transform: scale(.93); }
+.asteme-composer:focus-visible { outline: 2px solid color-mix(in srgb, currentColor 60%, transparent); outline-offset: 1px; }
+.asteme-composer svg { overflow: visible; }
+.asteme-composer__line { stroke-dasharray: 1; stroke-dashoffset: 0; transition: stroke-dashoffset .36s cubic-bezier(.3, .7, .2, 1), opacity .25s ease; transition-delay: calc(var(--n) * 60ms); }
+.asteme-composer[aria-pressed="false"] .asteme-composer__line { stroke-dashoffset: 1; opacity: 0; transition-delay: calc((3 - var(--n)) * 40ms); }
+.asteme-composer[aria-pressed="false"]:hover:not(:disabled) .asteme-composer__line { stroke-dashoffset: .5; opacity: .5; transition-delay: calc(var(--n) * 40ms); }
+.asteme-composer__star { transform-box: fill-box; transform-origin: center; transition: transform .32s cubic-bezier(.3, 1.5, .5, 1), opacity .3s ease; }
+.asteme-composer[aria-pressed="false"] .asteme-composer__star { transform: scale(.74); }
+.asteme-composer__word { animation: asteme-word .28s ease both; }
+@keyframes asteme-word { from { opacity: 0; transform: translateX(-3px); } }
+@keyframes asteme-answer { 0% { transform: scale(.74); } 55% { transform: scale(1.42); } 100% { transform: scale(1); } }
+@keyframes asteme-glimmer { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .5; transform: scale(1.2); } }
+@keyframes asteme-wait { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.asteme-composer.is-lit .asteme-composer__star { animation: asteme-answer .5s cubic-bezier(.3, 1.4, .5, 1) both; animation-delay: calc(var(--n) * 70ms + 140ms); }
+.asteme-composer[aria-pressed="true"]:hover:not(:disabled):not(.is-lit) .asteme-composer__star { animation: asteme-glimmer 1.6s ease-in-out infinite; animation-delay: calc(var(--n) * 190ms); }
+.asteme-composer.is-busy svg { animation: asteme-wait .9s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .asteme-composer, .asteme-composer__line, .asteme-composer__star { transition: none; }
+  .asteme-composer__star, .asteme-composer__word, .asteme-composer.is-busy svg { animation: none !important; }
+}
+
+/* In DSH's side bar, outside the panel: one star of Asteme's mark is lit when it has said something not yet seen. A warm light, the size of the star it is. */
+.ast-navicon { display: inline-flex; }
+.ast-navlit { color: #e9b95c; transform-box: fill-box; transform-origin: center; animation: ast-navlit-in .5s ease-out; }
+@keyframes ast-navlit-in { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .ast-navlit { animation: none; } }

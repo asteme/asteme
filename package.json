@@ -1,0 +1,70 @@
+{
+  "name": "asteme",
+  "version": "0.11.0",
+  "description": "Asteme: someone to talk to whose memory does not fade. It recalls by situation, learns from how each use turned out, and every memory can be traced to words you said.",
+  "keywords": [
+    "memory",
+    "agent",
+    "assistant",
+    "long-term-memory",
+    "dsh-plugin",
+    "local-first"
+  ],
+  "homepage": "https://github.com/asteme/asteme",
+  "bugs": "https://github.com/asteme/asteme/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/asteme/asteme.git"
+  },
+  "author": "WSL043",
+  "type": "module",
+  "main": "./src/core.mjs",
+  "exports": {
+    ".": "./src/core.mjs",
+    "./log": "./src/log.mjs",
+    "./policy": "./src/policy.mjs"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs test/legacy/*.test.mjs client/*.test.mjs",
+    "build": "node client/build.mjs",
+    "preview": "node client/preview/snapshot.mjs && node client/preview/build.mjs",
+    "demo": "node sandbox/demo.mjs",
+    "eval": "node eval/run.mjs",
+    "bundle": "node scripts/make-dsh-bundle.mjs",
+    "sync-dsh": "node scripts/sync-dsh-repo.mjs",
+    "brain": "node brain/cli.mjs",
+    "brain:preview": "node brain/preview.mjs"
+  },
+  "bin": {
+    "asteme": "brain/cli.mjs"
+  },
+  "files": [
+    "src/*.mjs",
+    "brain/*.mjs",
+    "brain/page/",
+    "standalone/*.mjs",
+    "client/copy.mjs",
+    "client/locales/*.mjs",
+    "client/icon.mjs",
+    "icon.svg",
+    "LICENSE",
+    "NOTICE",
+    "TRADEMARKS.md",
+    "README.md",
+    "README.ja.md",
+    "CHANGELOG.md",
+    "!brain/preview.mjs"
+  ],
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@huggingface/transformers": "3.8.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  }
+}

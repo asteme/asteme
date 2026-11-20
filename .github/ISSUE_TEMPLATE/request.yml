@@ -1,0 +1,11 @@
+name: A request
+description: Something you would like it to do.
+labels: [request]
+body:
+  - type: textarea
+    id: need
+    attributes: { label: What you were trying to do, description: "The situation, before the solution." }
+    validations: { required: true }
+  - type: textarea
+    id: idea
+    attributes: { label: What would help }

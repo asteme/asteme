@@ -1,0 +1,112 @@
+// Talking with Asteme itself, inside the panel. The conversation is Asteme's
+// own page (brain/page.html), served by the plugin to this computer only and
+// shown here in a frame; the same page can be opened in a window of its own.
+import React from "react";
+import { Button, Notice, Spinner } from "./ui.jsx";
+
+export function TalkTab({ ctx, active, onManage, onOpenSession, onChanged, settingsAsked = 0 }) {
+  const { t, model, projectId } = ctx;
+  const [door, setDoor] = React.useState(null), [error, setError] = React.useState(null), [busy, setBusy] = React.useState(false);
+  const start = React.useCallback(async () => {
+    setBusy(true); setError(null);
+    try { setDoor((await model.request("brain", { projectId })).url); } catch (e) { setError(e.message); } finally { setBusy(false); }
+  }, [model, projectId]);
+  // Opening the tab is asking for the conversation; nothing runs before that.
+  React.useEffect(() => { if (active && !door && !busy && !error) void start(); }, [active, door, busy, error, start]);
+  // The page asks for the panel by its "Manage and settings" button.
+  // It also asks for a DSH session to be opened: the one doing a task it handed over.
+  React.useEffect(() => { const heard = (e) => { if (!door || e.origin !== new URL(door).origin) return; if (e.data?.asteme === "manage") onManage?.(typeof e.data.tab === "string" ? e.data.tab : "review"); else if (e.data?.asteme === "changed") onChanged?.(); else if (e.data?.asteme === "open" && typeof e.data.session === "string" && /^[\w-]{1,120}$/.test(e.data.session)) onOpenSession?.(e.data.session); }; window.addEventListener("message", heard); return () => window.removeEventListener("message", heard); }, [door, onManage, onOpenSession]);
+  const dark = typeof document !== "undefined" && (document.body?.hasAttribute("data-ds-dark-theme") || document.querySelector(".asteme-page")?.style.colorScheme === "dark");
+  // DSH can be dressed by skins. The page is in a frame and cannot see them, so
+  // the colours actually in use here are read and handed to it.
+  const frame = React.useRef(null);
+  const look = React.useCallback(() => {
+    const hex = (c) => { const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/.exec(c ?? ""); return m && (m[4] === undefined || Number(m[4]) > 0.5) ? "#" + [m[1], m[2], m[3]].map(n => Number(n).toString(16).padStart(2, "0")).join("") : ""; };
+    let node = document.querySelector(".asteme-page"), bg = ""; const ink = node ? hex(getComputedStyle(node).color) : "";
+    for (; node && !bg; node = node.parentElement) bg = hex(getComputedStyle(node).backgroundColor);
+    const n = bg ? parseInt(bg.slice(1), 16) : 0, dark = bg ? (.299 * (n >> 16) + .587 * ((n >> 8) & 255) + .114 * (n & 255)) < 128 : document.body.hasAttribute("data-ds-dark-theme");
+    return { theme: dark ? "dark" : "light", bg, ink };
+  }, []);
+  // DSH can change its theme, or be dressed by a skin, while the conversation is open: it follows.
+  React.useEffect(() => {
+    if (!door || typeof MutationObserver === "undefined") return undefined;
+    const tell = () => frame.current?.contentWindow?.postMessage({ asteme: "theme", ...look() }, new URL(door).origin);
+    const watch = new MutationObserver(tell);
+    for (const node of [document.documentElement, document.body]) watch.observe(node, { attributes: true, attributeFilter: ["class", "style", "data-ds-dark-theme", "data-theme"] });
+    const media = window.matchMedia?.("(prefers-color-scheme: dark)"); media?.addEventListener?.("change", tell);
+    return () => { watch.disconnect(); media?.removeEventListener?.("change", tell); };
+  }, [door, look]);
+  const colours = React.useMemo(() => {
+    if (typeof document === "undefined") return "";
+    const hex = (c) => { const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/.exec(c ?? ""); return m && (m[4] === undefined || Number(m[4]) > 0.5) ? [m[1], m[2], m[3]].map(n => Number(n).toString(16).padStart(2, "0")).join("") : ""; };
+    let node = document.querySelector(".asteme-page"), bg = ""; const ink = node ? hex(getComputedStyle(node).color) : "";
+    for (; node && !bg; node = node.parentElement) bg = hex(getComputedStyle(node).backgroundColor);
+    return (bg ? `&bg=${bg}` : "") + (ink ? `&ink=${ink}` : "");
+  }, [door]);
+  // The address is made once. A later change of theme is told to the page; it must not load it again.
+  const src = React.useMemo(() => door ? `${door}&embed=1&lang=${encodeURIComponent(ctx.t("_lang") || "")}&theme=${typeof document === "undefined" ? (dark ? "dark" : "light") : look().theme}${colours}` : "", [door]);
+  // Asked from the panel's settings: the conversation opens its own. The page may still be loading, so it is told again when it says it is ready.
+  const wantSettings = React.useRef(0);
+  React.useEffect(() => { if (!settingsAsked || !door) return undefined; wantSettings.current = settingsAsked; const tell = () => frame.current?.contentWindow?.postMessage({ asteme: "settings" }, new URL(door).origin); tell(); const again = setTimeout(tell, 1200); return () => clearTimeout(again); }, [settingsAsked, door]);
+  // The microphone. DSH on the desktop gives it to its own window and to no
+  // frame inside it, so the page cannot record there. It asks; the recording
+  // is made here, the measured level is told to the page as it goes, and what
+  // was recorded is handed to the page when it says stop. Nothing is kept here.
+  const recording = React.useRef(null);
+  React.useEffect(() => {
+    if (!door) return undefined;
+    const origin = new URL(door).origin, tell = (message, transfer) => frame.current?.contentWindow?.postMessage({ asteme: "mic", ...message }, origin, transfer ?? []);
+    const end = (keep) => { const r = recording.current; recording.current = null; if (!r) return keep ? tell({ state: "none" }) : undefined;
+      clearInterval(r.tick); try { r.proc.disconnect(); } catch { /* already apart */ } r.stream.getTracks().forEach(track => track.stop()); void r.audio.close().catch(() => {});
+      if (!keep) return tell({ state: "cancelled" });
+      const total = r.chunks.reduce((n, c) => n + c.length, 0), all = new Float32Array(total); let at = 0; for (const c of r.chunks) { all.set(c, at); at += c.length; }
+      tell({ state: "done", rate: r.rate, pcm: all.buffer }, [all.buffer]); };
+    const begin = async () => {
+      if (recording.current) return;
+      tell({ state: "asked" });
+      let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } }); } catch (e) { return tell({ state: "refused", why: String(e?.name ?? "") }); }
+      const Audio = window.AudioContext || window.webkitAudioContext, audio = new Audio(), source = audio.createMediaStreamSource(stream), proc = audio.createScriptProcessor(4096, 1, 1), quiet = audio.createGain(); quiet.gain.value = 0;
+      const r = recording.current = { stream, audio, proc, chunks: [], rate: audio.sampleRate, level: 0, seconds: 0 };
+      proc.onaudioprocess = (e) => { const d = e.inputBuffer.getChannelData(0); r.chunks.push(new Float32Array(d)); let sum = 0; for (let i = 0; i < d.length; i += 8) sum += d[i] * d[i]; r.level = Math.min(1, Math.sqrt(sum / (d.length / 8)) * 5); r.seconds += d.length / r.rate; };
+      source.connect(proc); proc.connect(quiet); quiet.connect(audio.destination);
+      // Two minutes is the most the page asks for; past that it is ended here too, in case the page has gone.
+      r.tick = setInterval(() => { if (r.seconds > 130) return end(false); tell({ state: "level", level: r.level }); }, 85);
+      tell({ state: "on", rate: r.rate });
+    };
+    const heard = (e) => { if (e.origin !== origin || e.data?.asteme !== "mic") return; if (e.data.do === "start") void begin(); else if (e.data.do === "stop") end(true); else if (e.data.do === "cancel") end(false); };
+    window.addEventListener("message", heard);
+    return () => { window.removeEventListener("message", heard); end(false); };
+  }, [door]);
+  // The frame takes exactly the room DSH leaves it: from its own corner to the
+  // nearest edge of DSH's that would cut it off. A share of the window's height
+  // is not that room: DSH on the desktop has a title bar, and the bottom of the
+  // conversation, where the box is, ended up below the window.
+  const [room, setRoom] = React.useState(null);
+  React.useLayoutEffect(() => {
+    const el = frame.current; if (!el || typeof ResizeObserver === "undefined") return undefined;
+    const outside = []; for (let n = el.closest(".asteme-page")?.parentElement; n; n = n.parentElement) outside.push(n);
+    const fit = () => {
+      // The frame is made to fill exactly the room there is, so nothing around it has a reason to scroll. A container that has scrolled all the same (a browser does that to bring a focused field into view when the frame was, for a moment, larger than the room) is put back: left as it was, the top of the conversation stayed hidden and the measure taken from there was wrong for good.
+      for (const n of outside) { if (n.scrollTop) n.scrollTop = 0; if (n.scrollLeft) n.scrollLeft = 0; }
+      const at = el.getBoundingClientRect(); let bottom = window.innerHeight, right = window.innerWidth;
+      // Only DSH's own containers count: Asteme's are as large as the frame makes them.
+      for (const n of outside) { const cs = getComputedStyle(n); if (!/hidden|auto|scroll|clip/.test(cs.overflowX + cs.overflowY)) continue; const r = n.getBoundingClientRect(); bottom = Math.min(bottom, r.top + n.clientTop + n.clientHeight); right = Math.min(right, r.left + n.clientLeft + n.clientWidth); }
+      const h = Math.max(240, Math.floor(bottom - at.top)), w = Math.max(240, Math.floor(right - at.left));
+      setRoom(now => now && now.h === h && now.w === w ? now : { h, w });
+    };
+    fit();
+    const watch = new ResizeObserver(fit); for (const n of outside) watch.observe(n);
+    window.addEventListener("resize", fit);
+    // Where the frame begins can change with nothing changing size (a bar that appears above it, a panel that slides): that is looked for too, a few times a second, which costs a handful of measurements.
+    for (const n of outside) n.addEventListener("scroll", fit, { passive: true });
+    const often = setInterval(fit, 400);
+    return () => { watch.disconnect(); window.removeEventListener("resize", fit); for (const n of outside) n.removeEventListener("scroll", fit); clearInterval(often); };
+  }, [door, active]);
+  if (error) return <div className="ast-talk__wait"><Notice tone="danger">{error}</Notice><div className="ast-actions"><Button onClick={start}>{t("tryAgain")}</Button></div></div>;
+  if (!door) return <div className="ast-talk__wait"><Spinner /> <span className="ast-soft">{t("talkLead")}</span></div>;
+  return (
+    <div className="ast-talk">
+      <iframe className="ast-talk__frame" title={t("tabTalk")} ref={frame} src={src} allow="microphone; autoplay; local-fonts; clipboard-write" style={room ? { height: room.h, width: room.w } : undefined} />
+    </div>
+  );
+}

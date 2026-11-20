@@ -1,0 +1,108 @@
+/*
+ * ASTEME design tokens.
+ *
+ * This file is the theme. styles.css reads these roles and holds no raw
+ * colors, sizes or durations of its own. To retheme, override the roles here
+ * (or from the host, on .asteme-page) and leave styles.css alone.
+ *
+ * Default theme: derived from the host text color, so it follows whatever
+ * light or dark theme DSH is using. Hue is reserved for state (danger,
+ * warning, positive); everything else is the host color at a given strength.
+ *
+ * One rule keeps the derived defaults stable: `currentColor` resolves where a
+ * token is used, so set `color` on leaf text only, never on a container whose
+ * children use these tokens. Explicit hex values have no such limit.
+ */
+.asteme-page {
+  /* Text */
+  --ast-text-muted: color-mix(in srgb, currentColor 68%, transparent);
+
+  /* Lines */
+  --ast-line: color-mix(in srgb, currentColor 14%, transparent);
+  --ast-line-strong: color-mix(in srgb, currentColor 30%, transparent);
+  --ast-control-line: color-mix(in srgb, currentColor 52%, transparent);
+  --ast-control-line-hover: color-mix(in srgb, currentColor 70%, transparent);
+
+  /* Fills (laid over the host background) */
+  --ast-fill-1: color-mix(in srgb, currentColor 4%, transparent);
+  --ast-fill-2: color-mix(in srgb, currentColor 8%, transparent);
+  --ast-fill-hover: color-mix(in srgb, currentColor 7%, transparent);
+  --ast-fill-press: color-mix(in srgb, currentColor 12%, transparent);
+  --ast-field-bg: transparent;
+
+  /* Accent: selected tab, switch, focus ring. Monochrome by default. */
+  --ast-accent: currentColor;
+  --ast-focus: currentColor;
+  --ast-focus-width: 2px;
+
+  /* Primary action */
+  --ast-primary-bg: color-mix(in srgb, currentColor 12%, transparent);
+  --ast-primary-bg-hover: color-mix(in srgb, currentColor 18%, transparent);
+  --ast-primary-fg: currentColor;
+  --ast-primary-line: color-mix(in srgb, currentColor 62%, transparent);
+
+  /* State hues. Text roles lean toward the host text color so they stay
+     readable on both light and dark backgrounds. */
+  --ast-danger-hue: #d43a2f;
+  --ast-danger: color-mix(in oklab, var(--ast-danger-hue) 66%, currentColor);
+  --ast-danger-line: color-mix(in srgb, var(--ast-danger-hue) 60%, transparent);
+  --ast-danger-fill: color-mix(in srgb, var(--ast-danger-hue) 10%, transparent);
+  --ast-danger-fill-hover: color-mix(in srgb, var(--ast-danger-hue) 18%, transparent);
+
+  --ast-warning-hue: #b26a00;
+  --ast-warning: color-mix(in oklab, var(--ast-warning-hue) 74%, currentColor);
+  --ast-warning-line: color-mix(in srgb, var(--ast-warning-hue) 60%, transparent);
+  --ast-warning-fill: color-mix(in srgb, var(--ast-warning-hue) 12%, transparent);
+
+  --ast-positive-hue: #1f8a4c;
+  --ast-positive: color-mix(in oklab, var(--ast-positive-hue) 74%, currentColor);
+
+  /* Type */
+  --ast-font: "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", system-ui, sans-serif;
+  --ast-font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
+  --ast-text-xs: 0.75rem;
+  --ast-text-sm: 0.8125rem;
+  --ast-text-md: 0.875rem;
+  --ast-text-lg: 1rem;
+  --ast-text-xl: 1.125rem;  /* the claim at the top of an account */
+  --ast-leading: 1.5;
+  --ast-leading-tight: 1.25;
+  --ast-weight-regular: 400;
+  --ast-weight-medium: 500;
+  --ast-weight-strong: 600;
+  --ast-wordmark-tracking: 0.08em;
+
+  /* Space (4px base) */
+  --ast-space-1: 4px;
+  --ast-space-2: 8px;
+  --ast-space-3: 12px;
+  --ast-space-4: 16px;
+  --ast-space-5: 24px;
+  --ast-space-6: 32px;
+
+  /* Layout */
+  --ast-gutter: 16px;       /* page padding below 560px */
+  --ast-gutter-wide: 24px;  /* page padding from 560px */
+  --ast-measure: 720px;     /* widest the content column grows */
+  --ast-label-col: 8.5rem;  /* label column of fact rows from 480px */
+
+  /* Shape */
+  --ast-radius-sm: 4px;
+  --ast-radius-md: 6px;
+  --ast-control-h: 30px;
+  --ast-stroke: 1.6px;      /* matches the icon stroke */
+  --ast-node: 9px;          /* a point on a trace */
+  /* The star: its size says how easily a memory comes to mind. */
+  --ast-star-lg: 11px;
+  --ast-star-md: 8px;
+  --ast-star-sm: 5px;
+  --ast-star-box: 14px;     /* the column every star is centred in */
+
+  /* Motion */
+  --ast-dur: 120ms;
+  --ast-ease: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Misc */
+  --ast-disabled-opacity: 0.5;
+}
+

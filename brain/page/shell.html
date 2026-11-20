@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="__LANG__" data-theme="__THEME__">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asteme</title>
+<style>
+/*__STYLE__*/
+</style>
+</head>
+<body>
+<div id="wall" aria-hidden="true"></div>
+<canvas id="sky" aria-hidden="true"></canvas>
+<header><span class="face" id="face" role="button" tabindex="0"><span class="mark" id="mark">__ICON__</span></span><button class="bare name" id="name" type="button">ASTEME</button><button class="bare state muted" id="state" type="button" role="status"></button><button class="bare soon muted" id="soon" type="button" hidden></button><button class="bare fresh muted" id="fresh" type="button"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/><path d="M17.5 3.5a1.8 1.8 0 0 1 2.6 2.6L12 14.2 8.8 15l.8-3.2z"/></svg></button><button class="bare count muted" id="count" type="button"></button><button class="plain skyset muted" id="skyset" type="button"></button></header>
+<p class="sr" id="skylabel"></p>
+<main id="scroller"><div class="column" id="thread" aria-live="polite"></div></main>
+<div class="column" id="newestwrap"><button id="newest" type="button" tabindex="-1"></button></div>
+<form id="form"><div class="column"><div class="hint muted" id="hint" role="status"></div><div class="choose" id="choose"></div><div class="composer" id="composer"><div id="replying"></div><div id="files"></div>
+<div class="row" id="row"><button class="tool" id="attach" type="button"></button><textarea id="box" rows="1" autofocus></textarea><button class="tool" id="mic" type="button" hidden></button><button class="tool" id="halt" type="button" hidden></button><button id="send" type="submit"></button></div>
+<div class="rec" id="rec" hidden><button class="tool" id="recno" type="button"></button><canvas id="level"></canvas><span class="muted" id="rectime"></span><button id="recok" type="button"></button></div>
+<input id="pick" type="file" multiple hidden></div></div></form>
+<div id="spacebar"><button class="bare" id="spaceback" type="button"></button><input id="find" type="search" autocomplete="off"><span class="muted" id="spacecount"></span><button class="bare" id="spacelist" type="button" hidden></button><button class="bare" id="spacelevel" type="button"></button></div>
+<div class="muted" id="spacehint" role="note"></div>
+<aside id="sheet" aria-live="polite"></aside>
+<div id="birth" hidden><div class="birthcore"><div class="birthmark" id="birthmark">__ICON__<i class="birthring"></i><i class="birthring late"></i></div><p class="birthname" id="birthname"></p><div class="birthask" id="birthask"><p class="birthline" id="birthline"></p><p class="birthnote muted" id="birthnote"></p><div class="birthfield" id="birthfield"></div><div class="birthacts" id="birthacts"></div></div></div><div id="birthfoot"><div class="muted" id="birthmove" hidden></div><button class="bare muted" id="birthskip" type="button"></button></div></div>
+<div id="tip" role="tooltip"></div>
+<script>
+/*__SCRIPT__*/
+</script>
+</body>
+</html>

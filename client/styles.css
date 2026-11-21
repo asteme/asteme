@@ -712,6 +712,7 @@
   .asteme-page .ast-account,
   .asteme-page .ast-skeleton span { animation: none; }
   .asteme-page .ast-spinner { animation: none; border-color: currentColor; opacity: 0.6; }
+  .asteme-page .ast-talk__mark circle { animation: none; }
 }
 @media (forced-colors: active) {
   .asteme-page .ast-star,
@@ -738,7 +739,15 @@
 .asteme-page .ast-talk__frame { display: block; width: 100%; height: calc(100vh - 2.6rem); min-height: 15rem; border: 0; background: transparent; }
 .asteme-page .ast-talk__foot { margin: 0; padding: .45rem 1rem; font-size: .8rem; display: flex; gap: 1.2rem; justify-content: flex-end; }
 .asteme-page .ast-talk__link { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: .2em; }
-.asteme-page .ast-talk__wait { padding: 2rem 1.4rem; display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
+.asteme-page .ast-talk { position: relative; }
+.asteme-page .ast-talk--opening { min-height: 70vh; }
+.asteme-page .ast-talk__failed { padding: 2rem 1.4rem; display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
+.asteme-page .ast-talk__wait { position: absolute; inset: 0; min-height: 15rem; display: grid; place-items: center; pointer-events: none; opacity: 1; transition: opacity .35s ease; }
+.asteme-page .ast-talk__wait--leaving { opacity: 0; }
+.asteme-page .ast-talk__mark { opacity: .55; }
+.asteme-page .ast-talk__mark path { opacity: .5; }
+.asteme-page .ast-talk__mark circle { animation: ast-star-up 1.8s ease-in-out infinite backwards; }
+@keyframes ast-star-up { 0%, 100% { opacity: .25; } 45% { opacity: 1; } }
 
 /* The switch in the composer. Remembering is the constellation joined; not
    remembering is its lines drawn back to the middle star, the stars apart.

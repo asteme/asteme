@@ -2,11 +2,29 @@
 // own page (brain/page.html), served by the plugin to this computer only and
 // shown here in a frame; the same page can be opened in a window of its own.
 import React from "react";
-import { Button, Notice, Spinner } from "./ui.jsx";
+import { Button, Notice } from "./ui.jsx";
+import { ICON_PATH, ICON_CIRCLES, ICON_STROKE } from "./icon.mjs";
+
+// While the conversation is being opened there is its mark, in the middle, its stars coming up one after another. No words: there is nothing to read
+// in the second or two it takes, and a paragraph that appears and goes looked like something broken. It stays until the page itself has loaded, so that
+// what is seen is one thing giving way to the conversation, not a mark, then an empty frame, then the conversation.
+function Opening({ label, leaving = false }) {
+  return (
+    <div className={leaving ? "ast-talk__wait ast-talk__wait--leaving" : "ast-talk__wait"} role="status" aria-label={label}>
+      <svg className="ast-talk__mark" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={ICON_STROKE} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d={ICON_PATH} />
+        {ICON_CIRCLES.map(([cx, cy, r], i) => <circle key={i} cx={cx} cy={cy} r={r} fill="currentColor" stroke="none" style={{ animationDelay: `${i * 0.22}s` }} />)}
+      </svg>
+    </div>
+  );
+}
 
 export function TalkTab({ ctx, active, onManage, onOpenSession, onChanged, settingsAsked = 0 }) {
   const { t, model, projectId } = ctx;
   const [door, setDoor] = React.useState(null), [error, setError] = React.useState(null), [busy, setBusy] = React.useState(false);
+  // The page in the frame has loaded; until then the mark stays over it.
+  const [loaded, setLoaded] = React.useState(false);
+  React.useEffect(() => { setLoaded(false); }, [door]);
   const start = React.useCallback(async () => {
     setBusy(true); setError(null);
     try { setDoor((await model.request("brain", { projectId })).url); } catch (e) { setError(e.message); } finally { setBusy(false); }
@@ -102,11 +120,12 @@ export function TalkTab({ ctx, active, onManage, onOpenSession, onChanged, setti
     const often = setInterval(fit, 400);
     return () => { watch.disconnect(); window.removeEventListener("resize", fit); for (const n of outside) n.removeEventListener("scroll", fit); clearInterval(often); };
   }, [door, active]);
-  if (error) return <div className="ast-talk__wait"><Notice tone="danger">{error}</Notice><div className="ast-actions"><Button onClick={start}>{t("tryAgain")}</Button></div></div>;
-  if (!door) return <div className="ast-talk__wait"><Spinner /> <span className="ast-soft">{t("talkLead")}</span></div>;
+  if (error) return <div className="ast-talk__failed"><Notice tone="danger">{error}</Notice><div className="ast-actions"><Button onClick={start}>{t("tryAgain")}</Button></div></div>;
+  if (!door) return <div className="ast-talk ast-talk--opening"><Opening label={t("loading")} /></div>;
   return (
     <div className="ast-talk">
-      <iframe className="ast-talk__frame" title={t("tabTalk")} ref={frame} src={src} allow="microphone; autoplay; local-fonts; clipboard-write" style={room ? { height: room.h, width: room.w } : undefined} />
+      <iframe className="ast-talk__frame" title={t("tabTalk")} ref={frame} src={src} onLoad={() => setLoaded(true)} allow="microphone; autoplay; local-fonts; clipboard-write" style={room ? { height: room.h, width: room.w } : undefined} />
+      <Opening label={t("loading")} leaving={loaded} />
     </div>
   );
 }

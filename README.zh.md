@@ -1,5 +1,11 @@
 <p align="center">
-  <img src="docs/banner.zh.jpg" alt="Asteme" width="100%">
+  <img src="docs/banner.zh.jpg" alt="Asteme：给智能体用的记忆，按情形回想，并从每次使用的结果中学习" width="100%">
+</p>
+
+<p align="center">
+  <a href="https://github.com/asteme/asteme/actions/workflows/test.yml"><img src="https://github.com/asteme/asteme/actions/workflows/test.yml/badge.svg" alt="tests"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-3c6eb4" alt="license: Apache-2.0"></a>
+  <img src="https://img.shields.io/badge/node-%E2%89%A5%2022.5-3c873a" alt="node 22.5 or newer">
 </p>
 
 <p align="center">
@@ -8,41 +14,95 @@
 
 https://github.com/user-attachments/assets/ccb61a6e-346e-4c98-9be8-9209f1bdacd1
 
-**开发中：** 项目仍在开发，行为可能变化，也可能出错或丢数据。请不要用于重要用途。
+**状态：开发中。** Asteme 仍在构建当中。行为可能变化，也可能失败或丢数据。在重要的事情上还不要依赖它。
 
 # ASTEME
 
-Asteme 是给 AI 助手用的长期记忆。它不是在过去的对话里找相似的词，而是把你说过的话连同“它适用的情形”一起记住，等同样的情形再次出现时想起来，并根据用上之后有没有帮上忙，调整每条记忆被想起的难易。
+Asteme 是一个你与之交谈的“谁”，而且每次都是同一个。你告诉它的事情，它会连同这件事适用的情形一起记住；同样的情形再次出现时，它会把相应的记忆想起来；而它会根据用完之后的结果，改变下一次什么会浮现在脑海里。
 
-它运行在你自己的电脑上，只用一个 SQLite 文件。可以作为 DeepSeek Harness 的插件、供任何智能体使用的 MCP 服务器，或者一个库来使用。
+它运行在你自己的电脑上。它记得的一切都在一个 SQLite 文件里；你交给它的东西就放在这个文件旁边。
 
-<p align="center">
-  <img src="docs/review.zh.png" alt="确认页面" width="420">
-</p>
+目前它有两种形态：
 
-## 有什么不同
+- **在 DeepSeek Harness 里面**，作为一个插件：对话就是 harness 中的一个页面，设置面板就在它旁边。
+- **独立运行**，作为一个大脑：这台电脑上的一个页面，由 `brain/cli.mjs` 提供。
 
-**唤起记忆的是情形，不是字面。** 假设你改过一份备忘录：“结论放前面，总监只看前三行。”几天后你要一页给投资人的材料。两句话没有一个词相同，但情形一样（读者时间很少，却要做决定），这条记忆就会回来。
+两者在同一套机制上说话、记忆、守约。各自有各自的存储：插件使用 harness 配置档（profile）的存储，独立的大脑使用它设置文件里的存储，或者用 `--person <name>` 为每个人各用一个存储。`export` 和 `import` 会写出并读回一个完整的人，所以一个人可以在两者之间迁移。除此之外，它们看不到彼此的存储。
 
-**使用的结果会改写记忆。** 用过一条记忆之后，它会从你接下来说的话里判断效果。帮上忙的更容易被想起；不合场合的不再出现在那类情形里，在别处照常起作用。不会因为时间久就淡忘，也不会因为数量多就被删掉。
+## 它有什么不同
 
-**每条记忆都能追到你自己的原话。** 每条记忆都保留着它出处的那句话。打开任意一条，都能看到它的依据、适用于哪里、每次被用上的结果，以及它的每一次改动。你说它不对，就以你的话为准，而不是模型的判断。
+**唤起记忆的是情形，不是字面。** 你曾经改过一份备忘录：“结论放前面，总监只看前三行。”几天后，你要求一页给投资人的材料。没有一个词相同，但情形是一样的（一个时间很少、却必须做决定的读者），于是这条记忆回来了。
 
-此外，它会在对话之间回顾，从不同的经历里得出教训；发现两条记忆矛盾时会来问你；还有一份学习改变不了的目的与价值。各项机制及其测试见 [DESIGN.md](DESIGN.md)（英文）。
+**使用会改写记忆。** 一条记忆被用过之后，你接下来说的话会被读取，用来看效果如何。帮上忙的更容易被想起。不合场合的就不再出现在那类情形里，在别处照常起作用。不会因为旧就变淡，也不会因为存储变大就被删掉。
+
+**每条记忆都落回你自己的话。** 每条记忆都保留着它源自的那句原话。打开一条记忆，你能看到它依据什么、适用于哪里、每一次被使用以及结果如何、以及它被做过的每一次改动。如果你说某件事不对，你的话胜过模型的话。
+
+**它会守约。**“六月再问我一次”会变成 Asteme 自己持有的一条约定，一次性的或重复的，时间到了，它会先开口。
+
+**它把记得的东西展示出来。** 每条记忆都是对话背后那片天空里的一颗星，越容易想起来就越亮。抓住空白的天空，你就进到它们中间了。
 
 ## 一分钟试用
 
-需要 Node 22.5 或更高版本。无需安装依赖，也不需要 API 密钥。
+Node 22.5 或更高版本。不需要安装任何东西，也不需要 API 密钥。
 
 ```
 git clone https://github.com/asteme/asteme.git
-cd REPO
+cd asteme
 npm run demo
 ```
 
-演示会用一个按脚本作答的模型，重放与一位用户相处的两周，并逐步说明记忆做了什么。`npm test` 以同样的方式运行全部测试。想看界面，用浏览器打开 `client/preview/preview.html`。
+演示会让一位用户面对一个按脚本作答的模型，重放两周，并叙述记忆做了什么：
+
+```
+Day 1. The user corrects a memo.
+  stored as a case; the exchange stood out (salience 0.55) because it was a correction
+Day 3. A request with none of the memo's words: a one-pager for an investor.
+  recalled by the scene: "Writing a memo for the director"
+  it helped; accessibility 0.7453
+Day 4. The same memory is used where it does not belong: notes for the team.
+  marked out of place there; accessibility 0.605
+Night. Sleep.
+  integrate: one lesson drawn from two cases
+```
+
+测试也是这样运行：`npm test`。
+
+想在没有模型的情况下看看这个对话，就运行页面自带的预览：
+
+```
+DEMO=1 ALL=900 node brain/preview.mjs 4173 ja
+```
+
+然后在这台电脑上打开 `http://127.0.0.1:4173/?token=preview`（在 PowerShell 里，先设好这两个变量：`$env:DEMO=1; $env:ALL=900`）。里面没有任何人的真实对话。
 
 ## 使用方式
+
+### 在 DeepSeek Harness 里
+
+安装插件 `dsh-asteme`（插件 → 添加插件；它来自 npm，DSH 也从那里更新它）。安装过程中，DSH 会请求允许它依赖的三个包（onnxruntime-node、protobufjs、sharp）运行安装脚本；允许之后它会继续。随后侧边栏里会出现 **ASTEME**。
+
+- 对话占满整个画面。记忆在旁边打开；“设置”讲的是这个对话：它长什么样、Asteme 本身（名字、形象、说话方式、心情）、声音和思考。“记忆”讲的是它记得的一切：搜索、星空，以及在 DSH 里每一处照料记忆的地方。记忆相关的设置也在 DSH 自己的设置里，位于 Asteme 之下。
+- 不属于对话的东西都在面板里：确认、记忆、动态、章程、设置。
+- harness 自己的对话没有变化：那是智能体在一个会话里干活。Asteme 是一条横跨所有这些、一直延续下去的对话，而且它可以先开口。
+
+### 独立运行
+
+```
+npm run brain
+```
+
+设置从 `~/.asteme/brain.json` 读取（或 `ASTEME_CONFIG` 里的路径）。密钥从不写进这个文件；`keyEnv` 写的是存放它的环境变量名。
+
+```json
+{ "model": { "url": "https://your-endpoint/v1", "name": "your-model", "keyEnv": "YOUR_KEY_ENV" },
+  "judge": { "keyEnv": "YOUR_JUDGE_KEY_ENV" },
+  "workers": { "dsh": { "command": "dsh", "args": ["acp"], "about": "an agent with files and a shell" } },
+  "store": "~/.asteme/memory.sqlite", "port": 4170, "language": "en" }
+```
+
+这个页面只在这台电脑上回应，而且只认打印出来的地址里的那个 token。工作进程（worker）是一个通过 Agent Client Protocol 接收话语、用话语作答的智能体；在 harness 里 DSH 总是现成的，其他的可以在文件里添加。
+
+OpenAI 兼容的语音也可以用同样的方式借给它：`voice: { url, model, voices, keyEnv }`。
 
 ### 给任何智能体当记忆（MCP）
 
@@ -52,7 +112,7 @@ ASTEME_LLM_URL=https://your-endpoint/v1 ASTEME_LLM_KEY=... ASTEME_LLM_MODEL=... 
 node standalone/mcp.mjs
 ```
 
-这是一个基于 stdio 的 MCP 服务器。智能体在回答前调用 `asteme_recall`，回答后调用 `asteme_observe`。
+一个基于 stdio 的 MCP 服务器。智能体在回答前用每条用户消息调用 `asteme_recall`，回答后再用自己的回复调用 `asteme_observe`。
 
 ### 作为库
 
@@ -60,38 +120,74 @@ node standalone/mcp.mjs
 import { openBrain } from "./standalone/brain.mjs";
 
 const brain = openBrain({ path: "memory.sqlite", infer, embed });
-const { note } = await brain.recall({ session: "s1", message });   // 回答之前
-brain.observe({ session: "s1", reply });                           // 回答之后
-await brain.rest();                                                // 空闲时
+const { note } = await brain.recall({ session: "s1", message });   // before the agent answers
+brain.observe({ session: "s1", reply });                           // after it answered
+await brain.rest();                                                // when idle
 ```
 
-### 作为 DeepSeek Harness 插件
+## 对话
 
-`plugin/` 是适配层，`client/` 是设置面板。这是目前用得最多的方式。
+- **开始。** 一个新的存储，或者被清空的存储，里面还没有任何人。在对话之前，它会先问一次：它叫什么名字、该怎么称呼你、该怎么跟你说话（每一项都可以留空，也可以全部跳过），然后它被唤醒。被唤醒、被命名，就是它的第一条记忆：那颗星落进空白的天空，作为最亮的一颗留在正中央，然后它先开口。
+- **星星。** 一颗星就是一条记忆；最新的靠近中心，最旧的远在外圈，越容易想起来的越亮。拖动空白的天空、捏合、或者双击，就能进去；拖动是移动，滚轮是缩放，Shift + 拖动是旋转。不管转过多少，一拉动的仍然是手底下的东西；按 `0` 或选“天空回正”，它就恢复成正向。新学到的东西会作为一颗流星落进天空（这可以关掉）。
+- **搜索。** 在搜索框里打字，匹配的星星会一颗一颗地过来，排成一段松散的弧线。用滚轮或 ↑↓ 在它们之间移动，按 Enter 或点一下打开一条，其余的则淡淡地留在天空里。
+- **一条记忆。** 打开一颗星，能看到它的话、它依据什么、什么时候学到的，也可以说它仍然成立、已经不再成立，把它暂停，或者连同它的出处一起忘掉。
+- **约定。** 一条约定是做出它的那条回复下面的一行字，下一次的时间在页眉里，说一声就能取消。
+- **回复与表情。** 任何一条消息都可以就地回复；Asteme 可以在你的消息上贴一个表情，你也可以在它的消息上贴一个。
+- **已读标记。** 双方都能看到对方什么时候读的。两个方向都可以关掉。
+- **撤回消息。** 你的消息可以撤回；Asteme 针对它说的话会一起消失，它为这条消息派出去的工作也会被召回。
+- **文件。** 一条消息里最多可以添加、粘贴或拖入六个文件。文本文件会被读取；图片在模型能看图时会被看；PDF 或其他东西在需要时交给工作进程。
+- **语音。** 当 harness 持有 DeepSeek 密钥时，回复可以由 DeepSeek 的声音念出来；被念的文字会发送给 DeepSeek。念的是文字，不是 ID 或长串代码。
+- **你不在的时候。** 当 Asteme 说了你还没看到的话，harness 侧边栏里它图标上的一颗星会亮起，浏览器标签页也会在标题里计数。打开 Asteme 时可以先去对话，也可以先去记忆里等着你的东西；这在面板的设置里选。
 
-## 面板
+## 它是怎么工作的
 
-- **确认**：它拿不准的事，以及上一次回复用了什么、为什么。点一下就能告诉它“对／这里不合适／记错了”，这一下就是它学习的来源。
-- **记忆**：它记得的一切。每一条都可以打开查看依据。
-- **动态**：你不在的时候它做了什么；什么都没发生时，说明原因。
-- **章程**：它的目的与价值。由你来写，学习不会改变它。
+```mermaid
+flowchart LR
+  M[Your message] --> R[Recall by situation]
+  R --> A[Decide what belongs in the reply]
+  A --> P[Reply]
+  P --> O[Read how it went from what you say next]
+  O --> S[Look back while idle: reread, compare, draw lessons]
+  S --> R
+  O --> R
+```
 
-支持英文、日文和中文。
+在回复之前，消息会按意义把记忆唤起来，一次模型调用读取情形、决定哪些该放进去。回复之后，这段交流被读进记忆，你的那句话保留下来，作为所学之事的依据。之后，你接下来写的话会被读取，用来看每一条用过的记忆结果如何，而这也改变下次会想起什么。空闲时，它会重读那些突出的交流（一次纠正、一次意外、一个约定），比较可能互相矛盾的记忆，并从各自不同的场合里得出教训。
 
-## 要去往哪里
+代码从不决定某件事是什么意思。它检查的是结构：引用是否准确、id 是否存在、修订有没有动过。意义留给模型，而模型写下的每一样东西都必须指向一条已存储的记录。
 
-我们认为，记忆不是一份可以检索的记录。它是记住发生过什么，根据事情的结果改变想法，并且从不抹去，只是有些事会变得不那么容易想起。每一条记忆是一颗星，而当下的情形把它们连成图形。
-
-我们想走到的地方，是一个与同一个人相处足够久之后，对这个人来说成为“某一个谁”的助手。Asteme 还没有到那里。今天它只是这个循环的第一圈，运行在一台电脑上，设计好的部分多于已被验证的部分。哪些已经验证，[更新日志](CHANGELOG.md) 和 [`DESIGN.md`](DESIGN.md) 里写得很清楚。
+**重复性的工作是分开的。** Asteme 自己重复的约定（“每天早上”“每周五五点”）由 Asteme 自己持有，时间存在它自己的存储里：它不注册到 DeepSeek Harness 的定时任务里，也不出现在 harness 的列表里。只有那个时间真的要做实际工作的时候，才会去请求 harness。当这样的约定在等待时，Asteme 会和 harness 一起启动，所以即使它的页面从未被打开，时间到了也照样会到。
 
 ## 你的数据
 
-- 全部保存在你电脑上的一个 SQLite 文件里。没有遥测。只有访问你配置的模型接口、以及首次下载本地嵌入模型时才会联网。
-- **导出与导入**：包含对话的完整副本。导入只补上缺少的部分，不会覆盖。
-- **日记**：每月一个 Markdown 文件，记录说了什么、它记下了什么、结果如何。
-- **自动备份**：每天一次。只清理旧副本，绝不清理记忆本身。
-- **忘记就是真的忘记**：连同原话一起忘记后，所有表里都会删除，导入也不会把它带回来。
+- 一切都在你机器上的一个 SQLite 文件里；你交出去的文件放在它旁边。没有遥测。它只在你配置的模型接口、可选的评判模型或语音、以及一次下载本地嵌入模型时才联网。
+- **导出与导入**一份完整的副本，包含对话。导入只补上缺少的，从不覆盖。
+- **一份日记**：每月一个 Markdown 文件，记录说了什么、它从中得到了什么、结果如何。
+- **自动备份**每天一次。只会清理旧的副本，绝不清理它记住的东西。
+- **忘记是真的**：连同来源消息一起忘掉一条记忆，会把它们从每一张表里删掉，导入也无法把它们带回来。
+- **私密对话**只以顺序和计数被记住，文字被略去；其中的任何内容都不会被读进记忆，也不会从记忆里带进来。
+- **项目**可以把里面学到的东西留给自己，单条记忆也可以限定在它的项目内。
+
+## 今天的局限
+
+- 早期：0.11，第一个发布的版本。行为在不同版本之间仍可能变化。
+- 回复可能会等记忆：读取情形并从中挑选是一次模型调用，用推理模型时要花十到二十秒，有时更久。配置了一个小的决策模型（评判模型）的话，它可以接手这件事，那时回复就不再等它了。
+- 交给对话的图片在模型能看图时会被看；其他不是文本的文件（PDF、录音）Asteme 自己不会读：当工作需要打开它们时，它连路径一起交给 DSH。
+- 朗读只使用借来的声音（不会使用电脑上安装的声音）。你自己的语音服务（OpenAI 兼容的，或者本地服务器）要在设置文件里配置；目前还没有相应的界面。
+- 测试和插件构建在 CI 里跑 Windows、macOS 和 Linux。靠眼睛看过的是 Windows 上的使用和 Linux 上的检查；macOS 还没有人看过。
+- 页面只属于这台电脑；没有手机访问。
+
+## 它要去哪里
+
+今天是记忆：一个会记得、也能被你纠正的“谁”。接下来是手：同一个 Asteme 会请你电脑上的工具做事，并且在任何无法挽回的事之前先问你。记忆先来，是因为其余的都建在它上面；变得更好的模型，保留的是同一份记忆和同一个你。
+
+## 文档
+
+- [docs/BRAIN.md](docs/BRAIN.md)：大脑——一条对话、手、一个时钟、醒着与睡着
+- [CHANGELOG.md](CHANGELOG.md)：每个版本改了什么
+- [CONTRIBUTING.md](CONTRIBUTING.md)：怎么运行它、目录结构、改动的规则
+- [MAINTAINING.md](MAINTAINING.md)：谁决定什么，一项改动如何流转
 
 ## 许可
 
-[Apache-2.0](LICENSE)，附 [NOTICE](NOTICE)。许可覆盖代码；名称与标识归本项目所有：见 [TRADEMARKS.md](TRADEMARKS.md)。
+[Apache-2.0](LICENSE)，附一份 [NOTICE](NOTICE)。许可覆盖的是代码；名称与标识属于本项目：见 [TRADEMARKS.md](TRADEMARKS.md)。

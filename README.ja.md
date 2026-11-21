@@ -6,7 +6,7 @@
   <a href="README.md">English</a> · <a href="README.zh.md">中文</a> · 日本語 · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.pt.md">Português</a>
 </p>
 
-https://github.com/user-attachments/assets/6e3cc162-74d1-4edf-8de3-2276602201d1
+https://github.com/user-attachments/assets/f7880bf0-6b96-46db-a997-ff650ac58cd3
 
 **開発中:** 現在も開発を続けています。動作が変わったり、誤動作やデータ損失が起きたりする可能性があります。重要な用途にはまだ使わないでください。
 

@@ -2,6 +2,16 @@
 
 What changed in each version and why.
 
+## 0.12.0
+
+Speaking of its own accord. Nothing here runs on a schedule of its own: what is new is something to say, an occasion to say it, and leave to say nothing.
+
+- **Added:** a reply may come as two or three messages. Where a person would send a second short message instead of one longer one (an afterthought, a question after the answer), the model may give `more` beside `reply`: one or two further messages, each stored and shown as a message of its own, a moment apart, with the writing dots between them. What belongs to the reply (a time it set, a face, the memories it used) stays with the first. Stopped in between, the rest is not said.
+- **Added:** things kept in mind. `{act:"hold", about}` keeps something with no time on it to bring up when the user is next around: how a thing turned out, a question it was not the moment to ask. They are its own words, kept in the store (`brain:mind`, eight at most), shown to it as `INPUT.mind`, and shown to the user under "What it was doing" as "When you are next here", where each can be taken back. It lets one go itself with `unwake`.
+- **Added:** coming back is an occasion. The page says when the user comes to the conversation (`/api/here`: on opening it and on turning back to it, at most once a minute). After three hours away (`absenceMs`), and only when something is kept in mind, Asteme is woken with "the user is back" and decides for itself whether to say one of those things. Saying nothing is the ordinary case and is not an error. Once for one coming back; never while it is thinking or work is out.
+- **Changed:** when what it last brought up itself went unanswered, it is told to bring up less and keep less. The record of what was seen and answered was already in front of it (`INPUT.unanswered`); this is what it is for.
+- **Fixed:** the word "You" was written twice in each of the eight word files (the build warned of it on every run). Once now.
+
 ## 0.11.0
 
 The first published version. Apache-2.0, with a NOTICE.

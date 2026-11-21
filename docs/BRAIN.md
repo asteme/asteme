@@ -177,6 +177,18 @@ A DSH session that is one of Asteme's hands may ask its user something: a choice
 
 `{act: "wake", at, why, every}` with `every` one of `day`, `weekday`, `week`, `month`. When it comes it is set for its next time after now (`nextTime` in `brain/wake.mjs`, counted in this computer's clock); times missed while not running are not made up. `intentions` and `promised` carry `every`.
 
+### Of its own accord
+
+A person does not speak up because a clock ran out. Something is on their mind, and an occasion comes. Asteme is given both, and nothing that runs by itself.
+
+- **Something on its mind.** In any moment it may keep a thing to bring up later (`hold`): its own words, no time on it, at most eight. They are in the store, in front of it every time (`INPUT.mind`), and in front of the user under "What it was doing", where each can be taken back. A thing with a time is still `wake`.
+- **An occasion.** The page says when the user comes to the conversation. After three hours away, and only when something is kept, that is an occasion: one moment of attention with "the user is back". What it does with it is its own decision. An occasion is an event, not a beat: with nothing kept, or nobody coming, no call is made.
+- **Leave to say nothing.** On that occasion an empty reply is the ordinary case. It is not explained to the user and not counted as a failure, unlike silence after the user's own words.
+- **More than one message.** `more` beside `reply` is one or two further messages, sent a moment apart. The pause is a little longer for more words (`pauseMs`, `pauseChar`, `pauseMax`); it is the only timing here that is not the model's.
+- **Less when it is not welcome.** What it said that went unseen or unanswered is in front of it (`INPUT.unanswered`), and it is told to bring up less and keep less then.
+
+What it may not do is unchanged: it cannot make a memory this way, a kept thing is not a promise shown under its words, and anything it says of its own accord is a message like any other, stored, read into memory, and open to "this is wrong".
+
 ### Stopping, and how hard it thinks
 
 `POST /api/stop` ends what is being thought about for the user: the host's call is aborted, nothing is said or done, a record says why, and a `stopped` event follows. `thinkingSince` in `/api/state` says since when. `GET /api/models` gives `now.efforts` and `now.effort` where the model offers a choice; `POST /api/model {effort}` sets it (kept apart from which model).

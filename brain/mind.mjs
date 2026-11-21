@@ -38,6 +38,13 @@ export const DEFAULTS = {
   fileBytes: 25000000,
   filesAtOnce: 6,
   fileText: 4000,
+  // Between two messages said one after the other: a moment, longer for more words, the way a second message takes a moment to write.
+  pauseMs: 700,
+  pauseChar: 25,
+  pauseMax: 2600,
+  // How long the user was not here before coming back counts as coming back, and how many things are kept to bring up then.
+  absenceMs: 3 * 3600000,
+  held: 8,
 };
 // Kinds of file whose beginning can be read as text. The bytes decide in the
 // end: a file with one of these names that is not text is not read.
@@ -134,8 +141,10 @@ export function openMind({
   // looked at again with more of what it remembers before it is said, and dots that came, went and came back read as words that were lost.
   let writing = false,
     greeting = null;
+  // On an occasion where saying nothing is the ordinary case, the dots do not come up for words that may never be said: they would appear and go, answering nothing.
+  let hushed = false;
   const write = (on) => {
-    if (writing === on) return;
+    if (writing === on || (on && hushed)) return;
     writing = on;
     emit({ type: "writing", on });
   };
@@ -420,7 +429,26 @@ export function openMind({
       }
       return { answered: ask.id };
     }
+    // Something to bring up when the user is next around: kept in its own words, with no time on it.
+    if (a.act === "hold") {
+      const about = typeof a.about === "string" ? cut(a.about.trim(), 300) : "";
+      if (!about) return { refused: "hold", why: "what is kept needs words" };
+      const list = held();
+      if (list.length >= cfg.held) return { refused: "hold", why: `${cfg.held} things are kept already; let one go first` };
+      const kept = { id: `held-${randomUUID().slice(0, 8)}`, at: log.now(), about, ...(origin ? { from: origin } : {}) };
+      log.save("brain:mind", [...list, kept]);
+      emit({ type: "intention" });
+      return { holding: kept.id };
+    }
     if (a.act === "unwake") {
+      if (held().some((h) => h.id === a.id)) {
+        log.save(
+          "brain:mind",
+          held().filter((h) => h.id !== a.id),
+        );
+        emit({ type: "intention" });
+        return { unset: a.id };
+      }
       if (!standing().some((w) => w.id === a.id)) return { refused: "unwake", why: "there is no such time set" };
       wake.forget(a.id);
       emit({ type: "intention" });
@@ -527,6 +555,9 @@ export function openMind({
   // The times it has set to look at something or to speak, soonest first. A watch on a worker is its own business.
   const standing = () => wake.alarms.filter((a) => !String(a.ref ?? "").startsWith("watch:")).sort((a, b) => a.at - b.at);
 
+  // What it keeps to bring up when the user is next around. No time is set on these; each is in its own words, from the moment it kept it.
+  const held = () => (log.state("brain:mind", null) ?? []).filter((h) => h && typeof h.id === "string" && typeof h.about === "string");
+
   // --- One moment of attention ---------------------------------------------------
   const think = async (request, present) => {
     // An earlier message that came with files says so, by name, where the model reads it.
@@ -542,6 +573,7 @@ export function openMind({
           : e,
       );
     let reply = "",
+      more = [],
       acts = [];
     const zone = cfg.zone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
     const here = new Intl.DateTimeFormat("sv-SE", { timeZone: zone, dateStyle: "short", timeStyle: "short" }).format(new Date(log.now()));
@@ -576,6 +608,7 @@ export function openMind({
           }
         : {}),
       ...unanswered(present),
+      ...(held().length ? { mind: held().map((h) => ({ id: h.id, since: new Date(h.at).toISOString(), about: h.about })) } : {}),
       ...(feel().express && expressions().length
         ? { expressions: expressions().map((x) => ({ name: x.name, ...(x.shows ? { shows: x.shows } : {}) })) }
         : {}),
@@ -605,7 +638,11 @@ export function openMind({
       input: input(found),
       draft: () => ({ reply, acts }),
       heard: (a) => {
-        if (typeof a.reply === "string") reply = a.reply;
+        // What follows the reply belongs to that reply: a later answer that says the reply again says what follows it again, or that nothing does.
+        if (typeof a.reply === "string") {
+          reply = a.reply;
+          more = Array.isArray(a.more) ? a.more : [];
+        }
         if (Array.isArray(a.acts)) acts = a.acts;
       },
     });
@@ -675,7 +712,19 @@ export function openMind({
       memories: core.items().length,
       at: log.now(),
     };
-    return { reply: typeof reply === "string" ? reply.trim() : "", acts: acts.filter((a) => a?.act !== "search"), trace };
+    const opening = typeof reply === "string" ? reply.trim() : "";
+    return {
+      reply: opening,
+      // Two more at most, and only after a first: a reply in pieces is still one reply.
+      more: opening
+        ? more
+            .filter((m) => typeof m === "string" && m.trim())
+            .map((m) => m.trim())
+            .slice(0, 2)
+        : [],
+      acts: acts.filter((a) => a?.act !== "search"),
+      trace,
+    };
   };
   const attend = async (event) => {
     thinking = true;
@@ -686,6 +735,7 @@ export function openMind({
     thinkingSince = since;
     try {
       let request, present;
+      hushed = event.kind === "return";
       own();
       if (event.kind === "user") {
         const files = (event.files ?? []).map(fileOf).filter(Boolean),
@@ -797,6 +847,19 @@ export function openMind({
         );
         if (!turnOpen) turnOpen = true;
         present = { kind: "a time you set has come", why: event.why, ...(event.away ? { away: event.away } : {}) };
+      } else if (event.kind === "return") {
+        // The user is here again after a time away, and something was kept to bring up. Whether it is brought up is its own to decide; mostly it is not.
+        if (!held().length) return;
+        const hours = Math.max(1, Math.round((event.gone.to - event.gone.from) / 3600000));
+        request = add("tool", `The user is here again, after about ${hours} ${hours === 1 ? "hour" : "hours"} away.`, "tool/result", {
+          tool: { phase: "result", name: "clock", execution: "completed" },
+        });
+        if (!turnOpen) turnOpen = true;
+        present = {
+          kind: "the user is back",
+          gone: { from: new Date(event.gone.from).toISOString(), to: new Date(event.gone.to).toISOString() },
+          note: "Nothing is asked of you and the user has said nothing yet.",
+        };
       } else if (event.kind === "born") {
         request = add("tool", "You have just been woken for the first time.", "tool/result", {
           tool: { phase: "result", name: "clock", execution: "completed" },
@@ -808,7 +871,7 @@ export function openMind({
           note: "Nothing has been said yet and nothing is asked of you. Greet the person, briefly, in your own voice, in the language their screen is in (language, when given, is its tag).",
         };
       } else return;
-      const { reply, acts, trace } = await think(request, present);
+      const { reply, more, acts, trace } = await think(request, present);
       // Stopped by the user while it thought: nothing is said and nothing is done, and it is on record that this is why.
       if (mine.signal.aborted) {
         add("tool", "The user stopped this before you answered. Nothing was said and nothing was done.", "tool/result", {
@@ -852,6 +915,27 @@ export function openMind({
           ...with_,
           used: trace.delivered.map((i) => ({ id: i.id, use: i.use, text: cut(i.text, 200) })),
         });
+        // What it says right after, each a message of its own, a moment apart. Stopped in between, the rest is not said.
+        if (more.length) {
+          hushed = false;
+          write(true);
+        }
+        for (const text of more) {
+          await new Promise((done) => {
+            const t = setTimeout(done, Math.min(cfg.pauseMax, cfg.pauseMs + text.length * cfg.pauseChar));
+            mine.signal.addEventListener(
+              "abort",
+              () => {
+                clearTimeout(t);
+                done();
+              },
+              { once: true },
+            );
+          });
+          if (mine.signal.aborted) break;
+          const next = add("assistant", text);
+          emit({ type: "message", role: "assistant", text, at: next.occurredAt, id: next.id });
+        }
       }
       // The matter is closed for now when nothing is out; reflection reads it whole.
       if (!running().length) endTurn();
@@ -859,6 +943,7 @@ export function openMind({
       thinking = false;
       thinkingSince = null;
       if (halt === mine) halt = null;
+      hushed = false;
       write(false);
       emit({ type: "thinking", on: false });
     }
@@ -932,6 +1017,8 @@ export function openMind({
       const ids = Array.isArray(files) ? files.filter((id) => fileOf(id)).slice(0, cfg.filesAtOnce) : [];
       if (typeof text !== "string" || (!text.trim() && !ids.length)) throw new Error("Say something");
       if (log.state("brain:draft", null)) log.save("brain:draft", null);
+      // Whoever speaks is here.
+      log.save("brain:here", log.now());
       // Said in answer to one thing that was said before: it is named, so that "that one" has something to point at.
       const about =
         typeof replyTo === "string"
@@ -1001,8 +1088,15 @@ export function openMind({
     },
     /** A time it set is taken back by the user. What it said when it set it stays said. */
     unwake(id) {
-      if (!standing().some((w) => w.id === id)) throw new Error("That time is no longer set");
-      wake.forget(id);
+      if (held().some((h) => h.id === id))
+        log.save(
+          "brain:mind",
+          held().filter((h) => h.id !== id),
+        );
+      else {
+        if (!standing().some((w) => w.id === id)) throw new Error("That time is no longer set");
+        wake.forget(id);
+      }
       emit({ type: "intention" });
       return plain({
         intentions: standing()
@@ -1086,6 +1180,19 @@ export function openMind({
       const kept = typeof text === "string" && text ? cut(text, 20000) : null;
       if (kept !== log.state("brain:draft", null)) log.save("brain:draft", kept);
       return plain({ kept: !!kept });
+    },
+    /**
+     * The user is in front of the conversation. After a time away, when
+     * something was kept to bring up, that is an occasion: it is woken to
+     * decide for itself whether to say it. Nothing is kept, nothing happens.
+     */
+    here() {
+      const now = log.now(),
+        last = log.state("brain:here", null);
+      if (!last || now - last > 60000) log.save("brain:here", now);
+      const back = !!last && now - last >= cfg.absenceMs && held().length > 0 && !thinking && !running().length;
+      if (back) wake.stimulus({ kind: "return", gone: { from: last, to: now } });
+      return plain({ here: true, back });
     },
     seen(ids) {
       if (!Array.isArray(ids)) return plain({ seen: 0 });
@@ -1443,6 +1550,7 @@ export function openMind({
         intentions: standing()
           .slice(0, 8)
           .map((a) => ({ id: a.id, at: a.at, why: a.why, ...(a.every ? { every: a.every } : {}) })),
+        held: held().map((h) => ({ id: h.id, at: h.at, about: h.about })),
         unread: log.pending(identity, STAGE).length,
         idle: d.sleep?.idle ?? [],
         lastSleep: d.sleep?.last ?? null,

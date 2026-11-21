@@ -6,7 +6,7 @@
   <a href="README.md">English</a> · <a href="README.zh.md">中文</a> · <a href="README.ja.md">日本語</a> · Español · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.pt.md">Português</a>
 </p>
 
-[![Asteme](public/media/film-en.jpg)](public/media/asteme-en.mp4)
+https://github.com/user-attachments/assets/f3d6ef2a-0eee-491c-b3e8-9dd5756be9ca
 
 **En desarrollo:** Asteme sigue en construcción. El comportamiento puede cambiar y puede fallar o perder datos. No lo uses todavía para nada importante.
 
@@ -95,11 +95,3 @@ Trabajamos hacia un asistente que, tras suficiente tiempo con una persona, sea a
 ## Licencia
 
 Not yet published. All rights reserved for now: see [LICENSE](LICENSE).
-
-
-
-
-
-
-
-

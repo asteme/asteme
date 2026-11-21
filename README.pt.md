@@ -6,7 +6,7 @@
   <a href="README.md">English</a> · <a href="README.zh.md">中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · Português
 </p>
 
-[![Asteme](public/media/film-en.jpg)](public/media/asteme-en.mp4)
+https://github.com/user-attachments/assets/f3d6ef2a-0eee-491c-b3e8-9dd5756be9ca
 
 **Em desenvolvimento:** Asteme ainda está em construção. O comportamento pode mudar, e ele pode falhar ou perder dados. Ainda não use para nada importante.
 
@@ -95,12 +95,3 @@ O que buscamos é um assistente que, depois de tempo suficiente com uma pessoa, 
 ## Licença
 
 Not yet published. All rights reserved for now: see [LICENSE](LICENSE).
-
-
-
-
-
-
-
-
-

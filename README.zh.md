@@ -6,7 +6,7 @@
   <a href="README.md">English</a> · 中文 · <a href="README.ja.md">日本語</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.pt.md">Português</a>
 </p>
 
-[![Asteme 介绍视频](public/media/film-zh.jpg)](public/media/asteme-zh.mp4)
+https://github.com/user-attachments/assets/ccb61a6e-346e-4c98-9be8-9209f1bdacd1
 
 **开发中：** 项目仍在开发，行为可能变化，也可能出错或丢数据。请不要用于重要用途。
 
@@ -95,12 +95,3 @@ await brain.rest();                                                // 空闲时
 ## 许可
 
 Not yet published. All rights reserved for now: see [LICENSE](LICENSE).
-
-
-
-
-
-
-
-
-

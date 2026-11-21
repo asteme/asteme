@@ -6,6 +6,8 @@
   <a href="README.md">English</a> · <a href="README.zh.md">中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · Русский · <a href="README.pt.md">Português</a>
 </p>
 
+https://github.com/user-attachments/assets/f3d6ef2a-0eee-491c-b3e8-9dd5756be9ca
+
 **В разработке:** Asteme ещё разрабатывается. Поведение может меняться, возможны сбои и потеря данных. Пока не используйте его для важных задач.
 
 # ASTEME

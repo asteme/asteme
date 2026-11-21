@@ -98,9 +98,9 @@ The sky behind the conversation is a window onto the whole of memory, and it can
 
 What is drawn there is every memory in use, and each choice says something that is stored:
 
-- **Where**: by when it was learned. The newest are at the centre and the oldest at the rim, at an even density, so the sky grows with what is learned instead of getting crowded, and looking further out is looking further back.
+- **Where**: all around you, by when it was learned. The newest are nearest the middle and the oldest furthest out, in every direction and at an even density, so the sky grows with what is learned instead of getting crowded, and looking further out is looking further back whichever way you look. You are set down inside it (a young sky, too thin to stand in, is met from just outside). It is not a galaxy seen from above: that is a picture of somebody else's sky.
 - **Together**: a lesson holds the cases it was drawn from around it, joined by lines.
-- **How bright, and how near**: how easily it comes to mind (the same number recall uses). The sky is seen at a tilt and in perspective; a memory that comes easily stands above the plane, toward the eye, and one that is fading lies below it.
+- **How bright**: how easily it comes to mind (the same number recall uses). How near is only where you stand: the sky is seen in perspective, with a wide eye, and what is far is small but does not go out.
 - **What shape**: a ring is a matter still open, a cross is a lesson.
 
 This was designed for this data and not taken from a graph view. A force-directed graph places things by their links and means nothing where there are few links, which is most memories; here the place itself carries when, and the links carry what was learned from what.

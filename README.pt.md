@@ -94,4 +94,4 @@ O que buscamos é um assistente que, depois de tempo suficiente com uma pessoa, 
 
 ## Licença
 
-Not yet published. All rights reserved for now: see [LICENSE](LICENSE).
+[Apache-2.0](LICENSE), com um [NOTICE](NOTICE). A licença cobre o código; o nome e a marca são deste projeto: ver [TRADEMARKS.md](TRADEMARKS.md).

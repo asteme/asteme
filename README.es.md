@@ -94,4 +94,4 @@ Trabajamos hacia un asistente que, tras suficiente tiempo con una persona, sea a
 
 ## Licencia
 
-Not yet published. All rights reserved for now: see [LICENSE](LICENSE).
+[Apache-2.0](LICENSE), con un [NOTICE](NOTICE). La licencia cubre el código; el nombre y la marca son de este proyecto: véase [TRADEMARKS.md](TRADEMARKS.md).

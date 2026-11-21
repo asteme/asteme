@@ -188,6 +188,8 @@ Heute ist es Erinnerung: jemand, der sich erinnert und den du korrigieren kannst
 - [CONTRIBUTING.md](CONTRIBUTING.md): wie man es startet, der Aufbau, die Regeln für Änderungen
 - [MAINTAINING.md](MAINTAINING.md): wer was entscheidet und wie eine Änderung wandert
 
+<a href='https://ko-fi.com/wsl043'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=3' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+
 ## Lizenz
 
 [Apache-2.0](LICENSE), mit einer [NOTICE](NOTICE). Die Lizenz gilt für den Code; der Name und die Marke gehören zu diesem Projekt: siehe [TRADEMARKS.md](TRADEMARKS.md).

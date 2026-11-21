@@ -188,6 +188,8 @@ flowchart LR
 - [CONTRIBUTING.md](CONTRIBUTING.md): как его запускать, устройство, правила для изменений
 - [MAINTAINING.md](MAINTAINING.md): кто что решает и как проходит изменение
 
+<a href='https://ko-fi.com/wsl043'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=3' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+
 ## Лицензия
 
 [Apache-2.0](LICENSE), с [NOTICE](NOTICE). Лицензия распространяется на код; имя и знак принадлежат этому проекту: см. [TRADEMARKS.md](TRADEMARKS.md).

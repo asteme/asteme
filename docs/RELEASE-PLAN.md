@@ -48,3 +48,7 @@ Decided 2026-11-20, and changed the same day: before publication is exactly when
 - Before the day: installing from the one repository is tried on a clean DSH profile on Windows (a new install, and an update over the old bundle). If it cannot be made to work in time, the old way is published as it is and this is done after.
 
 The first published version is 0.11.0, tagged `v0.11.0`. Versions before it stay unlicensed. The repository is published with a new history of one commit. Making a repository public publishes every commit that can still be reached in it, and pull requests cannot be deleted, so the surest way is a repository made new under the same name; the packages on npm point at the name, not at the history, and need nothing done.
+
+## How a change travels
+
+A change is a short-lived branch, a pull request and a squash merge. main requires the tests workflow to pass, keeps a linear history, and refuses force pushes and deletions.

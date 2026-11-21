@@ -523,6 +523,90 @@ test("a time it sets is kept with the words it said then, is known to it the nex
   assert.throws(() => mind.unwake(again.id), /no longer set/);
 });
 
+test("a reply may come as two or three messages, a moment apart, each a record of its own; what belongs to the reply stays with the first", async t => {
+  const mind = openMind({ now: () => Date.parse("2026-03-10T12:00:00Z"), embed: situationEmbedder(), config: { pauseMs: 0, pauseChar: 0 },
+    infer: answerFor(purpose => purpose === "asteme-think" ? { ...base, reply: "June, then.", more: ["Do you still have her recipe?", "  ", 7, "I would like to read it.", "a fourth is not said"], acts: [{ act: "wake", at: "2026-06-01T00:00:00Z", why: "Plums" }] } : undefined) });
+  t.after(() => mind.close());
+  const heard = []; mind.listen(e => heard.push(e)); const replies = () => heard.filter(e => e.type === "message" && e.role === "assistant");
+  mind.start().say("Tell me when the plums are out.");
+  await until(() => replies().length === 3); await mind.idle();
+  assert.deepEqual(replies().map(r => r.text), ["June, then.", "Do you still have her recipe?", "I would like to read it."]);
+  assert.deepEqual(replies().map(r => !!r.promised), [true, false, false]);
+  assert.deepEqual(mind.snapshot().messages.slice(-3).map(m => m.text), ["June, then.", "Do you still have her recipe?", "I would like to read it."], "each is stored as said");
+  assert.equal(new Set(replies().map(r => r.id)).size, 3);
+  const on = heard.findIndex(e => e.type === "thinking" && e.on === false);
+  assert.ok(on > heard.indexOf(replies()[2]), "it is still at it until the last one is said");
+});
+
+test("nothing follows a reply that is not given, and a later answer that says the reply again decides what follows it", async t => {
+  let n = 0;
+  const mind = openMind({ now: () => Date.parse("2026-03-10T12:00:00Z"), embed: situationEmbedder(), config: { pauseMs: 0, pauseChar: 0 },
+    infer: answerFor(purpose => purpose === "asteme-think" ? (++n === 1 ? { ...base, reply: "", more: ["only this"], acts: [{ act: "react", emoji: "👍" }] } : { ...base, reply: "Yes." }) : undefined) });
+  t.after(() => mind.close());
+  const heard = []; mind.listen(e => heard.push(e)); const replies = () => heard.filter(e => e.type === "message" && e.role === "assistant");
+  mind.start().say("Thanks.");
+  await until(() => heard.some(e => e.type === "reaction")); await mind.idle();
+  assert.equal(replies().length, 0);
+  mind.say("Is it Tuesday?");
+  await until(() => replies().length === 1); await mind.idle();
+  assert.deepEqual(replies().map(r => r.text), ["Yes."]);
+});
+
+test("what it keeps in mind has no time on it: it is shown, known to it the next time, and let go by it or by the user", async t => {
+  let now = Date.parse("2026-03-10T12:00:00Z"); const inputs = [];
+  const mind = openMind({ now: () => now, embed: situationEmbedder(), config: { held: 2 }, infer: answerFor((purpose, input) => { if (purpose !== "asteme-think") return undefined; inputs.push(input);
+    const n = inputs.length;
+    return n === 1 ? { ...base, reply: "Good luck with it.", acts: [{ act: "hold", about: "How the talk with the director went" }, { act: "hold", about: "" }] }
+      : n === 2 ? { ...base, reply: "Glad it went well.", acts: [{ act: "unwake", id: input.mind?.[0]?.id }] }
+      : { ...base, reply: "Noted.", acts: [{ act: "hold", about: "one" }, { act: "hold", about: "two" }, { act: "hold", about: "three" }] }; }) });
+  t.after(() => mind.close());
+  const heard = []; mind.listen(e => heard.push(e)); const replies = () => heard.filter(e => e.type === "message" && e.role === "assistant");
+  mind.start().say("I talk to the director tomorrow.");
+  await until(() => replies().length === 1); await mind.idle();
+  const [kept] = mind.activity().held;
+  assert.deepEqual([kept.about, kept.at, /^held-/.test(kept.id), mind.activity().held.length], ["How the talk with the director went", now, true, 1]);
+  assert.deepEqual(mind.activity().intentions, [], "it is not a time that was set");
+  now += 86400000;
+  mind.say("It went well.");
+  await until(() => replies().length === 2); await mind.idle();
+  assert.deepEqual(inputs[1].mind, [{ id: kept.id, since: "2026-03-10T12:00:00.000Z", about: "How the talk with the director went" }]);
+  assert.deepEqual(mind.activity().held, []);
+  mind.say("And more.");
+  await until(() => replies().length === 3); await mind.idle();
+  assert.deepEqual(mind.activity().held.map(h => h.about), ["one", "two"], "no more than it may keep");
+  mind.unwake(mind.activity().held[0].id);
+  assert.deepEqual(mind.activity().held.map(h => h.about), ["two"], "the user takes one back");
+});
+
+test("coming back after a time away is an occasion only when something is kept; it may say it, and saying nothing is not an error", async t => {
+  let now = Date.parse("2026-03-10T12:00:00Z"); const presents = []; let quiet = true;
+  const mind = openMind({ now: () => now, embed: situationEmbedder(), config: { absenceMs: 3 * 3600000 }, infer: answerFor((purpose, input) => { if (purpose !== "asteme-think") return undefined; presents.push(input.present);
+    return input.present.kind === "the user wrote" ? { ...base, reply: "Good luck.", acts: presents.length === 1 ? [] : [{ act: "hold", about: "How it went" }] }
+      : quiet ? { ...base, reply: "", acts: [] } : { ...base, reply: "How did it go with the director?", acts: [{ act: "unwake", id: input.mind[0].id }] }; }) });
+  t.after(() => mind.close());
+  const heard = []; mind.listen(e => heard.push(e)); const replies = () => heard.filter(e => e.type === "message" && e.role === "assistant");
+  mind.start().say("Hello.");
+  await until(() => replies().length === 1); await mind.idle();
+  now += 5 * 3600000;
+  assert.equal(mind.here().back, false, "nothing is kept: coming back is nothing");
+  await mind.idle(); assert.equal(presents.length, 1);
+  mind.say("I talk to the director tomorrow.");
+  await until(() => replies().length === 2); await mind.idle();
+  now += 3600000;
+  assert.equal(mind.here().back, false, "an hour is not away");
+  now += 4 * 3600000;
+  assert.equal(mind.here().back, true);
+  await until(() => presents.length === 3); await mind.idle();
+  assert.deepEqual([presents[2].kind, typeof presents[2].gone.from, replies().length, heard.filter(e => e.type === "error").length], ["the user is back", "string", 2, 0], "it was asked, said nothing, and nothing is wrong");
+  assert.equal(heard.slice(heard.findLastIndex(e => e.type === "thinking" && e.on)).some(e => e.type === "writing" && e.on), false, "no dots for words that were never said");
+  assert.equal(mind.here().back, false, "once for one coming back");
+  quiet = false; now += 6 * 3600000;
+  assert.equal(mind.here().back, true);
+  await until(() => replies().length === 3); await mind.idle();
+  assert.equal(replies()[2].text, "How did it go with the director?");
+  assert.deepEqual(mind.activity().held, [], "said, and let go");
+});
+
 test("a reply is read aloud from what is stored: the marks for the eye are left out, a lent voice is asked with the chosen voice, and the door passes the sound on", async t => {
   const { forVoice, deepseekVoice } = await import("../brain/voice.mjs");
   assert.equal(forVoice("The LTS is **v26** (see [the list](https://nodejs.org/en/about) or https://www.example.com/a/b?c=1).\n\n## Steps\n- run `nvm install 26`\n```sh\nnvm install 26\n```\nDone."),

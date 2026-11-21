@@ -587,7 +587,23 @@ const openActivity = async () => {
   } catch (e) {
     return problem(e.message);
   }
-  const quiet = !a.tasks.length && !a.intentions.length && !a.unread;
+  const kept = a.held ?? [],
+    quiet = !a.tasks.length && !a.intentions.length && !kept.length && !a.unread;
+  // What it set a time for and what it keeps for when the user is next here are taken back the same way.
+  const takeBack = (id) =>
+    button(
+      say("brainUnwake"),
+      async () => {
+        try {
+          await post("/api/unwake", { id });
+          await load();
+          await openActivity();
+        } catch (e) {
+          problem(e.message);
+        }
+      },
+      "bare muted",
+    );
   sheet(say("brainDoing"), [
     el("p", "big", say("brainState_" + a.state)),
     quiet ? el("p", "muted", say("brainQuiet")) : null,
@@ -603,22 +619,19 @@ const openActivity = async () => {
               words = el("div");
             words.append(el("b", null, (i.every ? say("brainEvery_" + i.every) + " · " : "") + time(i.at)), el("span", null, i.why));
             // Taking one back does not unsay it: the line under the words it was said with stays.
-            row.append(
-              words,
-              button(
-                say("brainUnwake"),
-                async () => {
-                  try {
-                    await post("/api/unwake", { id: i.id });
-                    await load();
-                    await openActivity();
-                  } catch (e) {
-                    problem(e.message);
-                  }
-                },
-                "bare muted",
-              ),
-            );
+            row.append(words, takeBack(i.id));
+            return row;
+          }),
+        ]
+      : []),
+    ...(kept.length
+      ? [
+          el("h3", null, say("brainHeld")),
+          ...kept.map((h) => {
+            const row = el("div", "vowrow"),
+              words = el("div");
+            words.append(el("b", null, when(h.at)), el("span", null, h.about));
+            row.append(words, takeBack(h.id));
             return row;
           }),
         ]
@@ -776,6 +789,7 @@ const load = async () => {
   loaded = true;
   paint();
   tellSeen();
+  tellHere();
   wasBorn = s.born !== false;
   if (s.stale && !toldStale) {
     toldStale = true;

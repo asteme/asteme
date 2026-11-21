@@ -178,6 +178,17 @@ const seenMark = (id, at) => {
     );
 };
 document.addEventListener("visibilitychange", tellSeen);
+// That the user is in front of the conversation is said when they come to it: on opening it, on turning back to it. Not more than once a minute; what it means is Asteme's to decide.
+let hereTold = 0;
+const tellHere = () => {
+  if (document.hidden || Date.now() - hereTold < 60000) return;
+  hereTold = Date.now();
+  void post("/api/here", {}).catch(() => {
+    hereTold = 0;
+  });
+};
+document.addEventListener("visibilitychange", tellHere);
+addEventListener("focus", tellHere);
 addEventListener("resize", tellSeen);
 // The signs to choose from close when anything else is touched, or on Escape.
 const signsShut = (but) => {

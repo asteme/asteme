@@ -94,6 +94,8 @@ const tasks = [
   },
 ];
 const asks = [{ id: "q1", task: "t1", to: "dsh", title: 'run: git commit -m "changelog"', detail: '{"command":"git commit -m changelog"}' }];
+// What it keeps to bring up when the user is next around (none in a plain preview).
+let held = process.env.DEMO ? [{ id: "held-1", at: now - 86400000, about: "How the talk with the director went" }] : [];
 let intentions = process.env.DEMO
   ? [{ id: "w1", at: now + 30600000, why: "Remind about Mina's keys" }]
   : [{ id: "w1", at: now + 64800000, why: "Ask whether the memo was sent" }];
@@ -257,6 +259,7 @@ const mind = {
     return { retracted: id };
   },
   unwake: (id) => {
+    held = held.filter((h) => h.id !== id);
     intentions = intentions.filter((i) => i.id !== id);
     emit({ type: "intention" });
     return { intentions };
@@ -448,7 +451,8 @@ const mind = {
       habits: ["Leads with the decision when writing for a busy reader"],
     };
   },
-  activity: () => ({ state, tasks, intentions, unread: story ? 0 : 1, idle: [], lastSleep: now - 3600000 }),
+  activity: () => ({ state, tasks, intentions, held, unread: story ? 0 : 1, idle: [], lastSleep: now - 3600000 }),
+  here: () => ({ here: true, back: false }),
   change: async (which, revision, what) => {
     if (what === "forget" || what === "retire")
       sky.splice(
@@ -528,10 +532,22 @@ const mind = {
     }, whole * 0.6);
     answering = setTimeout(
       () => {
-        thinking = false;
-        writing = false;
-        emit({ type: "writing", on: false });
-        emit({ type: "thinking", on: false });
+        // A message with a 2 in it is answered in two, a moment apart, to see how that looks: the dots stay between them.
+        const two = /2|２/.test(text);
+        const done = () => {
+          thinking = false;
+          writing = false;
+          emit({ type: "writing", on: false });
+          emit({ type: "thinking", on: false });
+        };
+        if (two)
+          setTimeout(() => {
+            const r2 = { id: `r${messages.length}`, role: "assistant", text: "And one more thing: who reads it first?", at: Date.now() };
+            messages.push(r2);
+            emit({ type: "message", ...r2 });
+            done();
+          }, 1500);
+        else done();
         const r = {
           id: `r${messages.length}`,
           role: "assistant",

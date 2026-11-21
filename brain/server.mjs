@@ -306,6 +306,7 @@ export function serve(mind, { port = 4170, token = randomBytes(18).toString("bas
       if (req.method === "POST" && url.pathname === "/api/fresh") return json(res, 200, mind.fresh((await body(req)).on !== false));
       if (req.method === "POST" && url.pathname === "/api/draft") return json(res, 200, mind.draft((await body(req)).text));
       if (req.method === "POST" && url.pathname === "/api/seen") return json(res, 200, mind.seen((await body(req)).ids));
+      if (req.method === "POST" && url.pathname === "/api/here") return json(res, 200, mind.here?.() ?? { here: true });
       if (req.method === "POST" && url.pathname === "/api/retract") return json(res, 200, await mind.retract((await body(req)).id));
       json(res, 404, { error: "Not found" });
     } catch (e) {

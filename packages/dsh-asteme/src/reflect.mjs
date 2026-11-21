@@ -93,10 +93,18 @@ export const reflect = {
       .filter(e => ["user", "tool"].includes(e.role) && e.content && e.id !== t.request &&
         (e.occurredAt ?? e.observedAt) >= (this.log.event(t.request)?.occurredAt ?? t.at))
       .slice(0, 2).map(e => ({ id: e.id, role: e.role, quote: cut(e.content, 300) }));
-    const traces = [...new Map([...this.traces(turn.id), ...this.traces()].map(t => [t.id, t])).values()].filter(t => (t.scene || t.premise) && t.at <= endedAt).map(t => ({
+    // What this turn's own readings decided is shown whole. Of earlier readings, only those of the same conversation that passed something on are shown, six at most,
+    // and of their decisions only the ones that were passed: they are there so that a result reported now can be laid to what produced it. Readings of other
+    // conversations are not this reflection's business. (Measured on a store in use: the last twenty readings of any conversation, whole, were most of what a
+    // reflection was sent, and more than half of them belonged to another conversation.)
+    const own = this.traces(turn.id), ownIds = new Set(own.map(t => t.id));
+    const before = this.traces().filter(t => !ownIds.has(t.id) && this.log.event(t.request)?.sessionId === turn.sessionId && (t.delivered?.length || t.premise || t.used)).slice(0, 6);
+    const passed = t => new Set((t.delivered ?? []).map(i => i.id));
+    const traces = [...own, ...before].filter(t => (t.scene || t.premise) && t.at <= endedAt).map(t => ({
       id: t.id, request: t.request, input: cut(this.log.event(t.request)?.content, 500), at: t.at, scene: t.scene,
       candidates: t.candidates?.map(c => ({ id: c.item.id, score: c.score, due: c.due, entity: c.entity })),
-      decisions: t.decisions, delivered: t.delivered?.map(i => ({ id: i.id, text: bounded(i.text, 1200), use: i.use, expect: i.expect })),
+      decisions: ownIds.has(t.id) ? t.decisions : t.decisions?.filter(d => passed(t).has(d.id)),
+      delivered: t.delivered?.map(i => ({ id: i.id, text: bounded(i.text, 1200), use: i.use, expect: i.expect })),
       later: after(t),
       premise: t.premise, used: t.used, declared: t.declared, feedback: t.feedback,
     }));

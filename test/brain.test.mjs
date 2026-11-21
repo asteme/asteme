@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { Wakefulness } from "../brain/wake.mjs";
 import { openWorker } from "../brain/acp.mjs";
-import { openMind } from "../brain/mind.mjs";
+import { openMind, DEFAULTS } from "../brain/mind.mjs";
 import { composePage } from "../brain/page.mjs";
 import { situationEmbedder } from "./helpers.mjs";
 
@@ -442,6 +442,18 @@ test("what the DSH worker can do is read from a live DSH session, so a tool adde
   assert.match(worker.about, /web_fetch, read_image\./, "with no session open, what the last one saw is remembered");
 });
 
+test("what is set aside for the fixed part of a speaking call is at least its real size: the rules cannot grow past it unnoticed", async t => {
+  // The room left for what the user says is worked out from this number. When the rules were lengthened and the number was not, the fit to a small window was off by the difference, and only the systems with longer file paths showed it.
+  const sizes = [];
+  const mind = openMind({ now: () => Date.parse("2026-03-10T12:00:00Z"), embed: situationEmbedder(), infer: answerFor((purpose, input, prompt) => { if (purpose !== "asteme-think") return undefined; sizes.push(prompt.length); return { ...base, reply: "ok", acts: [] }; }) });
+  t.after(() => mind.close());
+  const heard = []; mind.listen(e => heard.push(e));
+  mind.start().say("hi");
+  await until(() => heard.some(e => e.type === "message" && e.role === "assistant")); await mind.idle();
+  assert.ok(sizes[0] <= DEFAULTS.fixedChars, `the smallest speaking call (${sizes[0]}) fits in fixedChars (${DEFAULTS.fixedChars})`);
+  assert.ok(sizes[0] > DEFAULTS.fixedChars - 3000, `and fixedChars is not far above it (${sizes[0]} of ${DEFAULTS.fixedChars}): room set aside and never used is room taken from what the user says`);
+});
+
 test("the conversation's length adds nothing to a call, and what arrives at once is fitted to the model that speaks: what was cut is marked, not guessed past", async t => {
   const { mkdtempSync, rmSync } = await import("node:fs"), { tmpdir } = await import("node:os"), { join } = await import("node:path");
   const folder = mkdtempSync(join(tmpdir(), "asteme-fit-")); t.after(() => rmSync(folder, { recursive: true, force: true }));
@@ -463,7 +475,7 @@ test("the conversation's length adds nothing to a call, and what arrives at once
   window = 32000;
   await turn("字".repeat(20000), keep());
   const small = inputs.at(-1);
-  assert.ok(sizes.at(-1) < 32000 * 0.7 + 20500 && sizes.at(-1) < sizes.at(-2), `fitted to seven tenths of its window (${sizes.at(-1)})`);
+  assert.ok(sizes.at(-1) < 32000 * 0.7 + DEFAULTS.fixedChars && sizes.at(-1) < sizes.at(-2), `fitted to seven tenths of its window (${sizes.at(-1)})`);
   assert.ok(small.present.files.every(f => f.text.length <= 401 && f.path), "each file keeps its beginning and its path, for a worker to open whole");
 });
 

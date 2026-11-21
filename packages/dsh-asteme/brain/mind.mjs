@@ -33,7 +33,8 @@ export const DEFAULTS = {
   presentChars: 12000,
   earlier: 10,
   promptChars: 80000,
-  fixedChars: 20500,
+  // What every speaking call carries whatever is said: the rules, the charter, the shape of the answer. A test holds this to the real size, so the rules cannot grow past it unnoticed.
+  fixedChars: 24500,
   candidateChars: 28000,
   fileBytes: 25000000,
   filesAtOnce: 6,

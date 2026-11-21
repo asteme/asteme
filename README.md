@@ -12,6 +12,8 @@
   English · <a href="README.zh.md">中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.pt.md">Português</a>
 </p>
 
+[![Asteme](public/media/film-en.jpg)](public/media/asteme-en.mp4)
+
 **Status: in development.** Asteme is still being built. Behavior may change, and it may fail or lose data. Do not rely on it for anything important yet.
 
 # ASTEME

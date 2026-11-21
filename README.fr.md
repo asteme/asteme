@@ -6,8 +6,6 @@
   <a href="README.md">English</a> · <a href="README.zh.md">中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.es.md">Español</a> · Français · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.pt.md">Português</a>
 </p>
 
-[![Asteme](public/media/film-en.jpg)](public/media/asteme-en.mp4)
-
 **En développement :** Asteme est encore en construction. Le comportement peut changer, et il peut échouer ou perdre des données. Ne l'utilisez pas encore pour quelque chose d'important.
 
 # ASTEME
@@ -95,12 +93,3 @@ Ce vers quoi nous travaillons, c'est un assistant qui, après assez de temps pas
 ## Licence
 
 Not yet published. All rights reserved for now: see [LICENSE](LICENSE).
-
-
-
-
-
-
-
-
-

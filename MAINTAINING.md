@@ -12,6 +12,10 @@ When this file and a habit disagree, the file is changed or the habit is. They a
 
 A report says what was seen, what was not looked at, and what is guessed, in that order and kept apart. "Not verified" is a complete and welcome sentence.
 
+### What the owner is asked for
+
+The owner's time is the scarcest thing here. The owner is asked only for what nobody else can do: a decision that is theirs (above), a secret only they hold (a token, a key, a passkey), a step that needs their hands on their own machine or account, and how it feels to use. Checking that something works is not one of these: the agent checks it, and where it cannot, says plainly that it was not checked. A report ends with at most one short list of what the owner must do, and with nothing when there is nothing; whoever writes it cuts from that list anything they could do or decide themselves. Anything secret is never shown in a conversation, a log or a report: a value that was shown is treated as lost and replaced.
+
 ## What a maintaining agent may change by itself
 
 - Machinery: CI configuration, release mechanics, packaging paths, line-ending and ignore files, dependency pins that CI proves.

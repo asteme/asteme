@@ -1,6 +1,6 @@
 # Contributing
 
-Read `DESIGN.md` first. It states what the system does, how each behavior is implemented and tested, and what has not been verified.
+Read `README.md` for what the system does and `docs/BRAIN.md` for how the brain is put together. What a behavior is, is settled by its test: a claim with no test is not yet a claim.
 
 ## Run it
 

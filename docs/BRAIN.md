@@ -117,7 +117,7 @@ A message goes through three things that can be seen, in the order they happen b
 
 ### Nothing jumps
 
-A person follows a thing that moves and has to look again for a thing that is suddenly somewhere else. So what changes place on the page is seen to go there: the conversation when something is added to it or taken from it (one place does this for every cause: `carry` in `brain/page/5-sheets.js`, which notices the rows or the size of the conversation change, measures how far the last thing said has moved, and lets it travel that far), the conversation making room for a sheet, the mark giving way to the conversation inside DSH. What appears where nothing was fades in; it does not pop. Where the device asks for less movement, things are simply in their new place, which is what was asked for.
+A person follows a thing that moves and has to look again for a thing that is suddenly somewhere else. So what changes place on the page is seen to go there: the conversation when something is added to it or taken from it (one place does this for every cause: `carry` in `brain/page/5-sheets.js`, which notices the conversation's rows change or the page being put at its end, measures how far the last thing said has moved, sets the conversation back by that much and lets what is left run down to nothing; it is checked on painted frames, because what a page reports about itself and what is drawn are not the same thing), the conversation making room for a sheet, the mark giving way to the conversation inside DSH. What appears where nothing was fades in; it does not pop. Where the device asks for less movement, things are simply in their new place, which is what was asked for.
 
 ### Less movement
 

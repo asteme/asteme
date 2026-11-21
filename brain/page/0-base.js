@@ -209,11 +209,9 @@ const when = (at) => {
     ? d.toLocaleTimeString(lang, { hour: "numeric", minute: "2-digit" })
     : d.toLocaleDateString(lang, { month: "short", day: "numeric" });
 };
-// To the end of the conversation. The page is put there at once; that what was on it is seen to travel there is the conversation's own doing (carry, where the
-// conversation is drawn), told here because a scroll made by the page looks, afterwards, like one made by a hand.
+// To the end of the conversation. Once the conversation is drawn, this is its own doing (carry, where it is drawn): what was on the page is seen to travel there.
 let carryNow = null;
 const down = () => {
-  const from = scroller.scrollTop;
-  scroller.scrollTop = scroller.scrollHeight;
-  if (scroller.scrollTop !== from) carryNow?.();
+  if (carryNow) carryNow(true);
+  else scroller.scrollTop = scroller.scrollHeight;
 };

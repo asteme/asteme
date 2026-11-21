@@ -1,12 +1,15 @@
 // --- Among the stars -------------------------------------------------------------
 // The sky behind the conversation is a window onto something larger. Take hold
 // of it and the conversation falls away, the flat sky tips over into depth and
-// you are carried in: every memory is there, laid out as a galaxy is. The
-// newest are at the centre and the oldest at the rim, so looking further out
-// is looking further back. A lesson holds the cases it was drawn from close
-// around it. What comes to mind easily is bright and stands nearer to you;
-// what is fading lies lower and further. Nothing here is drawn that is not a
-// stored memory.
+// you are carried in: every memory is there, and they are all around you.
+// Not a galaxy looked at from outside, which is a picture of somebody else's
+// sky: you stand near the middle of your own, and there are stars in every
+// direction, also behind you. The newest are nearest and the oldest furthest,
+// so looking further out is looking further back, whichever way you look, as
+// it is in the real sky. A lesson holds the cases it was drawn from close
+// around it. What comes to mind easily is bright; what is fading is faint.
+// Pulled far enough back, the whole of it is seen at once, as a ball of stars.
+// Nothing here is drawn that is not a stored memory.
 let spaceOn = false,
   space = 0,
   spaceFrom = 0,
@@ -86,30 +89,36 @@ let cam = { x: 0, y: 0, z: 0, k: 1, q: FLAT },
 const NEAREST = 2.8;
 const EASE = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2),
   OUT = (x) => 1 - Math.pow(1 - x, 4),
-  SPACING = 44,
+  // How far apart neighbours stand, and how far from the middle the nearest ring begins: each memory has the same room about it, however many there are.
+  SPACING = 96,
+  CLEAR = 60,
   GLIDE = 1500,
-  FOCAL = 900,
-  TIP = 0.98,
-  UPRIGHT = qabout(1, 0, 0, TIP);
+  // The eye is wide: standing among stars, a narrow eye sees a handful ahead and none of the ones going past.
+  FOCAL = 600,
+  UPRIGHT = FLAT;
 const sky = () => (space > 0 && all.size ? all : stars),
   quiet = () => (space > 0 ? calm : still);
 // Where each memory stands in that sky.
 const chart = (map) => {
-  // The first star (the memory of being woken and named) is the pole of this sky: it stands at the middle, a little above the plane, and the rest are laid out around it.
+  // The first star (the memory of being woken and named) is the middle of this sky: everything since has gathered around it.
   const pole = [...map.values()].find((m) => m.first);
   if (pole) {
     pole.wx = 0;
     pole.wy = 0;
-    pole.wz = 70;
+    pole.wz = 0;
     pole.ph = 0;
   }
+  // Around it in every direction, the newest nearest. The direction is the memory's own (from its id) and is even over the whole ball;
+  // how far out is its place in time, by the cube root, so that the stars are as thick far out as near.
   const list = [...map.values()].filter((m) => m !== pole).sort((a, b) => (b.at ?? 0) - (a.at ?? 0));
   list.forEach((m, n) => {
-    const r = SPACING * Math.sqrt(n + 0.5),
+    const r = CLEAR + SPACING * Math.cbrt(n + 0.5),
+      up = 2 * hash(m.id, 7) - 1,
+      flat = Math.sqrt(1 - up * up),
       a = hash(m.id, 3) * 6.2832;
-    m.wx = Math.cos(a) * r;
-    m.wy = Math.sin(a) * r;
-    m.wz = (m.strength - 0.42) * 230 + (hash(m.id, 7) - 0.5) * 70;
+    m.wx = Math.cos(a) * flat * r;
+    m.wy = Math.sin(a) * flat * r;
+    m.wz = up * r;
     m.ph = hash(m.id, 5) * 6.2832;
   });
   // A case stands by its lesson: the first lesson that was drawn from it.
@@ -121,12 +130,14 @@ const chart = (map) => {
         if (!c || c.kind === "lesson" || held.has(id)) continue;
         held.add(id);
         const a = hash(id, 4) * 6.2832,
-          d = 34 + 46 * hash(id, 6);
-        c.wx = m.wx + Math.cos(a) * d;
-        c.wy = m.wy + Math.sin(a) * d;
-        c.wz = m.wz + (hash(id, 8) - 0.5) * 60;
+          up = 2 * hash(id, 8) - 1,
+          flat = Math.sqrt(1 - up * up),
+          d = 30 + 34 * hash(id, 6);
+        c.wx = m.wx + Math.cos(a) * flat * d;
+        c.wy = m.wy + Math.sin(a) * flat * d;
+        c.wz = m.wz + up * d;
       }
-  rim = SPACING * Math.sqrt(list.length + 1) + 90;
+  rim = CLEAR + SPACING * Math.cbrt(list.length + 1) + 60;
 };
 const loadAll = async () => {
   try {
@@ -136,6 +147,11 @@ const loadAll = async () => {
     chart(next);
     regather(next);
     all = next;
+    // The whole sky is larger than the part of it behind the conversation: where the eye is set down is taken from the whole, unless a hand has already moved it.
+    if (spaceOn && touched === spaceT0) {
+      if (flight) flight.to.k = setDown();
+      else cam.k = setDown();
+    }
     if (gather) lay();
     if (!found) $("spacecount").textContent = say("brainSpaceCount", { n: next.size });
     kick();
@@ -144,6 +160,14 @@ const loadAll = async () => {
   }
 };
 const lowest = () => Math.min(1, (Math.min(innerWidth, innerHeight) * 0.46) / rim);
+// How near the eye is set down on coming in. A sky of a few hundred memories is stood inside: a little under half way from the middle to the edge.
+// A young sky is too thin to stand in (a few points and a great deal of dark), so it is met from just outside, all of it ahead, and one walks in.
+// It grows around whoever keeps it: with every memory the place one is set down is further in.
+const setDown = () => {
+  const n = (all.size || stars.size) - 1,
+    out = Math.min(1.45, Math.max(0.45, 1.45 - n / 420));
+  return Math.min(NEAREST, Math.max(lowest(), FOCAL / (out * rim)));
+};
 const hold = (c) => {
   const far = rim + 200,
     x = c.x ?? cam.x,
@@ -271,10 +295,10 @@ const enterSpace = () => {
   $("find").value = "";
   touched = spaceT0;
   chart(stars);
-  const near = SPACING * Math.sqrt(Math.min(stars.size || 1, 220) + 1) + 60,
-    k = Math.min(1.25, Math.max(lowest(), (Math.min(innerWidth, innerHeight) * 0.5) / near));
-  // Carried in: from flat and far, turning, to tipped and near.
-  cam = { x: 0, y: 0, z: 0, k: k * 0.5, q: qabout(0, 0, 1, -0.7) };
+  // Where you are set down: inside, a little under half way from the middle to the edge, looking at the middle. From there the newest are close about you and the rest go on behind them in every direction, and behind you.
+  const k = setDown();
+  // Carried in: from outside and turning, to inside.
+  cam = { x: 0, y: 0, z: 0, k: Math.max(lowest(), k * 0.35), q: qabout(0, 0, 1, -0.7) };
   aim = null;
   anchor = null;
   glide = null;
@@ -360,7 +384,7 @@ const flyTo = (id) => {
     kick();
   }
 };
-// Put the sky the right way up again: tipped as it was when you came in, facing as near as may be the way it faces now, and looking at the plane.
+// Back to where you were set down: at the middle, facing the way you faced when you came in.
 const upright = () => {
   unpoint();
   touched = performance.now();
@@ -370,15 +394,15 @@ const upright = () => {
   aim = null;
   flight = {
     from: { ...cam },
-    to: hold({ ...cam, z: 0, q: qmul(UPRIGHT, qabout(0, 0, 1, heading(cam.q))) }),
+    to: hold({ ...cam, x: 0, y: 0, z: 0, q: UPRIGHT }),
     t0: performance.now(),
     ms: calm ? 1 : 800,
   };
   kick();
 };
 const askew = () => {
-  const m = view.m;
-  return cam.z * cam.z > 900 || m[5] * -Math.sin(TIP) + m[8] * Math.cos(TIP) < 0.975 || Math.abs(m[2]) > 0.12;
+  // Away from the middle, or turned well away from how you came in: only then is there anything to go back to.
+  return Math.hypot(cam.x, cam.y, cam.z) > 60 || view.m[8] < 0.8;
 };
 // A soft light for the brighter stars, made once for each colour the page is in.
 const SHADES = 10,
@@ -749,8 +773,9 @@ const draw = (t = performance.now()) => {
         (skyHush && !s.first ? 1 - skyHush : 1) *
         (s.gw ? 1 - s.gw + s.gw * rowLight(s.go) : wheel.veil ? clearOf(p.x, p.y) : 1);
     // Near things are larger and clear, far ones small and faint.
-    const near = Math.min(2.4, Math.max(0.4, 1 / p.far)),
-      haze = Math.min(1, Math.max(0.16, 1.55 - 0.6 * p.far));
+    // Far ones do not go out: from inside, most of the sky is far, and a sky is its far stars.
+    const near = Math.min(2.4, Math.max(0.5, 1 / Math.sqrt(p.far))),
+      haze = Math.min(1, Math.max(0.34, 1.3 - 0.3 * p.far));
     const twinkle = e && !hush ? 1 - 0.24 * e * (0.5 + 0.5 * Math.sin(t * 0.0017 + s.ph)) : 1;
     const r =
         (1.1 + 2.1 * s.strength) *

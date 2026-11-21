@@ -435,7 +435,7 @@ export const archive = {
       ...(data.concerns.length ? data.concerns.map(c => `- ${c.text}`) : ["- nothing stands out in the numbers below"]), "",
       "## Before the reply", "",
       `- ${p.readings} readings for ${p.messages} messages (most for one message: ${p.most}; messages read more than once: ${p.repeated})`,
-      `- conversations not remembered (nothing read, by the user's choice): ${p.notRemembered} message(s)`,
+      `- conversations not remembered (nothing read; set aside by the user, or a session one agent opened for another, which is never read as the user's words): ${p.notRemembered} message(s)`,
       `- failed: ${p.failed}; had candidates: ${p.withCandidates}; delivered something: ${p.delivered}`,
       `- candidates but no decision at all: ${p.unanswered}; asked twice: ${p.askedTwice}; left some candidate unanswered: ${p.undecided}`,
       `- scene taken from the message because the model failed: ${p.sceneFromMessage}; admitted by the judge: ${p.byJudge}`,

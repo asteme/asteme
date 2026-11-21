@@ -115,6 +115,10 @@ This was designed for this data and not taken from a graph view. A force-directe
 
 A message goes through three things that can be seen, in the order they happen between people. It is marked read when Asteme takes it up. While it recalls and decides, the conversation shows nothing; the word at the top says it is thinking. The three dots stand only while it writes: from the first word of its answer (`writing` on) until the words are there. A host that streams sets `infer.reports = true` and calls `hooks.wrote()` (the fifth argument of `infer`) at the first text of the answer; with a host that does not, writing is taken to begin when the call that speaks goes out. The dots never come before the read mark, and an answer never stands above the mark for what it answers.
 
+### Nothing jumps
+
+A person follows a thing that moves and has to look again for a thing that is suddenly somewhere else. So what changes place on the page is seen to go there: the conversation when something is added to it or taken from it (one place does this for every cause: `carry` in `brain/page/5-sheets.js`, which notices the rows or the size of the conversation change, measures how far the last thing said has moved, and lets it travel that far), the conversation making room for a sheet, the mark giving way to the conversation inside DSH. What appears where nothing was fades in; it does not pop. Where the device asks for less movement, things are simply in their new place, which is what was asked for.
+
 ### Less movement
 
 Where the device asks for less movement, the page follows it: things fade and nothing flies. The beginning keeps its length and order. The person can choose, on that device, to have it move all the same (the scene offers it, and the settings under "Movement"); the choice is kept beside the page (`asteme-motion`), not in the store.

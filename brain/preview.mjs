@@ -540,14 +540,6 @@ const mind = {
           emit({ type: "writing", on: false });
           emit({ type: "thinking", on: false });
         };
-        if (two)
-          setTimeout(() => {
-            const r2 = { id: `r${messages.length}`, role: "assistant", text: "And one more thing: who reads it first?", at: Date.now() };
-            messages.push(r2);
-            emit({ type: "message", ...r2 });
-            done();
-          }, 1500);
-        else done();
         const r = {
           id: `r${messages.length}`,
           role: "assistant",
@@ -557,6 +549,15 @@ const mind = {
         };
         messages.push(r);
         emit({ type: "message", ...r });
+        // As the real one does: what it says comes first, and only then is it no longer writing.
+        if (two)
+          setTimeout(() => {
+            const r2 = { id: `r${messages.length}`, role: "assistant", text: "And one more thing: who reads it first?", at: Date.now() };
+            messages.push(r2);
+            emit({ type: "message", ...r2 });
+            done();
+          }, 1500);
+        else done();
       },
       Number(process.env.SLOW ?? 2.5) * 1000,
     );

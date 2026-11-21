@@ -38,6 +38,10 @@ export function TalkTab({ ctx, active, onManage, onOpenSession, onChanged, setti
   // DSH can be dressed by skins. The page is in a frame and cannot see them, so
   // the colours actually in use here are read and handed to it.
   const frame = React.useRef(null);
+  // The room the conversation is given is measured on the box around it, which is there from the first moment: the mark that stands in it while
+  // the conversation is opened is then in the same place before the frame exists and after. (It was measured on the frame, so the room was only known
+  // once the frame was there, and the mark moved down as it gave way.)
+  const box = React.useRef(null);
   const look = React.useCallback(() => {
     const hex = (c) => { const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/.exec(c ?? ""); return m && (m[4] === undefined || Number(m[4]) > 0.5) ? "#" + [m[1], m[2], m[3]].map(n => Number(n).toString(16).padStart(2, "0")).join("") : ""; };
     let node = document.querySelector(".asteme-page"), bg = ""; const ink = node ? hex(getComputedStyle(node).color) : "";
@@ -101,7 +105,7 @@ export function TalkTab({ ctx, active, onManage, onOpenSession, onChanged, setti
   // conversation, where the box is, ended up below the window.
   const [room, setRoom] = React.useState(null);
   React.useLayoutEffect(() => {
-    const el = frame.current; if (!el || typeof ResizeObserver === "undefined") return undefined;
+    const el = box.current; if (!el || typeof ResizeObserver === "undefined") return undefined;
     const outside = []; for (let n = el.closest(".asteme-page")?.parentElement; n; n = n.parentElement) outside.push(n);
     const fit = () => {
       // The frame is made to fill exactly the room there is, so nothing around it has a reason to scroll. A container that has scrolled all the same (a browser does that to bring a focused field into view when the frame was, for a moment, larger than the room) is put back: left as it was, the top of the conversation stayed hidden and the measure taken from there was wrong for good.
@@ -119,13 +123,13 @@ export function TalkTab({ ctx, active, onManage, onOpenSession, onChanged, setti
     for (const n of outside) n.addEventListener("scroll", fit, { passive: true });
     const often = setInterval(fit, 400);
     return () => { watch.disconnect(); window.removeEventListener("resize", fit); for (const n of outside) n.removeEventListener("scroll", fit); clearInterval(often); };
-  }, [door, active]);
+  }, [active, error]);
   if (error) return <div className="ast-talk__failed"><Notice tone="danger">{error}</Notice><div className="ast-actions"><Button onClick={start}>{t("tryAgain")}</Button></div></div>;
-  if (!door) return <div className="ast-talk ast-talk--opening"><Opening label={t("loading")} /></div>;
+  const size = room ? { height: room.h, width: room.w } : undefined;
   return (
-    <div className="ast-talk">
-      <iframe className="ast-talk__frame" title={t("tabTalk")} ref={frame} src={src} onLoad={() => setLoaded(true)} allow="microphone; autoplay; local-fonts; clipboard-write" style={room ? { height: room.h, width: room.w } : undefined} />
-      <Opening label={t("loading")} leaving={loaded} />
+    <div className="ast-talk" ref={box} style={size}>
+      {door && <iframe className="ast-talk__frame" title={t("tabTalk")} ref={frame} src={src} onLoad={() => setLoaded(true)} allow="microphone; autoplay; local-fonts; clipboard-write" style={size} />}
+      <Opening label={t("loading")} leaving={!!door && loaded} />
     </div>
   );
 }

@@ -740,7 +740,7 @@
 .asteme-page .ast-talk__foot { margin: 0; padding: .45rem 1rem; font-size: .8rem; display: flex; gap: 1.2rem; justify-content: flex-end; }
 .asteme-page .ast-talk__link { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: .2em; }
 .asteme-page .ast-talk { position: relative; }
-.asteme-page .ast-talk--opening { min-height: 70vh; }
+.asteme-page .ast-talk { min-height: 15rem; }
 .asteme-page .ast-talk__failed { padding: 2rem 1.4rem; display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
 .asteme-page .ast-talk__wait { position: absolute; inset: 0; min-height: 15rem; display: grid; place-items: center; pointer-events: none; opacity: 1; transition: opacity .35s ease; }
 .asteme-page .ast-talk__wait--leaving { opacity: 0; }

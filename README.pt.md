@@ -188,6 +188,8 @@ Hoje é memória: alguém que lembra, e a quem você pode corrigir. Depois vêm 
 - [CONTRIBUTING.md](CONTRIBUTING.md): como rodar, a estrutura, as regras para mudanças
 - [MAINTAINING.md](MAINTAINING.md): quem decide o quê, e como uma mudança viaja
 
+<a href='https://ko-fi.com/wsl043'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=3' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+
 ## Licença
 
 [Apache-2.0](LICENSE), com um [NOTICE](NOTICE). A licença cobre o código; o nome e a marca são deste projeto: ver [TRADEMARKS.md](TRADEMARKS.md).

@@ -180,6 +180,8 @@ flowchart LR
 - [CONTRIBUTING.md](CONTRIBUTING.md): 動かし方、構成、変更の規則
 - [MAINTAINING.md](MAINTAINING.md): 誰が何を決めるか、変更がどう入るか
 
+<a href='https://ko-fi.com/wsl043'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=3' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+
 ## ライセンス
 
 [Apache-2.0](LICENSE) です（[NOTICE](NOTICE) つき）。ライセンスが及ぶのはコードです。名前とマークはこのプロジェクトのものです（[TRADEMARKS.md](TRADEMARKS.md)）。

@@ -188,6 +188,8 @@ flowchart LR
 - [CONTRIBUTING.md](CONTRIBUTING.md)：怎么运行它、目录结构、改动的规则
 - [MAINTAINING.md](MAINTAINING.md)：谁决定什么，一项改动如何流转
 
+<a href='https://ko-fi.com/wsl043'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=3' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+
 ## 许可
 
 [Apache-2.0](LICENSE)，附一份 [NOTICE](NOTICE)。许可覆盖的是代码；名称与标识属于本项目：见 [TRADEMARKS.md](TRADEMARKS.md)。

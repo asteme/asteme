@@ -94,4 +94,4 @@ await brain.rest();                                                // 空闲时
 
 ## 许可
 
-Not yet published. All rights reserved for now: see [LICENSE](LICENSE).
+[Apache-2.0](LICENSE)，附 [NOTICE](NOTICE)。许可覆盖代码；名称与标识归本项目所有：见 [TRADEMARKS.md](TRADEMARKS.md)。

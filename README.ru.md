@@ -94,4 +94,4 @@ await brain.rest();                                                // когда
 
 ## Лицензия
 
-Not yet published. All rights reserved for now: see [LICENSE](LICENSE).
+[Apache-2.0](LICENSE), с [NOTICE](NOTICE). Лицензия распространяется на код; имя и знак принадлежат этому проекту: см. [TRADEMARKS.md](TRADEMARKS.md).

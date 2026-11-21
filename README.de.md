@@ -94,4 +94,4 @@ Worauf wir hinarbeiten, ist ein Assistent, der nach genug Zeit mit einem Mensche
 
 ## Lizenz
 
-Not yet published. All rights reserved for now: see [LICENSE](LICENSE).
+[Apache-2.0](LICENSE), mit einer [NOTICE](NOTICE). Die Lizenz gilt für den Code; der Name und die Marke gehören zu diesem Projekt: siehe [TRADEMARKS.md](TRADEMARKS.md).

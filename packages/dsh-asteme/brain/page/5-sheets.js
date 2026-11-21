@@ -689,6 +689,48 @@ const post = async (path, body) => {
   return v;
 };
 // Several things often change at once (a reply, what was learned from it, a time it set): the state is read once for them, a moment after the first, and never twice at the same time.
+// What was on the page does not jump to its new place: it is carried there, and what has just arrived rises in with it. A person follows a thing that moves;
+// a thing that is suddenly somewhere else has to be found again. Whatever makes the conversation longer or shorter (a message, the dots coming or going, a line
+// under a message) is noticed in one place, here, by the conversation changing size, and not at each of the places that can cause it.
+// Not where the device asks for less movement, not while the page is first filled, and not for a move of most of a screen.
+let carrying = null,
+  stoodAt = null;
+const shift = () => new DOMMatrixReadOnly(getComputedStyle(thread).transform).m42;
+const standing = () => {
+  const row = [...thread.children].findLast((r) => !r.classList.contains("typing"));
+  stoodAt = row ? { row, top: row.getBoundingClientRect().top - shift(), tall: thread.offsetHeight } : null;
+};
+// A hand scrolling moves the page and that is where it now stands. A scroll that comes with the conversation having changed size is the page being put at its end: that is the change itself, and is left for below.
+scroller.addEventListener(
+  "scroll",
+  () => {
+    if (!stoodAt || stoodAt.tall === thread.offsetHeight) standing();
+  },
+  { passive: true },
+);
+// Where it stands is looked at again whenever the conversation's rows change and whenever it changes size (a picture that has loaded, a line that wraps).
+const carry = () => {
+  const was = stoodAt;
+  if (was?.row.isConnected && !calm && loaded) {
+    const onTheWay = shift(),
+      moved = was.top - (was.row.getBoundingClientRect().top - onTheWay);
+    if (Math.abs(moved) > 2) {
+      // One carrying at a time: a second change while the first is still on its way takes over from where the page is at that instant.
+      carrying?.cancel();
+      carrying =
+        Math.abs(moved + onTheWay) < innerHeight * 0.8
+          ? thread.animate([{ transform: `translateY(${moved + onTheWay}px)` }, { transform: "none" }], {
+              duration: 280,
+              easing: "cubic-bezier(.2, .7, .2, 1)",
+            })
+          : null;
+    }
+  }
+  standing();
+};
+carryNow = carry;
+new MutationObserver(carry).observe(thread, { childList: true, subtree: true, characterData: true });
+if (typeof ResizeObserver !== "undefined") new ResizeObserver(carry).observe(thread);
 // Whether the newest is kept in view. It is where the reader last left the conversation (at its end, or further back), and saying something brings them to the end.
 // It is not worked out when something arrives: what arrives is often drawn a moment later, and by then the reader may have gone back to read.
 let follow = true;

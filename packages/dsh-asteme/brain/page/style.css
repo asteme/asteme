@@ -309,6 +309,8 @@
   @media (max-width: 69.99rem) { body.sheet-on:not(.space) main, body.sheet-on:not(.space) form { opacity: .4; } }
   @media (prefers-reduced-motion: reduce) { #sheet { transition: none; } }
   @media (min-width: 70rem) { body.sheet-on header, body.sheet-on main, body.sheet-on form { margin-right: 25rem; } }
+  /* The conversation makes room at the pace the sheet comes in: one movement, not a sheet sliding over a page that has already jumped aside. */
+  @media (min-width: 70rem) and (prefers-reduced-motion: no-preference) { header, main, form { transition: margin-right .28s ease; } }
   #sheet .sheethead { position: sticky; top: 0; z-index: 3; margin: 0 -1.4rem .5rem; padding: 1.1rem 1.4rem .7rem; background: color-mix(in srgb, var(--bg) 90%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
   #sheet h2 { font-size: .8rem; font-weight: 600; letter-spacing: .06em; margin: 0; display: flex; align-items: center; }
   #sheet h2 button { margin-left: auto; font-weight: 400; letter-spacing: 0; }

@@ -176,11 +176,9 @@ flowchart LR
 ## 文書
 
 - [docs/BRAIN.md](docs/BRAIN.md): 頭脳（1 本の会話・手・時計・起きている／眠っている）
-- [DESIGN.md](DESIGN.md): 記憶のモデル、なぜそうしたか、何をテストしたか
-- [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md): 実装で決めたこと
 - [CHANGELOG.md](CHANGELOG.md): 版ごとの変更
-- [HANDOFF.md](HANDOFF.md): 開発の現在地と次にやること
 - [CONTRIBUTING.md](CONTRIBUTING.md): 動かし方、構成、変更の規則
+- [MAINTAINING.md](MAINTAINING.md): 誰が何を決めるか、変更がどう入るか
 
 ## ライセンス
 

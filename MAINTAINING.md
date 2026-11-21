@@ -1,6 +1,6 @@
 # Keeping Asteme
 
-How this project is kept, for whoever keeps it: a person, or an agent working for one. It is written to hold while the project changes, so it says who decides and how a change travels, and names few files. `CONTRIBUTING.md` is how to make a change; `docs/RELEASE-PLAN.md` is where the project is going; this is how the keeping is done.
+How this project is kept, for whoever keeps it: a person, or an agent working for one. It is written to hold while the project changes, so it says who decides and how a change travels, and names few files. `CONTRIBUTING.md` is how to make a change; this is how the keeping is done.
 
 When this file and a habit disagree, the file is changed or the habit is. They are not left to disagree.
 

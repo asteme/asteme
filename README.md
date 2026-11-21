@@ -184,11 +184,9 @@ Today it is memory: someone who remembers, and whom you can correct. Next come h
 ## Documents
 
 - [docs/BRAIN.md](docs/BRAIN.md): the brain — one conversation, hands, a clock, awake and asleep
-- [DESIGN.md](DESIGN.md): the memory model, why it works that way, what is tested
-- [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md): decisions taken in the implementation
 - [CHANGELOG.md](CHANGELOG.md): what changed in each version
-- [HANDOFF.md](HANDOFF.md): the state of development and what is next
 - [CONTRIBUTING.md](CONTRIBUTING.md): how to run it, the layout, the rules for changes
+- [MAINTAINING.md](MAINTAINING.md): who decides what, and how a change travels
 
 ## License
 

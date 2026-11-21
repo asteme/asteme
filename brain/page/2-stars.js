@@ -367,7 +367,9 @@ const zoomAt = (px, py, k) => {
   aim = null;
   kick();
 };
-const flyTo = (id) => {
+// To a star. `beside` is for a star whose memory is being opened: on a wide screen the sheet covers the right of the sky, so the star is brought to the middle
+// of what is left, not to the middle of the screen, where the sheet's edge would lie across it.
+const flyTo = (id, beside = false) => {
   const s = all.get(id) ?? stars.get(id);
   unpoint();
   touched = performance.now();
@@ -375,9 +377,13 @@ const flyTo = (id) => {
     anchor = null;
     glide = null;
     spin = null;
+    const k = Math.max(cam.k, 1.7),
+      rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16,
+      aside = beside && innerWidth >= 70 * rem ? Math.min(25 * rem, innerWidth) / 2 / k : 0,
+      m = view.m;
     flight = {
       from: { ...cam },
-      to: hold({ ...cam, x: s.wx, y: s.wy, z: s.wz, k: Math.max(cam.k, 1.7) }),
+      to: hold({ ...cam, x: s.wx + m[0] * aside, y: s.wy + m[1] * aside, z: s.wz + m[2] * aside, k }),
       t0: performance.now(),
       ms: calm ? 1 : 900,
     };
@@ -1133,6 +1139,8 @@ addEventListener("click", (e) => {
   if (hover && !e.target.closest(BUSY)) {
     tip.classList.remove("on");
     gatherShow(hover);
+    // The star that was chosen comes to you as its memory opens.
+    if (spaceOn && !gather) flyTo(hover, true);
     void openMemory(hover);
   }
 });

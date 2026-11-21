@@ -765,3 +765,31 @@ test("the user's own name and the assistant's are common names from the first me
   assert.deepEqual([...commonNames(items)], [], "too few to tell by counting");
   assert.deepEqual([...commonNames(items, ["Boss", "", undefined, "Mina"])].sort(), ["boss", "mina"]);
 });
+
+test("a reflection is sent the readings of its own conversation: this turn's whole, earlier ones that passed something on, and none of another conversation's", async t => {
+  const w = world(t), calls = [];
+  const item = w.learn(w.say(DIRECTOR.text), DIRECTOR);
+  w.end(); w.tick();
+  const admit = [{ id: item.id, anchor: "memo for the director" }];
+  // Another conversation, with a reading of its own that passed the memory on.
+  const other = await w.attend("Writing a memo for the director about hiring", { session: "other", scene: "Writing a memo for the director", admit });
+  w.say("Here is the memo.", "other", "assistant"); w.end("other"); w.tick();
+  // This conversation: an earlier turn that passed it on, and one that passed nothing.
+  const first = await w.attend("Writing a memo for the director about the budget", { session: "mine", scene: "Writing a memo for the director", admit });
+  w.say("Here is the memo.", "mine", "assistant"); w.end("mine"); w.tick();
+  const idle = await w.attend("Writing a memo for the director about travel", { session: "mine", scene: "Writing a memo for the director", admit: [] });
+  w.say("Done.", "mine", "assistant"); w.end("mine"); w.tick();
+  const now = await w.attend("Writing a memo for the director about the offsite", { session: "mine", scene: "Writing a memo for the director", admit });
+  w.say("Here it is.", "mine", "assistant"); w.end("mine");
+  assert.deepEqual([other, first, now].map(x => x.trace.delivered.length), [1, 1, 1]);
+  const turn = w.log.pending(scope, "experienced").find(x => x.sessionId === "mine" && x.events.some(e => e.id === now.request.id));
+  await w.core.reflect(turn, scripted({ reflect: { scene: "Writing a memo for the director", changes: [], feedback: [] } }, calls));
+  const sent = calls.find(c => c.purpose === "asteme-reflect").input.traces;
+  const ids = sent.map(x => x.id);
+  assert.ok(ids.includes(now.trace.id) && ids.includes(first.trace.id), "its own reading, and the earlier one that passed something on");
+  assert.equal(ids.includes(other.trace.id), false, "not another conversation's");
+  assert.equal(ids.includes(idle.trace.id), false, "not one that passed nothing on");
+  const earlier = sent.find(x => x.id === first.trace.id), own = sent.find(x => x.id === now.trace.id);
+  assert.deepEqual(earlier.decisions.map(d => d.id), [item.id], "of an earlier reading, only what was passed");
+  assert.equal(own.decisions.length, now.trace.decisions.length, "its own decisions whole");
+});

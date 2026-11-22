@@ -6,7 +6,7 @@
   <a href="README.md">English</a> · <a href="README.zh.md">中文</a> · 日本語 · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.pt.md">Português</a>
 </p>
 
-<p align="center"><a href="https://asteme.github.io/asteme/">サイト</a></p>
+<p align="center"><a href="https://asteme.github.io/asteme/ja/">サイト</a></p>
 
 https://github.com/user-attachments/assets/f7880bf0-6b96-46db-a997-ff650ac58cd3
 
@@ -175,7 +175,7 @@ flowchart LR
 
 ## これから
 
-いまは記憶です。覚えていて、間違いを直せる相手。次は手です。同じ Asteme が、あなたの PC の道具に仕事を頼み、取り返しのつかないことの前には必ずあなたに聞きます。記憶が先なのは、ほかがその上に建つからです。モデルが賢くなっても、記憶とあなたとの関係はそのまま続きます。
+はじまりは記憶でした。覚えていて、間違いを直せる相手。いまは手もあります。あなたの PC のエージェント（DeepSeek Harness、または Agent Client Protocol を話すエージェント）に仕事を頼み、どうなったかを伝えます。この先も同じように、記憶の上に建てていきます。ほかのすべてがその上にあるからです。モデルが賢くなっても、記憶とあなたとの関係はそのまま続きます。
 
 ## 文書
 

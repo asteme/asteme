@@ -12,7 +12,7 @@
   <a href="README.md">English</a> · <a href="README.zh.md">中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · Português
 </p>
 
-<p align="center"><a href="https://asteme.github.io/asteme/">Site</a></p>
+<p align="center"><a href="https://asteme.github.io/asteme/pt/">Site</a></p>
 
 https://github.com/user-attachments/assets/b20a3d7d-69fa-41f3-a4e0-5f9b14073b19
 
@@ -183,7 +183,7 @@ O código nunca decide o que algo significa. Ele confere estrutura: que uma cita
 
 ## Para onde vai
 
-Hoje é memória: alguém que lembra, e a quem você pode corrigir. Depois vêm as mãos: o mesmo Asteme pedindo a ferramentas no seu computador que façam coisas, e perguntando a você antes de qualquer coisa que não possa ser desfeita. A memória vem primeiro porque o resto é construído sobre ela; um modelo que melhora mantém a mesma memória e o mesmo você.
+Começou como memória: alguém que lembra, e a quem você pode corrigir. Agora também tem mãos: passa trabalho a um agente no seu computador (DeepSeek Harness, ou qualquer agente que fale o Agent Client Protocol) e conta a você como foi. O que vem depois é construído do mesmo jeito, sobre a memória, porque todo o resto se apoia nela; um modelo que melhora mantém a mesma memória e o mesmo você.
 
 ## Documentos
 

@@ -12,7 +12,7 @@
   <a href="README.md">English</a> · 中文 · <a href="README.ja.md">日本語</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.pt.md">Português</a>
 </p>
 
-<p align="center"><a href="https://asteme.github.io/asteme/">网站</a></p>
+<p align="center"><a href="https://asteme.github.io/asteme/zh/">网站</a></p>
 
 https://github.com/user-attachments/assets/9ee8df30-5355-444a-a890-49af275b5738
 
@@ -183,7 +183,7 @@ flowchart LR
 
 ## 它要去哪里
 
-今天是记忆：一个会记得、也能被你纠正的“谁”。接下来是手：同一个 Asteme 会请你电脑上的工具做事，并且在任何无法挽回的事之前先问你。记忆先来，是因为其余的都建在它上面；变得更好的模型，保留的是同一份记忆和同一个你。
+它从记忆开始：一个会记得、也能被你纠正的“谁”。现在它也有了手：它把事情交给你电脑上的智能体（DeepSeek Harness，或任何使用 Agent Client Protocol 的智能体）去做，再告诉你结果如何。接下来的一切也是这样，建在记忆之上，因为其余的都靠它；变得更好的模型，保留的是同一份记忆和同一个你。
 
 ## 文档
 

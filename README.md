@@ -183,7 +183,7 @@ The code never decides what something means. It checks structure: that a quote i
 
 ## Where it is going
 
-Today it is memory: someone who remembers, and whom you can correct. Next come hands: the same Asteme asking tools on your computer to do things, and asking you first before anything that cannot be undone. The memory comes first because the rest is built on it; a model that gets better keeps the same memory and the same you.
+It began as memory: someone who remembers, and whom you can correct. It has hands now as well: it gives work to an agent on your computer (DeepSeek Harness, or any agent that speaks the Agent Client Protocol), and tells you how it went. What comes next is built the same way, on the memory, because everything else rests on it; a model that gets better keeps the same memory and the same you.
 
 ## Documents
 

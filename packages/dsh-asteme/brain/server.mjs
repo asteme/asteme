@@ -86,18 +86,29 @@ const same = (a, b) => {
   return x.length === y.length && timingSafeEqual(x, y);
 };
 
+// The words the page shows, in one language, and a composed page with its places filled. One function for whoever serves the page: this server,
+// and the site, which is the same page over a mind that only remembers what the site says.
+export const pageWords = (lang) =>
+  Object.fromEntries(
+    Object.entries({ ...copy.en, ...(copy[lang] ?? {}) }).filter(
+      ([k]) => k.startsWith("brain") || k.startsWith("kind_") || k.startsWith("idle_") || SHARED.includes(k),
+    ),
+  );
+export const fillPage = (page, { lang = "en", token = "", host = {}, theme = "" } = {}) =>
+  page
+    .replace("__LANG__", lang)
+    .replace("__TOKEN__", token)
+    .replace("__HOST__", JSON.stringify(host))
+    .replace("__THEME__", theme)
+    .replaceAll("__ICON__", MARK)
+    .replace("__WORDS__", JSON.stringify(pageWords(lang)).replace(/</g, "\\u003c"));
+
 export function serve(mind, { port = 4170, token = randomBytes(18).toString("base64url"), language = "", live = false } = {}) {
   const streams = new Set();
   mind.listen((event) => {
     const line = `data: ${JSON.stringify(event)}\n\n`;
     for (const s of streams) s.write(line);
   });
-  const words = (lang) =>
-    Object.fromEntries(
-      Object.entries({ ...copy.en, ...(copy[lang] ?? {}) }).filter(
-        ([k]) => k.startsWith("brain") || k.startsWith("kind_") || k.startsWith("idle_") || SHARED.includes(k),
-      ),
-    );
   const json = (res, status, value) => {
     res.writeHead(status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
     res.end(JSON.stringify(value));
@@ -165,20 +176,14 @@ export function serve(mind, { port = 4170, token = randomBytes(18).toString("bas
               .slice(0, 2)
               .toLowerCase();
         const lang = LANGUAGES.includes(wanted) ? wanted : "en";
-        const page = (LOADED.page && !live ? LOADED.page : await composePage())
-          .replace("__LANG__", lang)
-          .replace("__TOKEN__", framed ? token : "")
-          .replace(
-            "__HOST__",
-            JSON.stringify(
-              Object.fromEntries(
-                ["bg", "ink"].map((k) => [k, /^[0-9a-f]{6}$/i.test(url.searchParams.get(k) ?? "") ? "#" + url.searchParams.get(k) : ""]),
-              ),
-            ),
-          )
-          .replace("__THEME__", ["dark", "light"].includes(url.searchParams.get("theme")) ? url.searchParams.get("theme") : "")
-          .replaceAll("__ICON__", MARK)
-          .replace("__WORDS__", JSON.stringify(words(lang)).replace(/</g, "\\u003c"));
+        const page = fillPage(LOADED.page && !live ? LOADED.page : await composePage(), {
+          lang,
+          token: framed ? token : "",
+          host: Object.fromEntries(
+            ["bg", "ink"].map((k) => [k, /^[0-9a-f]{6}$/i.test(url.searchParams.get(k) ?? "") ? "#" + url.searchParams.get(k) : ""]),
+          ),
+          theme: ["dark", "light"].includes(url.searchParams.get("theme")) ? url.searchParams.get("theme") : "",
+        });
         res.writeHead(200, {
           "content-type": "text/html; charset=utf-8",
           "cache-control": "no-store",

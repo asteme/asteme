@@ -41,7 +41,7 @@ export function TalkTab({ ctx, active, onManage, onOpenSession, onChanged, setti
   // The room the conversation is given is measured on the box around it, which is there from the first moment: the mark that stands in it while
   // the conversation is opened is then in the same place before the frame exists and after. (It was measured on the frame, so the room was only known
   // once the frame was there, and the mark moved down as it gave way.)
-  const box = React.useRef(null);
+  const box = React.useRef(null), lastOver = React.useRef(0), roomRef = React.useRef(null);
   const look = React.useCallback(() => {
     const hex = (c) => { const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/.exec(c ?? ""); return m && (m[4] === undefined || Number(m[4]) > 0.5) ? "#" + [m[1], m[2], m[3]].map(n => Number(n).toString(16).padStart(2, "0")).join("") : ""; };
     let node = document.querySelector(".asteme-page"), bg = ""; const ink = node ? hex(getComputedStyle(node).color) : "";
@@ -114,7 +114,26 @@ export function TalkTab({ ctx, active, onManage, onOpenSession, onChanged, setti
       // Only DSH's own containers count: Asteme's are as large as the frame makes them.
       for (const n of outside) { const cs = getComputedStyle(n); if (!/hidden|auto|scroll|clip/.test(cs.overflowX + cs.overflowY)) continue; const r = n.getBoundingClientRect(); bottom = Math.min(bottom, r.top + n.clientTop + n.clientHeight); right = Math.min(right, r.left + n.clientLeft + n.clientWidth); }
       const h = Math.max(240, Math.floor(bottom - at.top)), w = Math.max(240, Math.floor(right - at.left));
-      setRoom(now => now && now.h === h && now.w === w ? now : { h, w });
+      // Something of DSH's can lie over the top of the room without the room being any smaller: a title bar the main area runs under when the side panel
+      // is folded away. Nothing scrolls and nothing changes size, so it cannot be measured, only looked for: what is actually under a point at the top
+      // of the frame? If it is not the frame, the frame begins lower. Only a bar counts (wide, at the very top, there on two looks in a row, and not
+      // deeper than a bar is): a menu, a tooltip or a dialog's backdrop passing over the frame moves nothing.
+      let over = 0;
+      if (at.top < 0) over = Math.ceil(-at.top);
+      else {
+        const x = at.left + Math.min(w / 2, 320);
+        for (let y = at.top + 2; y < at.top + 96; y += 3) {
+          const hit = document.elementFromPoint(x, y);
+          if (!hit || el.contains(hit)) break;
+          const r = hit.getBoundingClientRect();
+          if (r.width < w * 0.5 || r.top > at.top + 1 || r.bottom - at.top > 96) { over = 0; break; }
+          over = Math.ceil(r.bottom - at.top);
+          y = Math.max(y, r.bottom - 1);
+        }
+      }
+      const cover = over === lastOver.current ? over : (roomRef.current?.cover ?? 0);
+      lastOver.current = over;
+      setRoom(now => { const next = now && now.h === h && now.w === w && now.cover === cover ? now : { h, w, cover }; roomRef.current = next; return next; });
     };
     fit();
     const watch = new ResizeObserver(fit); for (const n of outside) watch.observe(n);
@@ -125,10 +144,11 @@ export function TalkTab({ ctx, active, onManage, onOpenSession, onChanged, setti
     return () => { watch.disconnect(); window.removeEventListener("resize", fit); for (const n of outside) n.removeEventListener("scroll", fit); clearInterval(often); };
   }, [active, error]);
   if (error) return <div className="ast-talk__failed"><Notice tone="danger">{error}</Notice><div className="ast-actions"><Button onClick={start}>{t("tryAgain")}</Button></div></div>;
-  const size = room ? { height: room.h, width: room.w } : undefined;
+  const cover = room?.cover ?? 0;
+  const size = room ? { height: room.h, width: room.w, paddingTop: cover, boxSizing: "border-box" } : undefined;
   return (
     <div className="ast-talk" ref={box} style={size}>
-      {door && <iframe className="ast-talk__frame" title={t("tabTalk")} ref={frame} src={src} onLoad={() => setLoaded(true)} allow="microphone; autoplay; local-fonts; clipboard-write" style={size} />}
+      {door && <iframe className="ast-talk__frame" title={t("tabTalk")} ref={frame} src={src} onLoad={() => setLoaded(true)} allow="microphone; autoplay; local-fonts; clipboard-write" style={room ? { height: room.h - cover, width: room.w } : undefined} />}
       <Opening label={t("loading")} leaving={!!door && loaded} />
     </div>
   );

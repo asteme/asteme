@@ -143,6 +143,7 @@ const loadAll = async () => {
     const next = new Map();
     for (const m of list) next.set(m.id, { ...m, ...(m.first ? { strength: 1 } : {}), u: hash(m.id, 1), v: hash(m.id, 2) });
     chart(next);
+    flat(next, stars);
     regather(next);
     all = next;
     // The whole sky is larger than the part of it behind the conversation: where the eye is set down is taken from the whole, unless a hand has already moved it.

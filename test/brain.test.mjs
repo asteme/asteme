@@ -1060,3 +1060,32 @@ test("a picture handed over is looked at by a model that can see, and what it sh
   blind.start().say("What is this?", [other.id]); await until(() => said.includes("message:assistant")); await blind.idle();
   assert.ok(!/"seen":\s*"/.test(prompts.at(-1)) && !prompts.at(-1).includes("heron"), "nothing is made up for a picture nobody looked at");
 });
+
+test("laid flat, the whole sky keeps what is joined by a line together, and the stars behind the conversation stay where they stand there", async () => {
+  // The star view starts from the flat places and returns to them. The page's own rule is run here as it is written (hash, families, flat).
+  const { readFile } = await import("node:fs/promises"); const vm = await import("node:vm");
+  const src = await readFile(new URL("../brain/page/1-sky.js", import.meta.url), "utf8");
+  const cut = (from, to) => src.slice(src.indexOf(from), src.indexOf(to, src.indexOf(from) + from.length));
+  const box = vm.createContext({ innerWidth: 1100, innerHeight: 860 });
+  vm.runInContext(`${cut("const hash = ", "\nconst ")}\n${cut("const families = ", "const setSky = ")}\nthis.hash = hash; this.flat = flat;`, box);
+  const { hash, flat } = box;
+  const star = (id, more = {}) => ({ id, at: Number(id.slice(1)), u: hash(id, 1), v: hash(id, 2), ...more });
+  // Forty lessons, each drawn from five cases; a second lesson drawn from one of the same cases; a lesson drawn from a lesson.
+  const list = [];
+  for (let n = 0; n < 40; n++) { const cases = [0, 1, 2, 3, 4].map(k => star(`c${n * 10 + k}`)); list.push(...cases, star(`l${n * 10 + 5}`, { kind: "lesson", from: cases.map(c => c.id) }), star(`l${n * 10 + 6}`, { kind: "lesson", from: [cases[0].id] }), star(`l${n * 10 + 7}`, { kind: "lesson", from: [`l${n * 10 + 5}`] })); }
+  const longest = (map) => { let far = 0; for (const m of map.values()) for (const id of m.from ?? []) { const c = map.get(id); far = Math.max(far, Math.hypot((m.u - c.u) * 0.9 * 1100, (m.v - c.v) * 0.7 * 860)); } return far; };
+  const raw = new Map(list.map(m => [m.id, { ...m }]));
+  assert.ok(longest(raw) > 600, "placed by their ids alone, lines cross the page");
+  // Behind the conversation: a part of the sky, gathered by the same rule.
+  const behind = new Map(list.filter((_, n) => n % 3 === 0).map(m => [m.id, { ...m }]));
+  flat(behind);
+  const whole = new Map(list.map(m => [m.id, { ...m }]));
+  flat(whole, behind);
+  for (const [id, m] of behind) assert.deepEqual([whole.get(id).u, whole.get(id).v], [m.u, m.v], `${id} moved`);
+  // Every memory that is not behind the conversation stands beside one it is joined to.
+  for (const m of whole.values()) {
+    if (behind.has(m.id)) continue;
+    const tied = [...(m.from ?? []), ...list.filter(o => o.from?.includes(m.id)).map(o => o.id)].map(id => whole.get(id));
+    if (tied.length) assert.ok(Math.min(...tied.map(c => Math.hypot((m.u - c.u) * 0.9 * 1100, (m.v - c.v) * 0.7 * 860))) < 140, `${m.id} stands alone`);
+  }
+});

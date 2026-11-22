@@ -153,7 +153,7 @@ test("decisions made at the same moment, over a store whose listings lag, lose n
 });
 
 test("a decision whose mark was slow to be written does not let an older copy pass for settled: the mark says when it landed, not when writing it began", async () => {
-  const env = room(60000), real = Date.now, at = real() - 3600000;
+  const env = room(60000), real = Date.now, began = real(), at = began - 3600000;
   let off = 0;
   Date.now = () => real() + off;
   try {
@@ -180,7 +180,7 @@ test("a decision whose mark was slow to be written does not let an older copy pa
     assert.deepEqual(await lines(), ["two"]);
     off += 100000;
     assert.deepEqual(await lines(), ["two"], "and it stays so");
-    assert.ok(Number(env.kept.get("changed").value) >= real() + 95000 - 5, "the mark carries the time it landed");
+    assert.ok(Number(env.kept.get("changed").value) >= began + 95000, "the mark carries the time it landed");
   } finally {
     Date.now = real;
   }

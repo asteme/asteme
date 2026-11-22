@@ -14,13 +14,6 @@
 
 https://github.com/user-attachments/assets/b20a3d7d-69fa-41f3-a4e0-5f9b14073b19
 
-<details>
-<summary>Earlier cut</summary>
-
-https://github.com/user-attachments/assets/f3d6ef2a-0eee-491c-b3e8-9dd5756be9ca
-
-</details>
-
 **Status: in Entwicklung.** Asteme wird noch gebaut. Das Verhalten kann sich ändern, und es kann versagen oder Daten verlieren. Verlass dich noch nicht für etwas Wichtiges darauf.
 
 # ASTEME

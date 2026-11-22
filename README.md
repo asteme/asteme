@@ -14,13 +14,6 @@
 
 https://github.com/user-attachments/assets/b20a3d7d-69fa-41f3-a4e0-5f9b14073b19
 
-<details>
-<summary>Earlier cut</summary>
-
-https://github.com/user-attachments/assets/f3d6ef2a-0eee-491c-b3e8-9dd5756be9ca
-
-</details>
-
 **Status: in development.** Asteme is still being built. Behavior may change, and it may fail or lose data. Do not rely on it for anything important yet.
 
 # ASTEME
@@ -45,6 +38,8 @@ Both talk, remember and keep promises, on the same machinery. Each has a store o
 **Every memory ends at your own words.** Each one keeps the exact sentence it came from. Open a memory and you see what it rests on, where it applies, every time it was used and how that went, and every change made to it. If you say something is wrong, your word stands over the model's.
 
 **It keeps promises.** "Ask me again in June" becomes a promise Asteme holds itself, once or repeating, and it speaks first when the time comes.
+
+**It speaks of its own accord.** Something you were uneasy about stays on its mind with no time set. When you come back after a while it may ask how it went, or say nothing: that is its own to decide, and what it is keeping is shown to you and can be taken back.
 
 **It shows what it remembers.** Every memory is one star on a sky behind the conversation, brighter when it comes to mind easily. Take hold of the empty sky and you are among them.
 

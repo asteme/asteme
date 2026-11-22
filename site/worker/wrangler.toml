@@ -14,4 +14,4 @@ ORIGIN = "https://asteme.github.io"
 
 [[kv_namespaces]]
 binding = "LINES"
-id = "PUT-THE-NAMESPACE-ID-HERE"
+id = "5aa4eee55e784f37bccf7ebaf828188d"

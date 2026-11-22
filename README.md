@@ -172,7 +172,7 @@ The code never decides what something means. It checks structure: that a quote i
 
 ## Limits, today
 
-- Early: 0.11, the first published version. Behavior can still change between versions.
+- Early. Behavior can still change between versions.
 - A reply may wait for memory: reading the situation and choosing from it is one model call, and with a reasoning model that has taken ten to twenty seconds, sometimes more. A small decision model (the judge) can take that place when one is configured, and then the reply no longer waits for it.
 - A picture given to the conversation is looked at when the model can see pictures; other files that are not text (a PDF, a recording) are not read by Asteme itself: it hands them to DSH with their path when the work needs them opened.
 - Reading aloud uses a lent voice only (the voices installed on the computer are not used). A voice service of your own (an OpenAI-compatible one, or a local server) is set in the settings file; there is no screen for it yet.

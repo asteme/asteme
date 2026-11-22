@@ -1,0 +1,56 @@
+/* The site is the sky. What the conversation page shows for a conversation is not here. */
+body.site > header, body.site > main, body.site > form#form, body.site #newestwrap, body.site #spaceback, body.site #spacehint { display: none !important; }
+body.site #spacebar { bottom: 3.7rem; }
+body.site:not(.site-own) #sheet .acts, body.site:not(.site-own) #sheet h3, body.site:not(.site-own) #sheet h3 ~ p.muted { display: none; }
+body.site.site-own #sheet .acts button:not(:last-child) { display: none; }
+.site-top { position: fixed; z-index: 30; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.4rem; font-size: .9rem; opacity: 0; transition: opacity 1.2s ease .8s; pointer-events: none; }
+.site-in .site-top { opacity: 1; pointer-events: auto; }
+.site-name { display: inline-flex; align-items: center; gap: .6rem; color: var(--ink); text-decoration: none; font-weight: 600; letter-spacing: .04em; }
+.site-links { display: inline-flex; align-items: center; gap: 1.1rem; flex-wrap: wrap; justify-content: flex-end; }
+.site-links a, .site-links button { color: var(--muted); text-decoration: none; font: inherit; padding: 0; }
+.site-links a:hover, .site-links button:hover, .site-links a.on { color: var(--ink); }
+.site-tries { position: fixed; z-index: 21; left: 0; right: 0; bottom: 7.4rem; display: flex; gap: .5rem; justify-content: center; flex-wrap: wrap; padding: 0 1rem; opacity: 0; transition: opacity 1.2s ease 1.6s; }
+.site-in .site-tries { opacity: 1; }
+.site-tries button { font: inherit; font-size: .82rem; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: .22rem .8rem; background: transparent; }
+.site-tries button:hover { color: var(--ink); border-color: var(--muted); }
+body.sheet-on .site-tries, body.sheet-on .site-leave { opacity: 0; pointer-events: none; }
+.site-leave { position: fixed; z-index: 21; left: 50%; transform: translateX(-50%); bottom: .9rem; display: flex; gap: .4rem; align-items: center; width: min(26rem, calc(100vw - 2rem)); opacity: 0; transition: opacity 1.2s ease 2.2s; }
+.site-in .site-leave { opacity: 1; }
+.site-leave input { flex: 1; min-width: 0; font: inherit; font-size: .85rem; color: var(--ink); background: transparent; border: 0; border-bottom: 1px solid var(--line); padding: .3rem .2rem; outline: none; }
+.site-leave input:focus { border-bottom-color: var(--muted); }
+.site-leave button { font: inherit; font-size: .82rem; color: var(--muted); background: transparent; border: 0; padding: .3rem .5rem; cursor: pointer; visibility: hidden; }
+.site-leave:focus-within button, .site-leave input:not(:placeholder-shown) + button { visibility: visible; }
+.site-leave button:hover { color: var(--ink); }
+.site-leave p { position: absolute; left: 0; right: 0; bottom: 100%; margin: 0 0 .3rem; font-size: .76rem; text-align: center; opacity: 0; transition: opacity .3s ease; pointer-events: none; }
+.site-leave:focus-within p { opacity: 1; }
+.site-leave:focus-within ~ .site-tries, body:has(.site-leave:focus-within) .site-tries { opacity: 0; }
+.site-door { position: fixed; z-index: 60; inset: 0; display: grid; place-items: center; background: var(--bg); color: var(--ink); transition: opacity 1.5s ease; }
+.site-door.gone { opacity: 0; pointer-events: none; }
+.site-door svg { width: 88px; height: 88px; }
+.site-door svg path { stroke-dasharray: 60; stroke-dashoffset: 60; animation: site-line 1s ease 1.2s forwards; opacity: .7; }
+.site-door svg circle { opacity: 0; animation: site-star .7s ease forwards; }
+.site-door svg circle:nth-of-type(1) { animation-delay: .15s; } .site-door svg circle:nth-of-type(2) { animation-delay: .4s; } .site-door svg circle:nth-of-type(3) { animation-delay: .65s; }
+.site-door svg circle:nth-of-type(4) { animation-delay: .9s; } .site-door svg circle:nth-of-type(5) { animation-delay: 1.15s; }
+@keyframes site-star { from { opacity: 0; } 60% { opacity: 1; } to { opacity: .9; } }
+@keyframes site-line { to { stroke-dashoffset: 0; } }
+.site-back { position: fixed; z-index: 31; top: 4.4rem; left: 50%; transform: translate(-50%, -.4rem); max-width: min(34rem, calc(100vw - 2rem)); text-align: center; color: var(--ink); font-size: .95rem; line-height: 1.7; opacity: 0; transition: opacity .9s ease, transform .9s ease; cursor: pointer; }
+.site-back.on { opacity: 1; transform: translate(-50%, 0); }
+.site-back b { font-weight: 600; margin-right: .5em; } .site-back span { color: var(--muted); } .site-back q { display: block; quotes: "“" "”"; }
+.site-film { position: fixed; z-index: 70; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--bg) 92%, transparent); padding: 3rem 1rem; }
+.site-film video { width: min(1100px, 100%); max-height: calc(100vh - 7rem); border-radius: 10px; background: #000; }
+.site-film button { position: absolute; top: 1rem; right: 1.4rem; font: inherit; color: var(--muted); }
+/* Read as a page: the same sentences, in order, for whoever wants them that way or has no scripts. */
+#plain { display: none; position: fixed; z-index: 80; inset: 0; overflow: auto; background: var(--bg, #131316); color: var(--ink, #ededed); padding: 4rem 1.4rem 5rem; }
+#plain:target { display: block; }
+#plain article { max-width: 40rem; margin: 0 auto; line-height: 1.75; }
+#plain h1 { font-size: 1.5rem; font-weight: 600; margin: 0 0 1.6rem; } #plain h2 { font-size: 1.05rem; font-weight: 600; margin: 2.2rem 0 .5rem; } #plain p { margin: .35rem 0; color: var(--muted, #a9a9b0); }
+#plain a { color: inherit; } #plain .shut { position: fixed; top: 1rem; right: 1.4rem; text-decoration: none; color: var(--muted, #a9a9b0); }
+@media (prefers-reduced-motion: reduce) { .site-door svg path, .site-door svg circle { animation: none; opacity: 1; stroke-dashoffset: 0; } .site-top, .site-tries, .site-leave, .site-door, .site-back { transition: none; } }
+@media (max-width: 40rem) { .site-links { gap: .7rem; font-size: .8rem; } .site-top { padding: .8rem .9rem; align-items: flex-start; } .site-said { top: 5.6rem; } .site-said p { font-size: .95rem; } }
+body.sheet-on .site-links { opacity: 0; pointer-events: none; } .site-links { transition: opacity .3s ease; }
+.site-said { position: fixed; z-index: 20; top: 4.2rem; left: 50%; transform: translateX(-50%); width: min(40rem, calc(100vw - 2rem)); text-align: center; pointer-events: none; opacity: 0; transition: opacity 1.4s ease 1.2s; }
+.site-in .site-said { opacity: 1; } .site-said.aside, body.sheet-on .site-said, body:has(#find:not(:placeholder-shown)) .site-said { opacity: 0; transition-delay: 0s; transition-duration: .4s; }
+.site-said p { margin: 0; font-size: 1.02rem; line-height: 1.7; color: var(--ink); text-shadow: 0 0 12px var(--bg), 0 0 4px var(--bg); }
+.site-said p.muted { font-size: .8rem; margin-top: .35rem; color: var(--muted); transition: opacity 1.2s ease; } .site-said.known p.muted { opacity: 0; }
+.site-back { text-shadow: 0 0 12px var(--bg), 0 0 4px var(--bg); }
+@media (prefers-reduced-motion: reduce) { .site-said, .site-links { transition: none; } }

@@ -2,6 +2,13 @@
 
 What changed in each version and why.
 
+## 0.12.1
+
+- **Added:** the site (`site/`, published to GitHub Pages). It is not a page about Asteme: it is the conversation page's own sky over a mind that remembers only what the site says. Each sentence about Asteme is a star, each subject a constellation; a word typed below gathers what is said about it, as it gathers memories in Asteme; and a line a visitor leaves becomes a star in their own browser, sent nowhere, and is said back to them when they return. The way in is the mark: its five stars come up, and then they are the sky. The same sentences are there as a plain page for a reader without scripts. Built by `scripts/make-site.mjs` from `site/content.mjs`, which is the one place that says what the site says; written in English, Japanese and Chinese.
+- **Changed:** filling the places in a composed page (language, words, mark) is one function, `fillPage` in `brain/server.mjs`, used by the server and by the site.
+- **Fixed:** inside DSH the top of the conversation could lie under a bar of DSH's own (seen with the side panel folded away: the header and the mark were cut off). Nothing scrolls and nothing changes size when that happens, so the room could not be measured smaller; it is now looked for: if what is under a point at the top of the frame is not the frame but a wide bar of the host's, the frame begins below it. A menu, a tooltip or a dialog's backdrop passing over moves nothing.
+- **Changed:** among the stars, what is joined by a line stands together. A case stood by the first lesson drawn from it and by no other, and a lesson never moved, so a second lesson drawn from the same case, or a lesson drawn from a lesson, was joined to it by a line as long as the two happened to be apart, sometimes most of the sky. Each such family now gathers around its oldest member, which keeps its place in time.
+
 ## 0.12.0
 
 Speaking of its own accord. Nothing here runs on a schedule of its own: what is new is something to say, an occasion to say it, and leave to say nothing.

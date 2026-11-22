@@ -121,22 +121,41 @@ const chart = (map) => {
     m.wz = up * r;
     m.ph = hash(m.id, 5) * 6.2832;
   });
-  // A case stands by its lesson: the first lesson that was drawn from it.
-  const held = new Set();
-  for (const m of list)
-    if (m.kind === "lesson")
-      for (const id of m.from ?? []) {
-        const c = map.get(id);
-        if (!c || c.kind === "lesson" || held.has(id)) continue;
-        held.add(id);
-        const a = hash(id, 4) * 6.2832,
+  // What is joined by a line stands together. A lesson and the cases it was drawn from, a second lesson drawn from one of the same cases, a lesson drawn
+  // from a lesson: each such family gathers around the one of them that is oldest (the first star, if it is among them), which keeps its own place in time.
+  // The others give up theirs: a line across half the sky says less than two stars side by side. (Before, a case stood by the first lesson drawn from it
+  // and by no other, and a lesson never moved, so every further tie was a line as long as the two happened to be apart.)
+  const ties = new Map(),
+    tie = (a, b) => {
+      (ties.get(a) ?? ties.set(a, []).get(a)).push(b);
+      (ties.get(b) ?? ties.set(b, []).get(b)).push(a);
+    };
+  for (const m of map.values()) for (const id of m.from ?? []) if (id !== m.id && map.has(id)) tie(m.id, id);
+  const placed = new Set();
+  const heads = [...ties.keys()]
+    .map((id) => map.get(id))
+    .sort((a, b) => (b === pole) - (a === pole) || !!b.from?.length - !!a.from?.length || (a.at ?? 0) - (b.at ?? 0));
+  for (const head of heads) {
+    if (placed.has(head.id)) continue;
+    placed.add(head.id);
+    for (const line = [head]; line.length;) {
+      const m = line.shift();
+      for (const id of ties.get(m.id)) {
+        if (placed.has(id)) continue;
+        placed.add(id);
+        const c = map.get(id),
+          a = hash(id, 4) * 6.2832,
           up = 2 * hash(id, 8) - 1,
           flat = Math.sqrt(1 - up * up),
-          d = 30 + 34 * hash(id, 6);
+          // One that others are drawn from in turn stands a little further off, so that its own have room around it.
+          d = (ties.get(id).length > 1 ? 62 : 30) + 34 * hash(id, 6);
         c.wx = m.wx + Math.cos(a) * flat * d;
         c.wy = m.wy + Math.sin(a) * flat * d;
         c.wz = m.wz + up * d;
+        line.push(c);
       }
+    }
+  }
   rim = CLEAR + SPACING * Math.cbrt(list.length + 1) + 60;
 };
 const loadAll = async () => {

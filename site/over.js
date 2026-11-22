@@ -8,7 +8,11 @@
   const top = make("nav", "site-top");
   const home = make("a", "site-name"); home.href = S.root || "./"; home.innerHTML = S.mark; home.append(make("span", null, "Asteme"));
   const links = make("span", "site-links");
-  for (const [code, label, path] of [["en", "English", ""], ["ja", "日本語", "ja/"], ["zh", "中文", "zh/"]]) { const a = make("a", code === S.lang ? "on" : null, label); a.href = S.root + path || "./"; a.lang = code; links.append(a); }
+  // The languages fold into one: eight names in a row leave no room for anything else.
+  const langs = make("details", "site-lang"), list = make("div");
+  langs.append(make("summary", null, (S.languages.find(([code]) => code === S.lang) ?? S.languages[0])[1]), list);
+  for (const [code, label, path] of S.languages) { const a = make("a", code === S.lang ? "on" : null, label); a.href = S.root + path || "./"; a.lang = code; a.hreflang = code; list.append(a); }
+  links.append(langs); addEventListener("click", (e) => { if (!langs.contains(e.target)) langs.open = false; });
   const film = make("button", "bare", U.film); film.type = "button";
   const plain = make("a", null, U.plain); plain.href = "#plain";
   const code = make("a", null, U.code); code.href = "https://github.com/asteme/asteme"; code.rel = "noopener";
@@ -20,8 +24,12 @@
   // --- A line of one's own ---------------------------------------------------------------------------------
   const leave = make("div", "site-leave"), field = make("input"), keepIt = make("button", null, U.keep), note = make("p", "muted", U.leaveNote);
   field.type = "text"; field.maxLength = 200; field.placeholder = U.leave; field.setAttribute("aria-label", U.leave); keepIt.type = "button";
-  leave.append(field, keepIt, note); document.body.append(leave);
-  const keepLine = async () => { const line = S.leave(field.value); if (!line) return; field.value = ""; field.blur(); await load(); await loadAll(); setTimeout(() => { flyTo(line.id, true); void openMemory(line.id); }, 500); };
+  // Sharing is offered only where there is somewhere to send to, and only when asked for: the box is empty until the visitor ticks it.
+  const share = make("label", "site-share"), box = make("input"); box.type = "checkbox"; share.append(box, make("span", null, U.share), make("small", "muted", U.shareNote));
+  leave.append(field, keepIt, note); if (S.share) leave.append(share); document.body.append(leave);
+  const tell = (text) => { const t = make("div", "site-told", text); document.body.append(t); requestAnimationFrame(() => t.classList.add("on")); setTimeout(() => { t.classList.remove("on"); setTimeout(() => t.remove(), 800); }, 5200); };
+  const keepLine = async () => { const line = S.leave(field.value); if (!line) return; const also = S.share && box.checked; field.value = ""; box.checked = false; field.blur(); await load(); await loadAll(); setTimeout(() => { flyTo(line.id, true); void openMemory(line.id); }, 500);
+    if (also) fetch(S.share.replace(/\/$/, "") + "/line", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text: line.text, lang: S.lang }) }).then((r) => tell(r.ok ? U.shareSent : U.shareFail), () => tell(U.shareFail)); };
   keepIt.onclick = keepLine; field.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); void keepLine(); } e.stopPropagation(); });
   // --- The film ----------------------------------------------------------------------------------------------
   film.onclick = () => { const veil = make("div", "site-film"), v = make("video"), x = make("button", "bare", U.close);

@@ -35,6 +35,11 @@
       }),
     ),
   );
+  // What visitors chose to share, once a person has read it: a constellation of its own, and the newest thing in the sky after a visitor's own line.
+  if (S.shared?.length) {
+    said.push({ id: "s-shared", kind: "lesson", private: false, text: S.ui.shared, strength: 0.9, from: S.shared.map((_, n) => `v-${n}`), at: born + DAY * 30 });
+    S.shared.forEach((text, n) => said.push({ id: `v-${n}`, kind: "noted", private: false, text, strength: 0.7, from: [], at: born + DAY * 30 - (n + 1) * 60000 }));
+  }
   const sky = () => [...mine().map((m) => ({ id: m.id, kind: "noted", private: false, text: m.text, strength: 0.9, from: [], at: m.at })), ...said];
   const state = () => ({
     fresh: false, born: true, name: "Asteme", you: "", look: {}, manner: "", face: null, yourFace: null, review: [], state: "awake", thinking: false, writing: false, next: null,

@@ -1,0 +1,16 @@
+# The Worker that takes the lines visitors choose to share (worker.js). Deployed by whoever holds the Cloudflare account:
+#   npx wrangler kv namespace create LINES        (put the id it prints below)
+#   npx wrangler secret put KEY                    (a long random string; the same goes into the repository's secret LINES_KEY)
+#   npx wrangler secret put SALT                   (another long random string; kept nowhere else)
+#   npx wrangler deploy
+# Then put the Worker's address in site/config.mjs (SHARE_URL) and in the repository's variable LINES_URL.
+name = "asteme-lines"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+
+[vars]
+ORIGIN = "https://asteme.github.io"
+
+[[kv_namespaces]]
+binding = "LINES"
+id = "PUT-THE-NAMESPACE-ID-HERE"

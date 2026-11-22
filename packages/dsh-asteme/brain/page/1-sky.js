@@ -47,8 +47,9 @@ const place = (s) => {
 // What is joined by a line stands together, in the sky behind the conversation and among the stars alike. A lesson and the cases it was drawn from, a second
 // lesson drawn from one of the same cases, a lesson drawn from a lesson: each such family is walked outward from the oldest of them that others are drawn from
 // (the first star, if it is among them), and `place(star, beside, hub)` is called for every other member with the one it stands beside; `hub` says that others
-// are drawn from it in turn, so it wants room about it. The one the walk starts from keeps its own place.
-const families = (map, place) => {
+// are drawn from it in turn, so it wants room about it. The one the walk starts from keeps its own place. `lead`, where given, says which members a walk
+// starts from before any other.
+const families = (map, place, lead = null) => {
   const ties = new Map(),
     tie = (a, b) => {
       (ties.get(a) ?? ties.set(a, []).get(a)).push(b);
@@ -58,7 +59,9 @@ const families = (map, place) => {
   const placed = new Set(),
     heads = [...ties.keys()]
       .map((id) => map.get(id))
-      .sort((a, b) => !!b.first - !!a.first || !!b.from?.length - !!a.from?.length || (a.at ?? 0) - (b.at ?? 0));
+      .sort(
+        (a, b) => (lead ? !!lead(b) - !!lead(a) : 0) || !!b.first - !!a.first || !!b.from?.length - !!a.from?.length || (a.at ?? 0) - (b.at ?? 0),
+      );
   for (const head of heads) {
     if (placed.has(head.id)) continue;
     placed.add(head.id);
@@ -72,6 +75,32 @@ const families = (map, place) => {
       }
     }
   }
+};
+// Behind the conversation the places are flat, and a family is a small cluster: a line there never crosses the page. The star view starts from these same
+// flat places and returns to them, with every memory and not only the ones behind the conversation, so the whole sky is laid flat by this one rule too
+// (`kept`: the ones already standing behind the conversation, which stay exactly where they stand there, and beside which their own gather). Before, the
+// rest started from wherever their ids put them, each alone: on the way in and on the way out, every line among them crossed the page.
+const flat = (map, kept = null) => {
+  const wide = Math.max(0.4, Math.min(1.6, (0.7 * innerHeight) / (0.9 * innerWidth)));
+  if (kept)
+    for (const m of map.values()) {
+      const k = kept.get(m.id);
+      if (k) {
+        m.u = k.u;
+        m.v = k.v;
+      }
+    }
+  families(
+    map,
+    (c, m, hub) => {
+      if (kept?.has(c.id)) return;
+      const a = hash(c.id, 4) * 6.2832,
+        d = (hub ? 0.085 : 0.04) + 0.045 * hash(c.id, 6);
+      c.u = Math.min(1, Math.max(0, m.u + Math.cos(a) * d * wide));
+      c.v = Math.min(1, Math.max(0, m.v + Math.sin(a) * d));
+    },
+    kept && ((m) => kept.has(m.id)),
+  );
 };
 const setSky = (list) => {
   const next = new Map();
@@ -93,14 +122,7 @@ const setSky = (list) => {
       }
     }
   }
-  // Behind the conversation the places are flat, and a family is a small cluster: a line there never crosses the page.
-  const wide = Math.max(0.4, Math.min(1.6, (0.7 * innerHeight) / (0.9 * innerWidth)));
-  families(next, (c, m, hub) => {
-    const a = hash(c.id, 4) * 6.2832,
-      d = (hub ? 0.085 : 0.04) + 0.045 * hash(c.id, 6);
-    c.u = Math.min(1, Math.max(0, m.u + Math.cos(a) * d * wide));
-    c.v = Math.min(1, Math.max(0, m.v + Math.sin(a) * d));
-  });
+  flat(next);
   stars = next;
   if (spaceOn) void loadAll();
   else chart(stars);

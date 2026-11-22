@@ -31,15 +31,16 @@ import { REVIEW } from "../site/worker/review.js";
 import { readFileSync, readdirSync } from "node:fs";
 
 // A stand-in for the Worker's store: values, each with what is kept beside it, listed in the order of their names.
-const room = () => {
-  const kept = new Map();
+const room = (lag = 0) => {
+  const kept = new Map(), gone = [];
   return {
     kept,
     LINES: {
       get: async (k) => kept.get(k)?.value ?? null,
-      put: async (k, value, more = {}) => void kept.set(k, { value, metadata: more.metadata ?? null, ttl: more.expirationTtl ?? null }),
-      delete: async (k) => void kept.delete(k),
-      list: async ({ prefix, limit = 1000 }) => ({ keys: [...kept.entries()].filter(([k]) => k.startsWith(prefix)).sort(([a], [b]) => (a < b ? -1 : 1)).slice(0, limit).map(([name, v]) => ({ name, metadata: v.metadata })), list_complete: true }),
+      put: async (k, value, more = {}) => void kept.set(k, { value, metadata: more.metadata ?? null, ttl: more.expirationTtl ?? null, at: Date.now() }),
+      delete: async (k) => { if (kept.has(k)) gone.push({ k, v: { ...kept.get(k), at: 0 }, at: Date.now() }); kept.delete(k); },
+      // A listing may lag behind what was written (`lag`, in ms), as the real one may; what was removed may linger in it as long (`gone`).
+      list: async ({ prefix, limit = 1000 }) => ({ keys: [...kept.entries(), ...gone.filter((g) => Date.now() - g.at < lag && !kept.has(g.k)).map((g) => [g.k, g.v])].filter(([k, v]) => k.startsWith(prefix) && (!lag || Date.now() - (v.at ?? 0) >= lag)).sort(([a], [b]) => (a < b ? -1 : 1)).slice(0, limit).map(([name, v]) => ({ name, metadata: v.metadata })), list_complete: true }),
     },
     ORIGIN: "https://asteme.github.io", KEY: "k".repeat(40), SALT: "s".repeat(40),
   };
@@ -122,6 +123,33 @@ test("a line a visitor shares is seen by nobody until the one who holds the key 
   assert.equal((await decide({ take: [a.id] })).taken, 1);
   assert.deepEqual((await lines()).map((l) => l.text), ["so do I", "from someone else"]);
   assert.equal(clean("a\u0000b\n\nc"), "a b c");
+});
+
+test("decisions made at the same moment, over a store whose listings lag, lose nothing: within a minute and a half what the site is given is exactly what is kept", async () => {
+  const env = room(60000), at = Date.now() - 3600000;
+  const lines = async () => (await (await ask(env, "/lines")).json()).lines.map((l) => l.text).sort();
+  const decide = async (body) => (await ask(env, "/decide", { method: "POST", key: env.KEY, body })).status;
+  for (const [n, text] of ["one", "two", "three"].entries()) env.kept.set(`pending:00000000${n}-aaaaaaaa`, { value: "", metadata: { text, lang: "en", at }, at });
+  // Two shown at once from two places: both are answered, both are kept; the copy the site reads may hold only one of them for a moment.
+  assert.deepEqual(await Promise.all([decide({ show: ["000000000-aaaaaaaa"] }), decide({ show: ["000000001-aaaaaaaa"] })]), [200, 200]);
+  assert.equal([...env.kept.keys()].filter((k) => k.startsWith("shown:")).length, 2);
+  assert.ok((await lines()).length >= 1);
+  assert.deepEqual(await later(100000, lines), ["one", "two"], "settled: both");
+  assert.deepEqual(await later(200000, lines), ["one", "two"], "and it stays so");
+  // One shown and one taken down at once.
+  await later(300000, async () => {
+    assert.deepEqual(await Promise.all([decide({ show: ["000000002-aaaaaaaa"] }), decide({ take: ["000000000-aaaaaaaa"] })]), [200, 200]);
+    assert.deepEqual(await later(100000, lines), ["three", "two"]);
+  });
+  // A copy that has settled is read as it is: no listing, nothing written.
+  await later(900000, async () => {
+    const before = JSON.stringify([...env.kept.entries()]);
+    let listed = 0;
+    const list = env.LINES.list;
+    env.LINES.list = (...a) => (listed++, list(...a));
+    assert.deepEqual(await lines(), ["three", "two"]);
+    assert.deepEqual([listed, JSON.stringify([...env.kept.entries()])], [0, before]);
+  });
 });
 
 test("sending a line takes leave asked for from the site a moment before, by the one who sends, and a little work", async () => {

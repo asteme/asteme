@@ -75,3 +75,6 @@ body.site-theirs .site-answer { display: block; }
 body.site-theirs .site-leave { opacity: 0; pointer-events: none; }
 body.site-aimed:has(.site-share) #spacebar { bottom: 9.4rem; } body.site-aimed:has(.site-share) .site-tries { bottom: 13.1rem; }
 #spacebar, .site-tries { transition: bottom .3s ease, opacity .3s ease; }
+/* What is written over the sky is read against the dark, not against stars and their names: the sky dims behind the top of the page and behind the sentence. */
+.site-top::before { content: ""; position: absolute; inset: 0 0 -1.6rem; z-index: -1; background: linear-gradient(var(--bg), color-mix(in srgb, var(--bg) 70%, transparent) 55%, transparent); }
+.site-said::before { content: ""; position: absolute; inset: -1.2rem -2.5rem -1.6rem; z-index: -1; background: radial-gradient(closest-side, color-mix(in srgb, var(--bg) 92%, transparent) 62%, transparent); }

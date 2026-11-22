@@ -15,7 +15,9 @@
 //
 // How it is kept: each line is a key of its own (pending:<id> while it waits, shown:<id> once shown), with its words in the key's metadata, so reading
 // them all is one listing and two decisions made at once cannot undo each other. What the site is given is one value written from those (`sky`), so a
-// visit costs one read.
+// visit does not cost a listing. That value is a copy and is treated as one: this store has no way to change two things together, and a listing may
+// lag behind a write, so a copy written at a decision can miss a line shown a moment before by another. A copy is therefore trusted only once it was
+// written well after the last decision (`settle`); until then whoever asks for the lines has it written again from the lines themselves (`skyOf`).
 // Set on the Worker: ORIGIN (the site's origin, e.g. https://asteme.github.io), and the secrets KEY (what the reader types) and SALT.
 import { refuse, letters } from "./sieve.js";
 import { REVIEW } from "./review.js";
@@ -23,7 +25,7 @@ import { REVIEW } from "./review.js";
 // perDay: lines one visitor may send in a day. everyone: lines taken from all visitors in a day (what the free plan can write, with room to spare).
 // wait and work: what sending costs (seconds between asking and sending; bits of work), nothing to a person and something to a script.
 // given: how many lines a visit is given at most; beyond that the newest half and, of the older, a different part each day.
-export const LIMITS = { min: 2, max: 120, name: 24, perDay: 1, everyone: 200, queue: 400, wait: 3, work: 14, passHours: 12, given: 600, kept: 20000 };
+export const LIMITS = { min: 2, max: 120, name: 24, settle: 90, again: 10, perDay: 1, everyone: 200, queue: 400, wait: 3, work: 14, passHours: 12, given: 600, kept: 20000 };
 // Words no line may hold: a public list (LDNOOBW, CC BY 4.0) at a fixed revision, fetched here and kept for a week, not kept in the repository.
 const WORDS = "https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/5faf2ba42d7b1c0977169ec3611df25a3c08eb13/";
 const LISTS = ["en", "ja", "zh", "de", "es", "fr", "pt", "ru", "ko"];
@@ -81,7 +83,23 @@ const linesOf = async (env, prefix, most) => {
   }
   return lines;
 };
-const skyOf = async (env) => parse(await env.LINES.get("sky"), []).filter((l) => l && typeof l.text === "string");
+// What is shown, newest first, with each line's id: read from the copy, and the copy made again from the lines themselves while it cannot be trusted
+// yet (written before the last decision had settled), though not more often than every few seconds. `over` is what a decision has just done here, laid
+// over a listing that may not have caught up with it.
+const written = async (env, now, over = { show: [], take: new Set() }) => {
+  const listed = (await linesOf(env, "shown:", LIMITS.kept)).filter((l) => !over.take.has(l.id) && !over.show.some((s) => s.id === l.id)),
+    lines = [...listed, ...over.show].sort((a, b) => (a.id < b.id ? 1 : -1));
+  await env.LINES.put("sky", JSON.stringify({ built: now, lines }));
+  return lines;
+};
+const skyOf = async (env, now) => {
+  const copy = parse(await env.LINES.get("sky"), null),
+    changed = Number((await env.LINES.get("changed")) ?? 0),
+    lines = (Array.isArray(copy?.lines) ? copy.lines : []).filter((l) => l && typeof l.text === "string"),
+    built = Number(copy?.built ?? 0);
+  if (!changed || built > changed + LIMITS.settle * 1000 || now - built < LIMITS.again * 1000) return lines;
+  return written(env, now);
+};
 // What a visit is given: everything while it is few; when it is many, the newest half and a part of the older that is another part each day, so that
 // every line that was ever shown is in the sky some of the time and none is dropped for being old.
 export const given = (sky, today, most = LIMITS.given) => {
@@ -126,7 +144,7 @@ export default {
       if (today >= LIMITS.everyone) return json(503, { error: "full" }, origin);
       await env.LINES.put(mine, String(seen + 1), { expirationTtl: 86400 });
       // What the sieve throws away is answered like what it keeps: whoever sends such things learns nothing from the answer.
-      const sky = await skyOf(env),
+      const sky = await skyOf(env, now),
         words = await banned(env);
       if (refuse(text, words, sky.map((l) => l.text)) || (name && refuse(name, words, [], 1))) return json(202, { taken: true }, origin);
       // Added to another line only if that line is in the sky.
@@ -139,7 +157,7 @@ export default {
       return json(202, { taken: true }, origin);
     }
     if (request.method === "GET" && url.pathname === "/lines")
-      return json(200, { lines: given(await skyOf(env), day(now)) }, env.ORIGIN ?? null, "public, max-age=300");
+      return json(200, { lines: given(await skyOf(env, now), day(now)) }, env.ORIGIN ?? null, "public, max-age=120");
     if (request.method === "GET" && url.pathname === "/review")
       return new Response(REVIEW, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex", "referrer-policy": "no-referrer", "x-frame-options": "DENY", "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'" } });
     if (request.method === "GET" && url.pathname === "/waiting") {
@@ -159,12 +177,11 @@ export default {
       for (const l of show) await env.LINES.put(`shown:${l.id}`, "", { metadata: kept(l) });
       for (const id of take) await env.LINES.delete(`shown:${id}`);
       for (const l of [...show, ...drop]) await env.LINES.delete(`pending:${l.id}`);
-      // What the site is given is written again from the lines themselves. A listing may not have caught up with what was just done here, so that is
-      // laid over it; and whichever of two decisions made at once writes last has listed the other's lines as well.
+      // What the site is given is written again at once, so that the one who decided sees it; and marked as changed, so that it goes on being written
+      // again from the lines themselves until that has settled, whatever another decision made at the same moment did to this copy.
       if (show.length || take.size) {
-        const listed = (await linesOf(env, "shown:", LIMITS.kept)).filter((l) => !take.has(l.id) && !show.some((s) => s.id === l.id));
-        const sky = [...listed, ...show.map((l) => ({ id: l.id, ...kept(l) }))].sort((a, b) => (a.id < b.id ? 1 : -1));
-        await env.LINES.put("sky", JSON.stringify(sky));
+        await env.LINES.put("changed", String(Date.now()));
+        await written(env, Date.now(), { show: show.map((l) => ({ id: l.id, ...kept(l) })), take });
       }
       return json(200, { shown: show.length, dropped: drop.length, taken: take.size });
     }

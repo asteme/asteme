@@ -14,13 +14,6 @@
 
 https://github.com/user-attachments/assets/9ee8df30-5355-444a-a890-49af275b5738
 
-<details>
-<summary>Earlier cut</summary>
-
-https://github.com/user-attachments/assets/ccb61a6e-346e-4c98-9be8-9209f1bdacd1
-
-</details>
-
 **状态：开发中。** Asteme 仍在构建当中。行为可能变化，也可能失败或丢数据。在重要的事情上还不要依赖它。
 
 # ASTEME

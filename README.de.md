@@ -12,7 +12,7 @@
   <a href="README.md">English</a> · <a href="README.zh.md">中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · Deutsch · <a href="README.ru.md">Русский</a> · <a href="README.pt.md">Português</a>
 </p>
 
-<p align="center"><a href="https://asteme.github.io/asteme/">Website</a></p>
+<p align="center"><a href="https://asteme.github.io/asteme/de/">Website</a></p>
 
 https://github.com/user-attachments/assets/b20a3d7d-69fa-41f3-a4e0-5f9b14073b19
 
@@ -183,7 +183,7 @@ Der Code entscheidet nie, was etwas bedeutet. Er prüft Struktur: dass ein Zitat
 
 ## Wohin es geht
 
-Heute ist es Erinnerung: jemand, der sich erinnert und den du korrigieren kannst. Als Nächstes kommen Hände: derselbe Asteme, der Werkzeuge auf deinem Rechner bittet, Dinge zu tun, und dich zuerst fragt, bevor etwas nicht rückgängig zu machen ist. Die Erinnerung kommt zuerst, weil der Rest darauf gebaut ist; ein Modell, das besser wird, behält dieselbe Erinnerung und dich, wie du bist.
+Es begann als Erinnerung: jemand, der sich erinnert und den du korrigieren kannst. Inzwischen hat es auch Hände: Es gibt Arbeit an einen Agenten auf deinem Rechner (DeepSeek Harness oder jeden Agenten, der das Agent Client Protocol spricht) und sagt dir, wie es ausgegangen ist. Was als Nächstes kommt, wird genauso gebaut, auf der Erinnerung, weil alles andere auf ihr ruht; ein Modell, das besser wird, behält dieselbe Erinnerung und dich, wie du bist.
 
 ## Dokumente
 

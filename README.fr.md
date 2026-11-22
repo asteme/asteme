@@ -12,7 +12,7 @@
   <a href="README.md">English</a> · <a href="README.zh.md">中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.es.md">Español</a> · Français · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.pt.md">Português</a>
 </p>
 
-<p align="center"><a href="https://asteme.github.io/asteme/">Site</a></p>
+<p align="center"><a href="https://asteme.github.io/asteme/fr/">Site</a></p>
 
 https://github.com/user-attachments/assets/b20a3d7d-69fa-41f3-a4e0-5f9b14073b19
 
@@ -183,7 +183,7 @@ Le code ne décide jamais de ce que quelque chose veut dire. Il vérifie la stru
 
 ## Où va ce projet
 
-Aujourd'hui, c'est la mémoire : quelqu'un qui se souvient, et que vous pouvez corriger. Ensuite viennent les mains : le même Asteme demandant aux outils de votre ordinateur de faire des choses, et vous demandant d'abord avant tout ce qui ne peut pas être défait. La mémoire vient d'abord parce que le reste se construit sur elle ; un modèle qui s'améliore garde la même mémoire et la même personne.
+Tout a commencé par la mémoire : quelqu'un qui se souvient, et que vous pouvez corriger. Elle a maintenant des mains aussi : elle confie du travail à un agent sur votre ordinateur (DeepSeek Harness, ou tout agent qui parle l'Agent Client Protocol) et vous dit comment cela s'est passé. La suite se construit de la même façon, sur la mémoire, parce que tout le reste repose sur elle ; un modèle qui s'améliore garde la même mémoire et la même personne.
 
 ## Documents
 

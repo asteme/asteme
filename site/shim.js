@@ -1,5 +1,5 @@
 // Stands where Asteme's own mind would be: the page asks its questions as it always does, and is answered from what the site says (window.SITE) and from
-// the lines a visitor has left, which are kept in this browser and nowhere else. Nothing here goes to a network: every call the page makes is answered here.
+// the lines a visitor has left, which are kept in this browser. Nothing here goes to a network: every call the page makes is answered here.
 (() => {
   const S = window.SITE,
     DAY = 86400000,
@@ -35,11 +35,15 @@
       }),
     ),
   );
-  // What visitors chose to share, once a person has read it: a constellation of its own, and the newest thing in the sky after a visitor's own line.
-  if (S.shared?.length) {
-    said.push({ id: "s-shared", kind: "lesson", private: false, text: S.ui.shared, strength: 0.9, from: S.shared.map((_, n) => `v-${n}`), at: born + DAY * 30 });
-    S.shared.forEach((text, n) => said.push({ id: `v-${n}`, kind: "noted", private: false, text, strength: 0.7, from: [], at: born + DAY * 30 - (n + 1) * 60000 }));
-  }
+  // What visitors chose to share, once a person has read it: a constellation of its own. It is not part of the page: it is asked for once the sky is
+  // there (over.js), and a sky that never hears back is simply without it.
+  window.SITE.others = (texts) => {
+    const lines = [...new Set(texts.filter((t) => typeof t === "string" && t.trim()))].slice(0, 80);
+    if (!lines.length || said.some((m) => m.id === "s-shared")) return false;
+    said.push({ id: "s-shared", kind: "lesson", private: false, text: S.ui.shared, strength: 0.9, from: lines.map((_, n) => `v-${n}`), at: born + DAY * 30 });
+    lines.forEach((text, n) => said.push({ id: `v-${n}`, kind: "noted", private: false, text, strength: 0.7, from: [], at: born + DAY * 30 - (n + 1) * 60000 }));
+    return true;
+  };
   const sky = () => [...mine().map((m) => ({ id: m.id, kind: "noted", private: false, text: m.text, strength: 0.9, from: [], at: m.at })), ...said];
   const state = () => ({
     fresh: false, born: true, name: "Asteme", you: "", look: {}, manner: "", face: null, yourFace: null, review: [], state: "awake", thinking: false, writing: false, next: null,

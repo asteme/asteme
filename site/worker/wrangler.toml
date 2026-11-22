@@ -1,9 +1,10 @@
-# The Worker that takes the lines visitors choose to share (worker.js). Deployed by whoever holds the Cloudflare account:
+# The Worker that takes the lines visitors choose to share, and where they are read before they are shown (worker.js). Deployed by whoever holds the
+# Cloudflare account, from this folder:
 #   npx wrangler kv namespace create LINES        (put the id it prints below)
-#   npx wrangler secret put KEY                    (a long random string; the same goes into the repository's secret LINES_KEY)
-#   npx wrangler secret put SALT                   (another long random string; kept nowhere else)
+#   npx wrangler secret put KEY                    (a long random string: what you type on the page where the lines are read; kept nowhere else)
+#   npx wrangler secret put SALT                   (another long random string; kept nowhere)
 #   npx wrangler deploy
-# Then put the Worker's address in site/config.mjs (SHARE_URL) and in the repository's variable LINES_URL.
+# Then put the Worker's address in site/config.mjs (SHARE_URL). The lines are read at <that address>/review.
 name = "asteme-lines"
 main = "worker.js"
 compatibility_date = "2026-11-01"

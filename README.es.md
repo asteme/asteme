@@ -12,7 +12,7 @@
   <a href="README.md">English</a> · <a href="README.zh.md">中文</a> · <a href="README.ja.md">日本語</a> · Español · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.pt.md">Português</a>
 </p>
 
-<p align="center"><a href="https://asteme.github.io/asteme/">Sitio</a></p>
+<p align="center"><a href="https://asteme.github.io/asteme/es/">Sitio</a></p>
 
 https://github.com/user-attachments/assets/b20a3d7d-69fa-41f3-a4e0-5f9b14073b19
 
@@ -183,7 +183,7 @@ El código nunca decide qué significa algo. Comprueba la estructura: que una ci
 
 ## Hacia dónde va
 
-Hoy es memoria: alguien que recuerda, y a quien puedes corregir. Después vienen las manos: el mismo Asteme pidiendo a las herramientas de tu ordenador que hagan cosas, y preguntándote antes de cualquier cosa que no se pueda deshacer. La memoria va primero porque el resto se construye sobre ella; un modelo que mejora conserva la misma memoria y la misma persona.
+Empezó como memoria: alguien que recuerda, y a quien puedes corregir. Ahora también tiene manos: encarga trabajo a un agente de tu ordenador (DeepSeek Harness, o cualquier agente que hable el Agent Client Protocol) y te cuenta cómo salió. Lo que venga después se construye igual, sobre la memoria, porque todo lo demás descansa en ella; un modelo que mejora conserva la misma memoria y la misma persona.
 
 ## Documentos
 

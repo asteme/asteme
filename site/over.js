@@ -29,7 +29,7 @@
   leave.append(field, keepIt, note); if (S.share) leave.append(share); document.body.append(leave);
   const tell = (text) => { const t = make("div", "site-told", text); document.body.append(t); requestAnimationFrame(() => t.classList.add("on")); setTimeout(() => { t.classList.remove("on"); setTimeout(() => t.remove(), 800); }, 5200); };
   const keepLine = async () => { const line = S.leave(field.value); if (!line) return; const also = S.share && box.checked; field.value = ""; box.checked = false; field.blur(); await load(); await loadAll(); setTimeout(() => { flyTo(line.id, true); void openMemory(line.id); }, 500);
-    if (also) fetch(S.share.replace(/\/$/, "") + "/line", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text: line.text, lang: S.lang }) }).then((r) => tell(r.ok ? U.shareSent : U.shareFail), () => tell(U.shareFail)); };
+    if (also) fetch(S.share + "/line", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text: line.text, lang: S.lang }) }).then((r) => tell(r.ok ? U.shareSent : U.shareFail), () => tell(U.shareFail)); };
   keepIt.onclick = keepLine; field.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); void keepLine(); } e.stopPropagation(); });
   // --- The film ----------------------------------------------------------------------------------------------
   film.onclick = () => { const veil = make("div", "site-film"), v = make("video"), x = make("button", "bare", U.close);
@@ -52,6 +52,8 @@
     try { enterSpace(); } catch {}
     door.classList.add("gone"); document.body.classList.add("site-in"); setTimeout(() => door.remove(), 1600);
     setTimeout(() => said.classList.add("known"), 14000);
+    // What other visitors left, and a person has read, comes into the sky once the sky is there. Nothing waits for it.
+    if (S.share) fetch(S.share + "/lines").then((r) => (r.ok ? r.json() : null)).then(async (j) => { if (j && S.others((j.lines ?? []).map((l) => l?.text))) { await load(); await loadAll(); } }).catch(() => {});
     // Someone who left a line and has come back is told so, in their own words.
     const [last] = S.lines();
     if (last) { said.classList.add("aside"); setTimeout(() => said.classList.remove("aside"), 10400); const hi = make("div", "site-back"); hi.append(make("b", null, U.back), make("span", null, U.backSaid), make("q", null, last.text)); document.body.append(hi); setTimeout(() => hi.classList.add("on"), still ? 0 : 2600); setTimeout(() => { hi.classList.remove("on"); setTimeout(() => hi.remove(), 900); }, 9500); hi.onclick = () => { flyTo(last.id, false); void openMemory(last.id); }; }

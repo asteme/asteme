@@ -393,9 +393,13 @@ test("the page's styles do not name two motions alike, and every element its scr
   const ids = new Set([...page.matchAll(/\sid="([\w-]+)"/g)].map(m => m[1]));
   const asked = new Set([...page.matchAll(/\$\("([\w-]+)"\)/g)].map(m => m[1]));
   assert.deepEqual([...asked].filter(id => !ids.has(id)), []);
-  // Among the stars the wheel brings the sky nearer and further. A change to what else the wheel does once left it doing nothing.
+  // Among the stars the wheel takes you on through the sky. A change to what else the wheel does once left it doing nothing.
   const wheel = /addEventListener\(\s*"wheel"[\s\S]*?\{ passive: false \},?\s*\);/.exec(page)?.[0] ?? "";
-  assert.match(wheel, /zoomAt\(/);
+  assert.match(wheel, /goOn\(/);
+  // Going on has no end short of the sky's own: it moves the place looked at, and falls back on nearer and further only at the two ends.
+  const going = /const goOn = [\s\S]*?\n};/.exec(page)?.[0] ?? "";
+  assert.match(going, /aim = hold\(/);
+  assert.equal((going.match(/zoomAt\(/g) ?? []).length, 2);
 });
 
 test("a long conversation is not summarised away: the message being answered is read whole, older ones briefly, and exchanges before those are known by one line each", async t => {

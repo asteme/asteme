@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/banner.de.jpg" alt="Asteme: ein Gedächtnis für Agenten, das sich nach Situation erinnert und aus dem Ausgang jeder Nutzung lernt" width="100%">
+  <img src="docs/banner.de.jpg" alt="Asteme: jemand, mit dem du sprichst, und jedes Mal derselbe. Erinnert sich nach Situation und lernt daraus, wie jede Nutzung ausging." width="100%">
 </p>
 
 <p align="center">
@@ -132,7 +132,7 @@ await brain.rest();                                                // when idle
 ## Das Gespräch
 
 - **Der Anfang.** Ein neuer Speicher, oder ein geleerter, hat noch niemanden darin. Einmal, vor dem Gespräch, fragt es nach einem Namen, wie es dich nennen soll und wie es mit dir sprechen soll (alles davon kann leer bleiben, oder ganz übersprungen werden), und dann wird es geweckt. Geweckt und benannt zu werden ist seine erste Erinnerung: Dieser Stern fällt in den leeren Himmel, bleibt in dessen Mitte als der hellste, und dann spricht es zuerst.
-- **Sterne.** Ein Stern ist eine Erinnerung; die neueste ist nahe der Mitte, die älteste weit draußen, und die, die leicht in den Sinn kommen, leuchten am hellsten. Zieh den leeren Himmel, zoom ihn mit zwei Fingern oder doppelklicke ihn, um hineinzugehen; Ziehen bewegt, das Rad zoomt, Shift-Ziehen dreht. Wie weit es auch gedreht wurde, ein Ziehen bewegt weiter, was unter der Hand liegt; `0` oder „Himmel ausrichten“ stellt es wieder richtig hin. Etwas neu Gelerntes fällt als Sternschnuppe in den Himmel (das lässt sich abschalten).
+- **Sterne.** Ein Stern ist eine Erinnerung; die neueste ist nahe der Mitte, die älteste weit draußen, und die, die leicht in den Sinn kommen, leuchten am hellsten. Zieh den leeren Himmel, zoom ihn mit zwei Fingern oder doppelklicke ihn, um hineinzugehen; Ziehen bewegt, das Rad führt zwischen ihnen hindurch (vor und zurück, so weit der Himmel reicht), Shift-Ziehen dreht. Wie weit es auch gedreht wurde, ein Ziehen bewegt weiter, was unter der Hand liegt; `0` oder „Himmel ausrichten“ stellt es wieder richtig hin. Etwas neu Gelerntes fällt als Sternschnuppe in den Himmel (das lässt sich abschalten).
 - **Suche.** Tippe ins Suchfeld, und die passenden Sterne kommen einer nach dem anderen in einem lockeren Bogen herbei. Rad oder ↑↓ bewegt durch sie, Enter oder ein Klick öffnet einen, und die übrigen bleiben blass im Himmel.
 - **Eine Erinnerung.** Öffne einen Stern, um seine Worte zu sehen, worauf er beruht, wann er gelernt wurde, und um zu sagen, dass er noch gilt, nicht mehr gilt, ihn zu pausieren oder ihn mit seinen Quellen zu vergessen.
 - **Versprechen.** Ein Versprechen ist eine Zeile unter der Antwort, die es gegeben hat, beim nächsten Mal im Kopfbereich, und es lässt sich absagen, indem du es sagst.

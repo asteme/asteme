@@ -1,10 +1,10 @@
 // What is plainly not a line is thrown away before anyone has to read it. The sieve only throws away; it never shows anything by itself.
 // Why a line is refused, or null when the sieve has nothing against it. `banned` is a list of lower-case words and phrases; `already` is what is there.
 export const letters = (s) => String(s).toLowerCase().normalize("NFKC");
-export const refuse = (text, banned = [], already = []) => {
+export const refuse = (text, banned = [], already = [], least = 2) => {
   const t = letters(text),
     n = [...text].length;
-  if (n < 2 || n > 120) return "length";
+  if (n < least || n > 120) return "length";
   if (/[^\s@]+@[^\s@]+\.[a-z]{2,}/.test(t)) return "address";
   if (/https?:|www\.|[a-z0-9-]+\.(com|net|org|io|ai|ru|cn|jp|xyz|top|info|biz|co|me|ly|gg|tv|app|dev|shop|site|online)\b/.test(t)) return "link";
   if (/(?:\d[\s\-().]*){7,}/.test(t)) return "number";

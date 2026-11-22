@@ -365,6 +365,39 @@ const zoomAt = (px, py, k) => {
   aim = null;
   kick();
 };
+// Going on. The wheel does not bring the sky nearer: it takes you through it, toward what is under the pointer, for as long as there is sky ahead. Bringing it
+// nearer stops where one cannot look any closer, and what lies beyond is then out of reach without turning the sky and pulling it across; going on has no
+// such end. `by` is in lengths of the way to the point looked at: a part of it forward, or (below nothing) back. Only at the two ends is it the old
+// nearer and further: seen from outside (smaller than where one is set down), forward first brings the sky up to that; and backing out past the edge,
+// where there is nothing more to back through, draws away until all of it is in view.
+const goOn = (px, py, by) => {
+  unpoint();
+  touched = performance.now();
+  flight = null;
+  glide = null;
+  spin = null;
+  const from = aim ?? cam,
+    stand = setDown();
+  if (by > 0 && (anchor?.k ?? cam.k) < stand * 0.98) return zoomAt(px, py, Math.min(stand, (anchor?.k ?? cam.k) * Math.exp(by * 1.2)));
+  const m = view.m,
+    d = view.d,
+    at = under(px, py),
+    to = {
+      ...from,
+      x: from.x + (at.x - cam.x - m[6] * d) * by,
+      y: from.y + (at.y - cam.y - m[7] * d) * by,
+      z: from.z + (at.z - cam.z - m[8] * d) * by,
+    };
+  if (by < 0 && Math.hypot(to.x, to.y, to.z) > rim + 200) return zoomAt(px, py, (anchor?.k ?? cam.k) * Math.exp(by * 1.2));
+  // Forward ends at the edge of the sky, with the last of it still around you: beyond is only dark, and nothing to steer by.
+  const out = Math.hypot(to.x, to.y, to.z),
+    was = Math.hypot(from.x, from.y, from.z),
+    most = Math.max(rim, was),
+    fit = by > 0 && out > most ? most / out : 1;
+  anchor = null;
+  aim = hold({ ...to, x: to.x * fit, y: to.y * fit, z: to.z * fit });
+  kick();
+};
 // To a star. `beside` is for a star whose memory is being opened: on a wide screen the sheet covers the right of the sky, so the star is brought to the middle
 // of what is left, not to the middle of the screen, where the sheet's edge would lie across it.
 const flyTo = (id, beside = false) => {
@@ -1191,7 +1224,7 @@ addEventListener("pointermove", (e) => {
       const [a, b] = [...touches.values()],
         d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
       if (!spaceOn && d > spread * 1.15) enterSpace();
-      else if (spaceOn && spread) zoomAt((a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2, ((anchor?.k ?? cam.k) * d) / spread);
+      else if (spaceOn && spread) goOn((a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2, Math.log(d / spread) * 0.9);
       spread = d;
       return;
     }
@@ -1308,14 +1341,14 @@ addEventListener(
       }
       return;
     }
-    zoomAt(e.clientX, e.clientY, (anchor?.k ?? cam.k) * Math.exp(-e.deltaY * (e.ctrlKey ? 0.012 : 0.0016)));
+    goOn(e.clientX, e.clientY, Math.max(-0.6, Math.min(0.6, -e.deltaY * (e.ctrlKey ? 0.012 : 0.0015))));
   },
   { passive: false },
 );
 addEventListener("dblclick", (e) => {
   if (e.target.closest(spaceOn ? BUSY + ", header" : SOLID)) return;
   if (!spaceOn) enterSpace();
-  else zoomAt(e.clientX, e.clientY, cam.k * 1.8);
+  else goOn(e.clientX, e.clientY, 0.6);
 });
 addEventListener("keydown", (e) => {
   if (!spaceOn || e.target.closest?.("#sheet")) return;
@@ -1350,11 +1383,9 @@ addEventListener("keydown", (e) => {
     aim = hold({ ...from, x: from.x + m[0] * x1 + m[3] * y1, y: from.y + m[1] * x1 + m[4] * y1, z: from.z + m[2] * x1 + m[5] * y1 });
     kick();
   } else if (e.key === "+" || e.key === "=") {
-    aim = hold({ ...from, k: from.k * 1.35 });
-    kick();
+    goOn(innerWidth / 2, innerHeight / 2, 0.3);
   } else if (e.key === "-") {
-    aim = hold({ ...from, k: from.k / 1.35 });
-    kick();
+    goOn(innerWidth / 2, innerHeight / 2, -0.3);
   } else if (e.key === "/") {
     e.preventDefault();
     $("find").focus();

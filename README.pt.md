@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/banner.pt.jpg" alt="Asteme: memória para agentes que lembra pela situação e aprende com o resultado de cada uso" width="100%">
+  <img src="docs/banner.pt.jpg" alt="Asteme: alguém com quem você conversa, e sempre a mesma pessoa. Lembra pela situação e aprende com o resultado de cada uso." width="100%">
 </p>
 
 <p align="center">
@@ -132,7 +132,7 @@ await brain.rest();                                                // when idle
 ## A conversa
 
 - **O começo.** Um armazenamento novo, ou um apagado, ainda não tem ninguém dentro. Uma vez, antes da conversa, ela pergunta um nome, como chamar você e como falar com você (qualquer parte pode ficar vazia, ou tudo pode ser pulado), e então é despertada. Ser despertada e receber um nome é a primeira lembrança dela: essa estrela cai no céu vazio, fica no meio dele como a mais brilhante, e então ela fala primeiro.
-- **Estrelas.** Uma estrela é uma lembrança; a mais nova fica perto do centro, a mais antiga longe, e as que vêm à mente com facilidade brilham mais. Arraste o céu vazio, faça pinça ou dê dois cliques para entrar; arrastar move, a roda dá zoom, Shift+arrastar gira. Por mais que tenha sido girado, um puxão ainda move o que está sob a mão; `0` ou “Nivelar o céu” coloca tudo no lugar certo de novo. Algo recém-aprendido cai no céu como estrela cadente (isso pode ser desligado).
+- **Estrelas.** Uma estrela é uma lembrança; a mais nova fica perto do centro, a mais antiga longe, e as que vêm à mente com facilidade brilham mais. Arraste o céu vazio, faça pinça ou dê dois cliques para entrar; arrastar move, a roda avança por entre elas (e recua, até onde o céu vai), Shift+arrastar gira. Por mais que tenha sido girado, um puxão ainda move o que está sob a mão; `0` ou “Nivelar o céu” coloca tudo no lugar certo de novo. Algo recém-aprendido cai no céu como estrela cadente (isso pode ser desligado).
 - **Busca.** Digite na caixa de busca e as estrelas que combinam vêm até ela, uma de cada vez, num arco solto. A roda ou ↑↓ passa por elas, Enter ou um clique abre uma, e as outras ficam fracas no céu.
 - **Uma lembrança.** Abra uma estrela para ver suas palavras, em que ela se apoia, quando foi aprendida, e para dizer que ainda é verdadeira, que não é mais, pausá-la, ou esquecê-la com as fontes.
 - **Promessas.** Uma promessa é uma linha embaixo da resposta que a fez, na próxima vez no cabeçalho, e pode ser cancelada dizendo isso.

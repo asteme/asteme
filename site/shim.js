@@ -35,13 +35,21 @@
       }),
     ),
   );
-  // What visitors chose to share, once a person has read it: a constellation of its own. It is not part of the page: it is asked for once the sky is
-  // there (over.js), and a sky that never hears back is simply without it.
-  window.SITE.others = (texts) => {
-    const lines = [...new Set(texts.filter((t) => typeof t === "string" && t.trim()))].slice(0, 80);
-    if (!lines.length || said.some((m) => m.id === "s-shared")) return false;
-    said.push({ id: "s-shared", kind: "lesson", private: false, text: S.ui.shared, strength: 0.9, from: lines.map((_, n) => `v-${n}`), at: born + DAY * 30 });
-    lines.forEach((text, n) => said.push({ id: `v-${n}`, kind: "noted", private: false, text, strength: 0.7, from: [], at: born + DAY * 30 - (n + 1) * 60000 }));
+  // What visitors chose to share, once a person has read it. It is not part of the page: it is asked for once the sky is there (over.js), and a sky
+  // that never hears back is simply without it. Each line is a star at the day it was left, so the newest are nearest, as memories are. A line added to
+  // another is joined to it; the rest are gathered a dozen at a time, in the order they came, under a star that says what they are.
+  window.SITE.others = (lines) => {
+    const got = (lines ?? []).filter((l) => l && typeof l.text === "string" && l.text.trim() && typeof l.id === "string");
+    if (!got.length || said.some((m) => m.id.startsWith("v-"))) return false;
+    const here = new Set(got.map((l) => l.id)),
+      when = (l, n) => (Date.parse(l.at) || born + DAY * 30) + 43200000 - n * 60000,
+      answers = (id) => got.filter((l) => l.to === id).map((l) => `v-${l.id}`);
+    got.forEach((l, n) => said.push({ id: `v-${l.id}`, kind: "noted", private: false, text: l.name ? `${l.text} — ${l.name}` : l.text, strength: 0.7, from: answers(l.id), at: when(l, n) }));
+    const alone = got.filter((l) => !(l.to && here.has(l.to)));
+    for (let n = 0; n < alone.length; n += 12) {
+      const part = alone.slice(n, n + 12);
+      said.push({ id: `s-shared-${n / 12}`, kind: "lesson", private: false, text: S.ui.shared, strength: 0.9, from: part.map((l) => `v-${l.id}`), at: when(part[0], got.indexOf(part[0])) + 30000 });
+    }
     return true;
   };
   const sky = () => [...mine().map((m) => ({ id: m.id, kind: "noted", private: false, text: m.text, strength: 0.9, from: [], at: m.at })), ...said];
@@ -89,6 +97,7 @@
     close() {}
   };
   // A line of the visitor's own: kept here, and nowhere else.
+  window.SITE.said = (id) => said.find((m) => m.id === `v-${id}`)?.text ?? "";
   window.SITE.lines = mine;
   window.SITE.leave = (text) => {
     const line = { id: "mine-" + Date.now().toString(36), text: String(text).trim().slice(0, 200), at: Date.now() };

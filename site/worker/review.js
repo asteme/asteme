@@ -23,18 +23,19 @@ export const REVIEW = `<!doctype html>
   ul { list-style: none; margin: 0; padding: 0; }
   li { display: flex; align-items: baseline; gap: 0.75rem; padding: 0.8rem 0; border-top: 1px solid #1d2543; }
   li q { flex: 1; quotes: none; overflow-wrap: anywhere; font-size: 1.05rem; }
-  li small { color: #8c8676; white-space: nowrap; }
+  li small { color: #8c8676; text-align: right; }
   li.gone { opacity: 0.35; }
   #say { min-height: 1.6rem; color: #e7a08a; }
   [hidden] { display: none; }
 </style>
 <main>
   <h1>Lines left by visitors</h1>
-  <p>Nothing here is on the site until you show it. Show a line and it becomes a star in everyone's sky; drop it and it is gone.</p>
+  <p>Nothing here is on the site until you show it. Show a line and it becomes a star in everyone's sky, and stays until you take it down; drop it and it is gone.</p>
   <form id="door"><input id="key" type="password" autocomplete="current-password" placeholder="The key" aria-label="The key" /><button>Open</button></form>
   <p id="say" role="status"></p>
   <section id="room" hidden>
     <h2 id="nw"></h2>
+    <p id="all" hidden><button id="dropall">Drop everything that is waiting</button></p>
     <ul id="waiting"></ul>
     <h2 id="ns"></h2>
     <ul id="shown"></ul>
@@ -42,7 +43,7 @@ export const REVIEW = `<!doctype html>
 </main>
 <script>
   const $ = (id) => document.getElementById(id), say = (t) => ($("say").textContent = t);
-  let key = sessionStorage.getItem("asteme-lines-key") || "";
+  let key = sessionStorage.getItem("asteme-lines-key") || "", texts = new Map();
   const ask = async (path, body) => {
     const r = await fetch(path, { method: body ? "POST" : "GET", headers: { authorization: "Bearer " + key, ...(body ? { "content-type": "application/json" } : {}) }, body: body ? JSON.stringify(body) : undefined });
     if (r.status === 401) throw new Error("That is not the key.");
@@ -51,7 +52,7 @@ export const REVIEW = `<!doctype html>
   };
   const row = (line, buttons) => {
     const li = document.createElement("li"), q = document.createElement("q"), s = document.createElement("small");
-    q.textContent = line.text; q.lang = line.lang; s.textContent = line.lang + " · " + (typeof line.at === "number" ? new Date(line.at).toISOString().slice(0, 10) : line.at);
+    q.textContent = line.text + (line.name ? " — " + line.name : ""); q.lang = line.lang; s.textContent = (line.to ? "added to: " + ((texts.get(line.to) || "a line no longer shown").slice(0, 24)) + " · " : "") + line.lang + " · " + (typeof line.at === "number" ? new Date(line.at).toISOString().slice(0, 10) : line.at);
     li.append(q, s);
     for (const [label, cls, what] of buttons) {
       const b = document.createElement("button"); b.textContent = label; b.className = cls;
@@ -62,12 +63,15 @@ export const REVIEW = `<!doctype html>
   };
   const fill = async () => {
     const { waiting, shown } = await ask("/waiting");
+    texts = new Map(shown.map((l) => [l.id, l.text]));
     $("nw").textContent = waiting.length ? "Waiting to be read: " + waiting.length : "Nothing is waiting.";
     $("ns").textContent = shown.length ? "On the site now: " + shown.length : "Nothing is on the site yet.";
+    $("all").hidden = waiting.length < 8;
     $("waiting").replaceChildren(...waiting.map((l) => row(l, [["Show", "show", "show"], ["Drop", "", "drop"]])));
     $("shown").replaceChildren(...shown.map((l) => row(l, [["Take down", "", "take"]])));
   };
   const open = async () => { try { await fill(); sessionStorage.setItem("asteme-lines-key", key); $("door").hidden = true; $("room").hidden = false; say(""); } catch (e) { say(e.message); sessionStorage.removeItem("asteme-lines-key"); } };
+  $("dropall").onclick = async () => { if (!confirm("Drop every line that is waiting? This cannot be undone.")) return; try { await ask("/decide", { dropAll: true }); await fill(); } catch (e) { say(e.message); } };
   $("door").onsubmit = (e) => { e.preventDefault(); key = $("key").value.trim(); $("key").value = ""; void open(); };
   if (key) void open();
 </script>

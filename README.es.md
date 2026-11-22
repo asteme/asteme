@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/banner.es.jpg" alt="Asteme: memoria para agentes que recuerda por la situación y aprende de lo que dio cada uso" width="100%">
+  <img src="docs/banner.es.jpg" alt="Asteme: alguien con quien hablas, y el mismo cada vez. Recuerda por la situación y aprende de cómo salió cada uso." width="100%">
 </p>
 
 <p align="center">
@@ -132,7 +132,7 @@ await brain.rest();                                                // when idle
 ## La conversación
 
 - **El principio.** Un almacén nuevo, o uno borrado del todo, todavía no tiene a nadie dentro. Una vez, antes de la conversación, pide un nombre, cómo llamarte y cómo hablarte (cualquiera de las tres cosas puede quedarse vacía, o saltarse todo) y entonces se le despierta. Que lo despierten y le den un nombre es su primer recuerdo: esa estrella cae en el cielo vacío, se queda en su centro como la más brillante, y después habla primero.
-- **Estrellas.** Una estrella es un recuerdo; los más nuevos están cerca del centro, los más antiguos lejos, y los que vienen fácil a la mente brillan más. Arrastra el cielo vacío, pellizca o haz doble clic para entrar; arrastra para mover, usa la rueda para acercar y Mayús+arrastrar para girar. Por mucho que se haya girado, un tirón sigue moviendo lo que está bajo la mano; `0` o «Nivelar el cielo» lo pone derecho otra vez. Lo que se aprende de nuevo cae al cielo como una estrella fugaz (esto se puede desactivar).
+- **Estrellas.** Una estrella es un recuerdo; los más nuevos están cerca del centro, los más antiguos lejos, y los que vienen fácil a la mente brillan más. Arrastra el cielo vacío, pellizca o haz doble clic para entrar; arrastra para mover, usa la rueda para avanzar entre ellas (y retroceder, hasta donde llega el cielo) y Mayús+arrastrar para girar. Por mucho que se haya girado, un tirón sigue moviendo lo que está bajo la mano; `0` o «Nivelar el cielo» lo pone derecho otra vez. Lo que se aprende de nuevo cae al cielo como una estrella fugaz (esto se puede desactivar).
 - **Búsqueda.** Escribe en el cuadro de búsqueda y las estrellas que coinciden vienen hacia él, de una en una, en un arco suelto. La rueda o ↑↓ avanza entre ellas, Intro o un clic abre una, y el resto se queda tenue en el cielo.
 - **Un recuerdo.** Abre una estrella para ver sus palabras, en qué se apoya, cuándo se aprendió, y para decir que sigue siendo cierto, que ya no lo es, ponerlo en pausa u olvidarlo con sus fuentes.
 - **Promesas.** Una promesa es una línea bajo la respuesta que la hizo, la próxima vez en la cabecera, y se puede cancelar diciéndolo.

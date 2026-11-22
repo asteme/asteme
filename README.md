@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/banner.jpg" alt="Asteme: memory for agents that recalls by situation and learns from how each use turned out" width="100%">
+  <img src="docs/banner.jpg" alt="Asteme: someone you talk to, and the same one each time. It remembers by situation, and learns from how each use turned out." width="100%">
 </p>
 
 <p align="center">
@@ -132,7 +132,7 @@ await brain.rest();                                                // when idle
 ## The conversation
 
 - **The beginning.** A new store, or one wiped clean, has nobody in it yet. Once, before the conversation, it asks for a name, what to call you and how to speak to you (any of it can be left empty, or all of it skipped), and then it is woken. Being woken and named is its first memory: that star falls into the empty sky, stays at the middle of it as the brightest, and then it speaks first.
-- **Stars.** One star is one memory; the newest is near the centre, the oldest far out, and the ones that come to mind easily shine brightest. Drag empty sky, pinch, or double-click it to go in; drag to move, wheel to zoom, Shift-drag to turn. However far it has been turned, a pull still moves what is under the hand; `0` or "Level the sky" puts it the right way up again. Something newly learned falls into the sky as a shooting star (this can be turned off).
+- **Stars.** One star is one memory; the newest is near the centre, the oldest far out, and the ones that come to mind easily shine brightest. Drag empty sky, pinch, or double-click it to go in; drag to move, wheel to go on through them (forward and back, as far as the sky goes), Shift-drag to turn. However far it has been turned, a pull still moves what is under the hand; `0` or "Level the sky" puts it the right way up again. Something newly learned falls into the sky as a shooting star (this can be turned off).
 - **Search.** Type in the search box and the stars that match come to it, one at a time, into a loose arc. Wheel or ↑↓ moves through them, Enter or a click opens one, and the rest stay faint in the sky.
 - **One memory.** Open a star to see its words, what it rests on, when it was learned, and to say it is still true, no longer true, to pause it, or to forget it with its sources.
 - **Promises.** A promise is a line under the reply that made it, the next time in the header, and it can be cancelled by saying so.

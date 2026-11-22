@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/banner.fr.jpg" alt="Asteme : une mémoire pour les agents, qui rappelle par la situation et apprend de ce que chaque usage a donné" width="100%">
+  <img src="docs/banner.fr.jpg" alt="Asteme : quelqu'un à qui vous parlez, et le même à chaque fois. Se souvient par la situation et apprend de ce que chaque usage a donné." width="100%">
 </p>
 
 <p align="center">
@@ -132,7 +132,7 @@ await brain.rest();                                                // when idle
 ## La conversation
 
 - **Le début.** Un magasin neuf, ou vidé, n'a encore personne dedans. Une fois, avant la conversation, elle demande un nom, comment vous appeler et comment vous parler (chacun peut rester vide, ou tout être passé), puis elle est réveillée. Être réveillée et nommée est son premier souvenir : cette étoile tombe dans le ciel vide, y reste au centre comme la plus brillante, puis elle parle la première.
-- **Les étoiles.** Une étoile est un souvenir ; les plus récents sont près du centre, les plus anciens au loin, et ceux qui reviennent facilement brillent le plus. Faites glisser le ciel vide, pincez ou double-cliquez pour y entrer ; glissez pour déplacer, molette pour zoomer, Maj+glisser pour tourner. Quel que soit le nombre de tours, un tirage déplace toujours ce qui est sous la main ; `0` ou « Remettre le ciel d'aplomb » le remet dans le bon sens. Ce qui est nouvellement appris tombe dans le ciel comme une étoile filante (cela peut être désactivé).
+- **Les étoiles.** Une étoile est un souvenir ; les plus récents sont près du centre, les plus anciens au loin, et ceux qui reviennent facilement brillent le plus. Faites glisser le ciel vide, pincez ou double-cliquez pour y entrer ; glissez pour déplacer, molette pour avancer parmi elles (et reculer, aussi loin que va le ciel), Maj+glisser pour tourner. Quel que soit le nombre de tours, un tirage déplace toujours ce qui est sous la main ; `0` ou « Remettre le ciel d'aplomb » le remet dans le bon sens. Ce qui est nouvellement appris tombe dans le ciel comme une étoile filante (cela peut être désactivé).
 - **Recherche.** Tapez dans le champ de recherche et les étoiles qui correspondent viennent vers lui, une par une, en un arc lâche. La molette ou ↑↓ les parcourt, Entrée ou un clic en ouvre une, et les autres restent pâles dans le ciel.
 - **Un souvenir.** Ouvrez une étoile pour voir ses mots, sur quoi il repose, quand il a été appris, et pour dire qu'il est toujours vrai, qu'il ne l'est plus, le mettre en pause, ou l'oublier avec ses sources.
 - **Les promesses.** Une promesse est une ligne sous la réponse qui l'a faite, la prochaine fois dans l'en-tête, et elle peut être annulée en le disant.

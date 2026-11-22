@@ -39,6 +39,8 @@ Los dos hablan, recuerdan y cumplen promesas sobre la misma maquinaria. Cada uno
 
 **Cumple promesas.** «Pregúntame otra vez en junio» se convierte en una promesa que Asteme sostiene por sí mismo, una sola vez o repetida, y habla primero cuando llega el momento.
 
+**Habla por su cuenta.** Algo que te inquietaba se le queda en la cabeza, sin hora fijada. Cuando vuelves al cabo de un rato puede preguntarte cómo fue, o no decir nada: eso lo decide por sí mismo, y lo que guarda lo ves tú y puedes retirarlo.
+
 **Muestra lo que recuerda.** Cada recuerdo es una estrella en un cielo detrás de la conversación, más brillante cuanto más fácil viene a la mente. Agarra el cielo vacío y estarás entre ellas.
 
 ## Pruébalo en un minuto

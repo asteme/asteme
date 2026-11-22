@@ -39,6 +39,8 @@ As duas conversam, lembram e cumprem promessas, na mesma maquinaria. Cada uma te
 
 **Ela cumpre promessas.** “Pergunte de novo em junho” vira uma promessa que o Asteme mantém sozinha, uma vez ou repetida, e ela fala primeiro quando a hora chega.
 
+**Ela fala por conta própria.** Algo que te incomodava fica na cabeça dela sem hora marcada. Quando voltas depois de um tempo, ela pode perguntar como foi, ou não dizer nada: é ela quem decide, e o que ela guarda fica à tua vista e podes retirar.
+
 **Ela mostra o que lembra.** Cada lembrança é uma estrela num céu atrás da conversa, mais brilhante quando vem à mente com facilidade. Segure o céu vazio e você está entre elas.
 
 ## Experimente em um minuto

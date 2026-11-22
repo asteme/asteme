@@ -39,6 +39,8 @@ Beide sprechen, erinnern sich und halten Versprechen, auf derselben Maschinerie.
 
 **Es hält Versprechen.** „Frag mich im Juni noch einmal“ wird ein Versprechen, das Asteme selbst hält, einmal oder wiederholt, und es spricht zuerst, wenn die Zeit kommt.
 
+**Es spricht von sich aus.** Etwas, das dir unangenehm war, bleibt ihm im Kopf, ohne feste Zeit. Wenn du nach einer Weile zurückkommst, kann es fragen, wie es gelaufen ist, oder nichts sagen: das entscheidet es selbst, und was es behält, siehst du, und du kannst es zurücknehmen.
+
 **Es zeigt, was es sich merkt.** Jede Erinnerung ist ein Stern an einem Himmel hinter dem Gespräch, heller, wenn sie leicht in den Sinn kommt. Pack den leeren Himmel an, und du bist mitten unter ihnen.
 
 ## In einer Minute ausprobieren

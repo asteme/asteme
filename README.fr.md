@@ -39,6 +39,8 @@ Les deux parlent, retiennent et tiennent parole, sur la même machinerie. Chacun
 
 **Elle tient parole.** « Redemande-moi en juin » devient une promesse qu'Asteme porte lui-même, une seule fois ou répétée, et elle parle la première quand le moment arrive.
 
+**Elle parle d'elle-même.** Ce qui te préoccupait lui reste en tête, sans heure fixée. Quand tu reviens après un moment, elle peut te demander comment cela s'est passé, ou ne rien dire : c'est à elle de décider, et ce qu'elle garde t'est montré, et tu peux le retirer.
+
 **Elle montre ce qu'elle retient.** Chaque souvenir est une étoile dans un ciel derrière la conversation, plus brillante quand il revient facilement à l'esprit. Saisissez le ciel vide et vous êtes parmi elles.
 
 ## L'essayer en une minute

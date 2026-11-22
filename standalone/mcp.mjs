@@ -39,7 +39,7 @@ export async function handle(brain, message) {
   const { id, method, params } = message ?? {};
   const reply = result => ({ jsonrpc: "2.0", id, result }), fail = (code, text) => ({ jsonrpc: "2.0", id, error: { code, message: text } });
   if (id === undefined || id === null) return null;
-  if (method === "initialize") return reply({ protocolVersion: params?.protocolVersion ?? "2024-11-05", capabilities: { tools: {} }, serverInfo: { name: "asteme", version: "0.12.1-rc.7" } });
+  if (method === "initialize") return reply({ protocolVersion: params?.protocolVersion ?? "2024-11-05", capabilities: { tools: {} }, serverInfo: { name: "asteme", version: "0.12.1-rc.8" } });
   if (method === "ping") return reply({});
   if (method === "tools/list") return reply({ tools: TOOLS.map(({ run, ...tool }) => tool) });
   if (method === "tools/call") {

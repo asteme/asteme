@@ -110,3 +110,19 @@ test("the panel is a way to teach it: a verdict, a confirmation and a settled di
   s = await request("memory", { projectId: "p", item: tea.id, revision: item(tea.id).revision, operation: "reopen" });
   assert.equal(item(tea.id).status, "active");
 });
+
+test("a failure reaches the panel in the shape the host's client reads: a code, a message and details; and no model yet has a code of its own", async () => {
+  const { registerSettings } = await import("../plugin/settings.mjs");
+  const routes = new Map();
+  const child = { effect: fn => fn(), connection: { fetch: { register: r => routes.set(r.path, r) } }, settings: { configure() {} } };
+  const noModel = Object.assign(new Error("No model has been used yet. Send one message first."), { code: "asteme/NO_MODEL" });
+  const host = { config: {}, openBrain: async () => { throw noModel; }, log: { state: () => null } };
+  registerSettings({ inject: (_needs, fn) => fn(child), fiber: null }, host);
+  const ask = async (action, payload) => (await routes.get(`/api/asteme.${action}`).fetch(new Request("http://127.0.0.1/api", { method: "POST", body: JSON.stringify({ type: "client-request", method: `asteme.${action}`, rpcId: "r1", payload }) }))).json();
+  const brain = await ask("brain", {});
+  assert.deepEqual(brain, { type: "server-response", rpcId: "r1", result: { ok: false, error: { code: "asteme/NO_MODEL", message: noModel.message, details: {} } } });
+  // Any other failure keeps the general code, and a code that is not Asteme's own is not passed on.
+  const other = await ask("why", {});
+  assert.equal(other.result.ok, false);
+  assert.deepEqual([other.result.error.code, typeof other.result.error.message, other.result.error.details], ["asteme/INVALID_INPUT", "string", {}]);
+});

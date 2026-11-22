@@ -15,6 +15,9 @@ import { record, textOf, redact, toolOutcome } from "./events.mjs";
 export { projectEvent, textOf } from "./events.mjs";
 import { TUNABLES, DEFAULTS } from "./tunables.mjs";
 
+// Asteme speaks with the model the user's own DSH chat last used. Before there is one it cannot start, and says so with a code
+// of its own, so that the panel can say it in the reader's language.
+const noModel = () => Object.assign(new Error("No model has been used yet. Send one message first."), { code: "asteme/NO_MODEL" });
 export class Host {
   constructor(ctx, input = {}) {
     this.ctx = ctx;
@@ -578,7 +581,7 @@ export class Host {
   selfcheck() {
     if (this.checking) return this.checking;
     const last = this.log.state("last-model");
-    if (!last && !this.config.learningModel) throw new Error("No model has been used yet. Send one message first.");
+    if (!last && !this.config.learningModel) throw noModel();
     const agent = { ctx: this.ctx, session: { id: "asteme-check" }, model: { current: () => last } };
     const started = Date.now(), status = this.checking = { at: started, done: 0, total: 0 };
     const infer = (_purpose, prompt, tokens) => this.infer(agent, "asteme-check", prompt, this.abort.signal, tokens);
@@ -641,7 +644,7 @@ export class Host {
   async openBrain() { if (this.brain) return this.brain.door; return this.opening ??= this.startBrain().finally(() => { this.opening = null; }); }
   async startBrain() {
     if (this.brain) return this.brain.door;
-    if (!this.log.state("last-model") && !this.config.learningModel) throw new Error("No model has been used yet. Send one message first.");
+    if (!this.log.state("last-model") && !this.config.learningModel) throw noModel();
     const agent = { ctx: this.ctx, session: { id: "asteme-brain" }, model: { current: () => this.log.state("last-model") } };
     const [{ openMind }, { openWorker }, { serve }, { dshWorker }] = await Promise.all([import("../brain/mind.mjs"), import("../brain/acp.mjs"), import("../brain/server.mjs"), import("./worker.mjs")]);
     // DSH itself is always at hand; others are added in the settings.

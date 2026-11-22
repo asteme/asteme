@@ -27,7 +27,7 @@ export function TalkTab({ ctx, active, onManage, onOpenSession, onChanged, setti
   React.useEffect(() => { setLoaded(false); }, [door]);
   const start = React.useCallback(async () => {
     setBusy(true); setError(null);
-    try { setDoor((await model.request("brain", { projectId })).url); } catch (e) { setError(e.message); } finally { setBusy(false); }
+    try { setDoor((await model.request("brain", { projectId })).url); } catch (e) { setError(e.code === "asteme/NO_MODEL" ? { text: t("talkNoModel"), tone: "neutral" } : { text: e.message, tone: "danger" }); } finally { setBusy(false); }
   }, [model, projectId]);
   // Opening the tab is asking for the conversation; nothing runs before that.
   React.useEffect(() => { if (active && !door && !busy && !error) void start(); }, [active, door, busy, error, start]);
@@ -143,7 +143,7 @@ export function TalkTab({ ctx, active, onManage, onOpenSession, onChanged, setti
     const often = setInterval(fit, 400);
     return () => { watch.disconnect(); window.removeEventListener("resize", fit); for (const n of outside) n.removeEventListener("scroll", fit); clearInterval(often); };
   }, [active, error]);
-  if (error) return <div className="ast-talk__failed"><Notice tone="danger">{error}</Notice><div className="ast-actions"><Button onClick={start}>{t("tryAgain")}</Button></div></div>;
+  if (error) return <div className="ast-talk__failed"><Notice tone={error.tone}>{error.text}</Notice><div className="ast-actions"><Button onClick={start}>{t("tryAgain")}</Button></div></div>;
   const cover = room?.cover ?? 0;
   const size = room ? { height: room.h, width: room.w, paddingTop: cover, boxSizing: "border-box" } : undefined;
   return (

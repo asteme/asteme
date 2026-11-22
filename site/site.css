@@ -46,19 +46,21 @@ body.sheet-on .site-tries, body.sheet-on .site-leave { opacity: 0; pointer-event
 #plain h1 { font-size: 1.5rem; font-weight: 600; margin: 0 0 1.6rem; } #plain h2 { font-size: 1.05rem; font-weight: 600; margin: 2.2rem 0 .5rem; } #plain p { margin: .35rem 0; color: var(--muted, #a9a9b0); }
 #plain a { color: inherit; } #plain .shut { position: fixed; top: 1rem; right: 1.4rem; text-decoration: none; color: var(--muted, #a9a9b0); }
 @media (prefers-reduced-motion: reduce) { .site-door svg path, .site-door svg circle { animation: none; opacity: 1; stroke-dashoffset: 0; } .site-top, .site-tries, .site-leave, .site-door, .site-back { transition: none; } }
-@media (max-width: 40rem) { .site-links { gap: .7rem; font-size: .8rem; } .site-top { padding: .8rem .9rem; align-items: flex-start; } .site-said { top: 5.6rem; } .site-said p { font-size: .95rem; } }
+@media (max-width: 40rem) { .site-links { gap: .7rem; font-size: .8rem; } .site-top { padding: .8rem .9rem; align-items: flex-start; } }
 body.sheet-on .site-links { opacity: 0; pointer-events: none; } .site-links { transition: opacity .3s ease; }
 .site-said { position: fixed; z-index: 20; top: 4.2rem; left: 50%; transform: translateX(-50%); width: min(40rem, calc(100vw - 2rem)); text-align: center; pointer-events: none; opacity: 0; transition: opacity 1.4s ease 1.2s; }
 .site-in .site-said { opacity: 1; } .site-said.aside, body.sheet-on .site-said, body:has(#find:not(:placeholder-shown)) .site-said { opacity: 0; transition-delay: 0s; transition-duration: .4s; }
 .site-said p { margin: 0; font-size: 1.02rem; line-height: 1.7; color: var(--ink); text-shadow: 0 0 12px var(--bg), 0 0 4px var(--bg); }
 .site-said p.muted { font-size: .8rem; margin-top: .35rem; color: var(--muted); transition: opacity 1.2s ease; } .site-said.known p.muted { opacity: 0; }
+/* On a phone the links above take two rows, so the sentence begins lower. This stands after the rules it changes: before them it changed nothing. */
+@media (max-width: 40rem) { .site-said { top: 5.6rem; } .site-said p { font-size: .95rem; } .site-said p.muted { font-size: .78rem; } }
 .site-back { text-shadow: 0 0 12px var(--bg), 0 0 4px var(--bg); }
 @media (prefers-reduced-motion: reduce) { .site-said, .site-links { transition: none; } }
 .site-share { position: absolute; left: 0; right: 0; top: 100%; margin-top: .25rem; display: none; gap: .4rem; align-items: baseline; justify-content: center; font-size: .78rem; color: var(--muted); cursor: pointer; }
 .site-leave:focus-within .site-share, .site-leave input:not(:placeholder-shown) ~ .site-share { display: flex; } .site-share small { opacity: .8; }
 .site-leave:has(.site-share) p { display: none; }
 body.site:has(.site-share) .site-leave { bottom: 5rem; } body.site:has(.site-share) #spacebar { bottom: 7.9rem; } body.site:has(.site-share) .site-tries { bottom: 11.6rem; } .site-share { flex-wrap: wrap; row-gap: 0; }
-.site-told { position: fixed; z-index: 40; left: 50%; bottom: 10.5rem; transform: translate(-50%, .4rem); font-size: .85rem; color: var(--ink); background: color-mix(in srgb, var(--bg) 86%, var(--ink)); border: 1px solid var(--line); border-radius: 999px; padding: .35rem 1rem; opacity: 0; transition: opacity .5s ease, transform .5s ease; pointer-events: none; }
+.site-told { position: fixed; z-index: 40; left: 50%; bottom: 10.5rem; transform: translate(-50%, .4rem); font-size: .85rem; color: var(--ink); background: color-mix(in srgb, var(--bg) 86%, var(--ink)); border: 1px solid var(--line); border-radius: 1.3rem; padding: .35rem 1rem; width: max-content; max-width: calc(100vw - 2rem); box-sizing: border-box; text-align: center; opacity: 0; transition: opacity .5s ease, transform .5s ease; pointer-events: none; }
 .site-told.on { opacity: 1; transform: translate(-50%, 0); }
 .site-lang { position: relative; } .site-lang summary { list-style: none; cursor: pointer; color: var(--muted); } .site-lang summary::-webkit-details-marker { display: none; }
 .site-lang summary::after { content: "▾"; margin-left: .3em; font-size: .8em; } .site-lang summary:hover, .site-lang[open] summary { color: var(--ink); }

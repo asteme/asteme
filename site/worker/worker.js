@@ -92,6 +92,17 @@ const written = async (env, now, over = { show: [], take: new Set() }) => {
   await env.LINES.put("sky", JSON.stringify({ built: now, lines }));
   return lines;
 };
+// The mark of the last decision. It has to say when it was written, not when writing it began: a write that hung for longer than `settle` would land
+// carrying a time from before a decision made meanwhile, and a copy made from a listing that had not caught up with that decision would then pass for
+// settled, and stay. So a write that took long is made again with the time it is by then. What is left is a mark at most `again` seconds old when it
+// lands, which is why `settle` less `again` has to stay longer than a listing can lag.
+const marked = async (env) => {
+  for (let i = 0; i < 4; i++) {
+    const at = Date.now();
+    await env.LINES.put("changed", String(at));
+    if (Date.now() - at < LIMITS.again * 1000) return;
+  }
+};
 const skyOf = async (env, now) => {
   const copy = parse(await env.LINES.get("sky"), null),
     changed = Number((await env.LINES.get("changed")) ?? 0),
@@ -180,7 +191,7 @@ export default {
       // What the site is given is written again at once, so that the one who decided sees it; and marked as changed, so that it goes on being written
       // again from the lines themselves until that has settled, whatever another decision made at the same moment did to this copy.
       if (show.length || take.size) {
-        await env.LINES.put("changed", String(Date.now()));
+        await marked(env);
         await written(env, Date.now(), { show: show.map((l) => ({ id: l.id, ...kept(l) })), take });
       }
       return json(200, { shown: show.length, dropped: drop.length, taken: take.size });

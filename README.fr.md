@@ -174,7 +174,7 @@ Le code ne décide jamais de ce que quelque chose veut dire. Il vérifie la stru
 
 ## Limites, aujourd'hui
 
-- Tôt : 0.11, la première version publiée. Le comportement peut encore changer d'une version à l'autre.
+- Tôt. Le comportement peut encore changer d'une version à l'autre.
 - Une réponse peut attendre la mémoire : lire la situation et y choisir est un appel au modèle, et avec un modèle de raisonnement cela prend dix à vingt secondes, parfois plus. Un petit modèle de décision (le juge) peut prendre cette place quand il est configuré, et la réponse ne l'attend alors plus.
 - Une image confiée à la conversation est regardée quand le modèle peut voir les images ; les autres fichiers qui ne sont pas du texte (un PDF, un enregistrement) ne sont pas lus par Asteme elle-même : elle les remet à DSH avec leur chemin quand le travail a besoin de les ouvrir.
 - La lecture à voix haute n'utilise qu'une voix prêtée (les voix installées sur l'ordinateur ne sont pas utilisées). Un service de voix à vous (compatible OpenAI, ou un serveur local) se règle dans le fichier de réglages ; il n'y a pas encore d'écran pour cela.

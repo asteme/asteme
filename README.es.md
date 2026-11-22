@@ -174,7 +174,7 @@ El código nunca decide qué significa algo. Comprueba la estructura: que una ci
 
 ## Límites, hoy
 
-- Temprano: 0.11, la primera versión publicada. El comportamiento todavía puede cambiar entre versiones.
+- Temprano. El comportamiento todavía puede cambiar entre versiones.
 - Una respuesta puede esperar a la memoria: leer la situación y elegir de ella es una llamada al modelo, y con un modelo de razonamiento tarda de diez a veinte segundos, a veces más. Un modelo de decisión pequeño (el juez) puede ocupar ese lugar cuando se configura, y entonces la respuesta ya no lo espera.
 - Una imagen entregada a la conversación se mira cuando el modelo puede ver imágenes; los demás archivos que no son texto (un PDF, una grabación) no los lee Asteme mismo: se los pasa a DSH con su ruta cuando el trabajo necesita abrirlos.
 - Leer en voz alta usa solo una voz prestada (las voces instaladas en el ordenador no se usan). Un servicio de voz propio (uno compatible con OpenAI, o un servidor local) se ajusta en el archivo de ajustes; todavía no hay pantalla para ello.

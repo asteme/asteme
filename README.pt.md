@@ -174,7 +174,7 @@ O código nunca decide o que algo significa. Ele confere estrutura: que uma cita
 
 ## Limites, hoje
 
-- Cedo: 0.11, a primeira versão publicada. O comportamento ainda pode mudar entre versões.
+- Cedo. O comportamento ainda pode mudar entre versões.
 - Uma resposta pode esperar a memória: ler a situação e escolher a partir dela é uma chamada de modelo, e com um modelo de raciocínio isso leva de dez a vinte segundos, às vezes mais. Um modelo pequeno de decisão (o juiz) pode ocupar esse lugar quando há um configurado, e então a resposta deixa de esperar por ele.
 - Uma imagem entregue à conversa é olhada quando o modelo consegue ver imagens; outros arquivos que não são texto (um PDF, uma gravação) não são lidos pelo próprio Asteme: ele os entrega ao DSH com o caminho quando o trabalho precisa que sejam abertos.
 - A leitura em voz alta usa só uma voz emprestada (as vozes instaladas no computador não são usadas). Um serviço de voz seu (um compatível com OpenAI, ou um servidor local) é configurado no arquivo de configurações; ainda não há tela para isso.

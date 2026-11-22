@@ -8,6 +8,13 @@
 
 https://github.com/user-attachments/assets/f7880bf0-6b96-46db-a997-ff650ac58cd3
 
+<details>
+<summary>Earlier cut</summary>
+
+https://github.com/user-attachments/assets/6e3cc162-74d1-4edf-8de3-2276602201d1
+
+</details>
+
 **開発中:** 現在も開発を続けています。動作が変わったり、誤動作やデータ損失が起きたりする可能性があります。重要な用途にはまだ使わないでください。
 
 # ASTEME

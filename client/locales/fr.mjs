@@ -527,6 +527,7 @@ export const fr = {
   "tryAgain": "Réessayer",
   "talk": "Parler à Asteme lui-même",
   "talkLead": "Une conversation avec Asteme plutôt qu'avec un agent dans une session : un seul fil qui continue, sur la même mémoire. Il peut parler le premier, à une heure qu'il s'est fixée. Elle s'ouvre dans sa propre page sur cet ordinateur.",
+  "talkNoModel": "Asteme parle avec le modèle que vous utilisez dans DSH, et aucun n'a encore été utilisé ici. Envoyez un message dans une session DSH, puis revenez.",
   "brainYou": "Vous",
   "brainState_awake": "Éveillé",
   "brainState_asleep": "Endormi",

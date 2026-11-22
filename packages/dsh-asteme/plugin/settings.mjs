@@ -288,7 +288,9 @@ export function registerSettings(ctx, host) {
               } catch (e) {
                 result = {
                   ok: false,
-                  error: { code: "asteme/INVALID_INPUT", message: e.message },
+                  // The host's client reads a failure only when it has all three of these; without `details` it reports its own
+                  // "invalid server-response" in place of what went wrong.
+                  error: { code: typeof e?.code === "string" && e.code.startsWith("asteme/") ? e.code : "asteme/INVALID_INPUT", message: String(e?.message ?? e), details: {} },
                 };
               }
               return Response.json(

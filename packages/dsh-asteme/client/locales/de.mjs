@@ -527,6 +527,7 @@ export const de = {
   "tryAgain": "Erneut versuchen",
   "talk": "Mit Asteme selbst sprechen",
   "talkLead": "Ein Gespräch mit Asteme statt mit einem Agenten in einer Sitzung: ein Faden, der weitergeht, mit demselben Gedächtnis. Es kann zuerst sprechen, zu einer Zeit, die es sich selbst gesetzt hat. Es öffnet sich als eigene Seite auf diesem Computer.",
+  "talkNoModel": "Asteme spricht mit dem Modell, das Sie in DSH verwenden, und hier wurde noch keines verwendet. Senden Sie in einer DSH-Sitzung eine Nachricht und kommen Sie dann zurück.",
   "brainYou": "Du",
   "brainState_awake": "Wach",
   "brainState_asleep": "Schläft",

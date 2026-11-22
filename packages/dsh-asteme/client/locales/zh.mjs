@@ -480,6 +480,7 @@ export const zh = {
   "tryAgain": "重试",
   "talk": "直接和 Asteme 交谈",
   "talkLead": "不是和某个会话里的智能体，而是和 Asteme 本身交谈：一场持续下去的对话，用的是同一份记忆。到了它自己定的时间，它也会先开口。它在这台电脑上以单独的页面打开。",
+  "talkNoModel": "Asteme 用你在 DSH 里使用的模型说话，而这里还没有用过任何模型。请先在 DSH 的会话里发一条消息，再回到这里。",
   "brainYou": "你",
   "brainState_awake": "醒着",
   "brainState_asleep": "睡着了",

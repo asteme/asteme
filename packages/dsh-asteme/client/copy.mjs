@@ -505,6 +505,7 @@ export const en = {
   "tryAgain": "Try again",
   "talk": "Talk to Asteme itself",
   "talkLead": "A conversation with Asteme rather than with an agent in a session: one thread that goes on, on the same memory. It can speak first, at a time it set itself. It opens as its own page on this computer.",
+  "talkNoModel": "Asteme speaks with the model you use in DSH, and none has been used here yet. Send one message in a DSH session, then come back.",
   "brainYou": "You",
   "brainState_awake": "Awake",
   "brainState_asleep": "Asleep",

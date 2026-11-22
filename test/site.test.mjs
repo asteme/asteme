@@ -152,6 +152,94 @@ test("decisions made at the same moment, over a store whose listings lag, lose n
   });
 });
 
+test("a decision whose mark was slow to be written does not let an older copy pass for settled: the mark says when it landed, not when writing it began", async () => {
+  const env = room(60000), real = Date.now, at = real() - 3600000;
+  let off = 0;
+  Date.now = () => real() + off;
+  try {
+    const lines = async () => (await (await ask(env, "/lines")).json()).lines.map((l) => l.text).sort();
+    const decide = async (body) => (await ask(env, "/decide", { method: "POST", key: env.KEY, body })).status;
+    env.kept.set("shown:000000000-aaaaaaaa", { value: "", metadata: { text: "one", lang: "en", at: "2026-01-01" }, at });
+    env.kept.set("pending:000000001-aaaaaaaa", { value: "", metadata: { text: "two", lang: "en", at }, at });
+    // The first decision's mark hangs for 95 seconds. While it hangs, "one" is taken down from another place, and that decision goes straight through.
+    const put = env.LINES.put;
+    let hung = false;
+    env.LINES.put = async (k, ...rest) => {
+      if (k === "changed" && !hung) {
+        hung = true;
+        off += 50000;
+        assert.equal(await decide({ take: ["000000000-aaaaaaaa"] }), 200);
+        off += 45000;
+      }
+      return put(k, ...rest);
+    };
+    assert.equal(await decide({ show: ["000000001-aaaaaaaa"] }), 200);
+    // The slow decision's own copy was made from a listing in which "one" still lingered. It must not be trusted: once things have settled, what was
+    // taken down is not given to the site.
+    off += 100000;
+    assert.deepEqual(await lines(), ["two"]);
+    off += 100000;
+    assert.deepEqual(await lines(), ["two"], "and it stays so");
+    assert.ok(Number(env.kept.get("changed").value) >= real() + 95000 - 5, "the mark carries the time it landed");
+  } finally {
+    Date.now = real;
+  }
+});
+
+test("however long the mark hangs, and however often, a line that was taken down does not stay: the last try carries a time ahead, and no copy is believed for ever", async () => {
+  const real = Date.now;
+  let off = 0;
+  Date.now = () => real() + off;
+  try {
+    const at = real() - 3600000;
+    const begin = (delays) => {
+      const env = room(60000), put = env.LINES.put, started = Date.now();
+      env.kept.set("shown:000000000-aaaaaaaa", { value: "", metadata: { text: "one", lang: "en", at: "2026-01-01" }, at });
+      env.kept.set("pending:000000001-aaaaaaaa", { value: "", metadata: { text: "two", lang: "en", at }, at });
+      const lines = async () => (await (await ask(env, "/lines")).json()).lines.map((l) => l.text).sort();
+      const decide = async (body) => (await ask(env, "/decide", { method: "POST", key: env.KEY, body })).status;
+      // Each write of the first decision's mark hangs for as long as `delays` says; "one" is taken down from another place 80 seconds in.
+      let n = 0, inner = false, taken = false;
+      env.LINES.put = async (k, ...rest) => {
+        if (k === "changed" && !inner && n < delays.length) {
+          const until = Date.now() + delays[n++];
+          if (!taken && until - started > 80000) {
+            off += 80000 - (Date.now() - started);
+            taken = inner = true;
+            assert.equal(await decide({ take: ["000000000-aaaaaaaa"] }), 200);
+            inner = false;
+          }
+          off += until - Date.now();
+        }
+        return put(k, ...rest);
+      };
+      return { env, lines, decide };
+    };
+    // Every try slow, the last one slowest: three tries with the time it is, then the one that carries a time ahead.
+    for (const delays of [[10000, 10000, 10000, 95000], [95000, 95000, 95000, 95000], [10000, 10000, 10000, 500000]]) {
+      const { env, lines, decide } = begin(delays);
+      assert.equal(await decide({ show: ["000000001-aaaaaaaa"] }), 200);
+      assert.ok(Number(env.kept.get("changed").value) > Date.now(), "the mark left behind is ahead of the time it landed");
+      off += 100000;
+      assert.deepEqual(await lines(), ["two"], `${delays}: after 100 seconds`);
+      off += 100000;
+      assert.deepEqual(await lines(), ["two"], `${delays}: after 200 seconds`);
+      off += LIMITS.hung * 1000;
+      assert.deepEqual(await lines(), ["two"], `${delays}: once the time ahead is over`);
+    }
+    // And if a copy that is wrong were ever believed, by any road: it is not believed for longer than `fresh`.
+    const { env, lines } = begin([]);
+    const old = Date.now();
+    env.kept.set("sky", { value: JSON.stringify({ built: old, lines: [{ id: "gone", text: "gone", lang: "en", at: "2026-01-01" }] }), metadata: null, at: old });
+    off += 600000;
+    assert.deepEqual(await lines(), ["gone"], "a settled copy is read as it is");
+    off += LIMITS.fresh * 1000;
+    assert.deepEqual(await lines(), ["one"], "and made again from the lines once it is old");
+  } finally {
+    Date.now = real;
+  }
+});
+
 test("sending a line takes leave asked for from the site a moment before, by the one who sends, and a little work", async () => {
   const env = room(), body = { text: "a line that is fine", lang: "en" };
   const post = (more, ip) => ask(env, "/line", { method: "POST", origin: site, ip, body: { ...body, ...more } });

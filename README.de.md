@@ -174,7 +174,7 @@ Der Code entscheidet nie, was etwas bedeutet. Er prüft Struktur: dass ein Zitat
 
 ## Grenzen, heute
 
-- Früh: 0.11, die erste veröffentlichte Version. Das Verhalten kann sich zwischen Versionen noch ändern.
+- Früh. Das Verhalten kann sich zwischen Versionen noch ändern.
 - Eine Antwort kann auf die Erinnerung warten: Die Situation zu lesen und daraus auszuwählen ist ein Modellaufruf, und mit einem Reasoning-Modell dauert das zehn bis zwanzig Sekunden, manchmal mehr. Ein kleines Entscheidungsmodell (der Judge) kann diesen Platz einnehmen, wenn eines eingerichtet ist, und dann wartet die Antwort nicht mehr darauf.
 - Ein Bild, das dem Gespräch gegeben wird, wird angesehen, wenn das Modell Bilder sehen kann; andere Dateien, die kein Text sind (ein PDF, eine Aufnahme), liest Asteme selbst nicht: Es gibt sie DSH mit ihrem Pfad, wenn die Arbeit sie geöffnet braucht.
 - Vorlesen nutzt nur eine ausgeliehene Stimme (die auf dem Rechner installierten Stimmen werden nicht verwendet). Ein eigener Stimmdienst (ein OpenAI-kompatibler oder ein lokaler Server) wird in der Einstellungsdatei eingerichtet; einen Bildschirm dafür gibt es noch nicht.

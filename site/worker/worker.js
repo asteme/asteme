@@ -18,6 +18,7 @@
 // visit does not cost a listing. That value is a copy and is treated as one: this store has no way to change two things together, and a listing may
 // lag behind a write, so a copy written at a decision can miss a line shown a moment before by another. A copy is therefore trusted only once it was
 // written well after the last decision (`settle`); until then whoever asks for the lines has it written again from the lines themselves (`skyOf`).
+// The mark of the last decision is itself a write that can hang (`marked`), and no settled copy is believed for longer than `fresh`.
 // Set on the Worker: ORIGIN (the site's origin, e.g. https://asteme.github.io), and the secrets KEY (what the reader types) and SALT.
 import { refuse, letters } from "./sieve.js";
 import { REVIEW } from "./review.js";
@@ -25,7 +26,7 @@ import { REVIEW } from "./review.js";
 // perDay: lines one visitor may send in a day. everyone: lines taken from all visitors in a day (what the free plan can write, with room to spare).
 // wait and work: what sending costs (seconds between asking and sending; bits of work), nothing to a person and something to a script.
 // given: how many lines a visit is given at most; beyond that the newest half and, of the older, a different part each day.
-export const LIMITS = { min: 2, max: 120, name: 24, settle: 90, again: 10, perDay: 1, everyone: 200, queue: 400, wait: 3, work: 14, passHours: 12, given: 600, kept: 20000 };
+export const LIMITS = { min: 2, max: 120, name: 24, settle: 90, again: 10, hung: 600, fresh: 3600, perDay: 1, everyone: 200, queue: 400, wait: 3, work: 14, passHours: 12, given: 600, kept: 20000 };
 // Words no line may hold: a public list (LDNOOBW, CC BY 4.0) at a fixed revision, fetched here and kept for a week, not kept in the repository.
 const WORDS = "https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/5faf2ba42d7b1c0977169ec3611df25a3c08eb13/";
 const LISTS = ["en", "ja", "zh", "de", "es", "fr", "pt", "ru", "ko"];
@@ -94,21 +95,27 @@ const written = async (env, now, over = { show: [], take: new Set() }) => {
 };
 // The mark of the last decision. It has to say when it was written, not when writing it began: a write that hung for longer than `settle` would land
 // carrying a time from before a decision made meanwhile, and a copy made from a listing that had not caught up with that decision would then pass for
-// settled, and stay. So a write that took long is made again with the time it is by then. What is left is a mark at most `again` seconds old when it
-// lands, which is why `settle` less `again` has to stay longer than a listing can lag.
+// settled, and stay. So a write that took long is made again with the time it is by then; a mark that lands in good time is at most `again` seconds
+// old, which is why `settle` less `again` has to stay longer than a listing can lag. Trying again cannot be all of it, because the last try can hang as
+// well (as first written it was, and four slow writes left an old mark behind). The last try therefore carries a time well ahead (`hung`): whenever it
+// lands within that, no copy passes for settled until that time is over, and until then the lines are read from the lines themselves.
 const marked = async (env) => {
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 3; i++) {
     const at = Date.now();
     await env.LINES.put("changed", String(at));
     if (Date.now() - at < LIMITS.again * 1000) return;
   }
+  await env.LINES.put("changed", String(Date.now() + LIMITS.hung * 1000));
 };
+// Nor is a settled copy believed for ever. Whatever else goes wrong between two writes to a store that cannot change two things together, a copy older
+// than `fresh` is made again from the lines themselves, so nothing the site is given can differ from what is kept for longer than that.
 const skyOf = async (env, now) => {
   const copy = parse(await env.LINES.get("sky"), null),
     changed = Number((await env.LINES.get("changed")) ?? 0),
     lines = (Array.isArray(copy?.lines) ? copy.lines : []).filter((l) => l && typeof l.text === "string"),
     built = Number(copy?.built ?? 0);
-  if (!changed || built > changed + LIMITS.settle * 1000 || now - built < LIMITS.again * 1000) return lines;
+  if (now - built < LIMITS.again * 1000) return lines;
+  if ((!changed || built > changed + LIMITS.settle * 1000) && now - built < LIMITS.fresh * 1000) return lines;
   return written(env, now);
 };
 // What a visit is given: everything while it is few; when it is many, the newest half and a part of the older that is another part each day, so that

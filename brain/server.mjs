@@ -63,6 +63,7 @@ const stale = () => {
 };
 // Words the panel already has that the page uses too.
 const SHARED = [
+  "back",
   "cancel",
   "save",
   "stillTrue",

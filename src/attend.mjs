@@ -59,6 +59,16 @@ export function renderExperience(items) {
   }).join("\n\n");
 }
 
+// What is kept of a reading. A candidate was kept with a whole copy of its memory and of the last twelve times that memory was used, at every reply:
+// thirty thousand characters a reading, nine tenths of a store a year old, and nothing read them back but the memory's words and how it was found
+// (why a reply was given, what a later outcome is filed under). That is what is kept now; the memory itself is in the store, by its id.
+const keptCandidate = (c) => {
+  if (!c?.item) return c;
+  const { item, score, sim, lift, closeness, fit, cue, origin, via, words, suppressed, against, accessibility, entity, due, stale, spread } = c;
+  return { item: { id: item.id, revision: item.revision, kind: item.kind, level: item.level, text: cut(item.text, 160) }, score, sim, lift, closeness, fit, cue, origin, via, words, suppressed, against, accessibility, entity, due, stale, spread };
+};
+export const keptTrace = (trace) => (Array.isArray(trace?.candidates) && trace.candidates.some(c => c?.item && (c.feedback || c.item.evidence)) ? { ...trace, candidates: trace.candidates.map(keptCandidate) } : trace);
+
 export const attend = {
   traces(request) {
     const rows = request ? this.log.db.prepare("SELECT data FROM attention WHERE owner=? AND request=?").all(this.owner, request)
@@ -67,7 +77,7 @@ export const attend = {
   },
   trace(value) {
     const v = { id: randomUUID(), at: this.log.now(), ...value };
-    this.log.db.prepare("INSERT INTO attention VALUES (?,?,?,?)").run(v.id, this.owner, v.request, JSON.stringify(v));
+    this.log.db.prepare("INSERT INTO attention VALUES (?,?,?,?)").run(v.id, this.owner, v.request, JSON.stringify(keptTrace(v)));
     return v;
   },
   /**
@@ -81,7 +91,7 @@ export const attend = {
     let read = 0;
     for (const row of rows) {
       const trace = JSON.parse(row.data), request = this.log.event(trace.request);
-      const save = () => this.log.db.prepare("UPDATE attention SET data=? WHERE id=?").run(JSON.stringify(trace), row.id);
+      const save = () => this.log.db.prepare("UPDATE attention SET data=? WHERE id=?").run(JSON.stringify(keptTrace(trace)), row.id);
       if (!request || request.erased) { trace.sceneLater = false; save(); continue; }
       const events = this.log.events(request.scope, request.sessionId), at = events.findIndex(e => e.id === request.id);
       const recent = events.slice(0, at + 1).filter(e => e.content && ["user", "assistant", "tool"].includes(e.role)).slice(-8);

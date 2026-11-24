@@ -58,6 +58,7 @@ export async function reclaim(host, { trim = false } = {}) {
   // Host bookkeeping stored by older versions holds no words and is read by
   // nothing, so it goes whether or not tool output is trimmed.
   const dropped = host.core.dropUnread();
+  for (let n = 0; n < 100 && host.core.keepTraces({ most: 2000 }).more; n++);
   const slimmed = trim ? host.core.slim() : { rows: 0, bytes: 0 };
   host.log.db.exec("VACUUM");
   try { host.log.db.exec("PRAGMA wal_checkpoint(TRUNCATE)"); } catch {}

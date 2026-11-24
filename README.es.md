@@ -156,7 +156,7 @@ flowchart LR
   O --> R
 ```
 
-Antes de una respuesta, el mensaje llama a los recuerdos por significado, y una llamada al modelo lee la situación y decide cuáles corresponden. Después de la respuesta, el intercambio se lee hacia la memoria, y tu frase se guarda como base de lo que se aprenda. Más tarde, lo que escribes a continuación se lee para ver cómo salió cada recuerdo usado, y eso cambia lo que se recordará la próxima vez. Cuando está libre, relee los intercambios que destacaron (una corrección, una sorpresa, una promesa), compara recuerdos que pueden contradecirse y saca lecciones de ocasiones distintas.
+Antes de una respuesta, el mensaje llama a los recuerdos por significado, y una llamada al modelo lee la situación y decide cuáles corresponden. Después de la respuesta, el intercambio se lee hacia la memoria, y tu frase se guarda como base de lo que se aprenda. Más tarde, lo que escribes a continuación se lee para ver cómo salió cada recuerdo usado, y eso cambia lo que se recordará la próxima vez. Cuando está libre, relee los intercambios que destacaron (una corrección, una sorpresa, una promesa), compara recuerdos que pueden contradecirse o decir dos veces lo mismo (y entonces se queda con uno) y saca lecciones de ocasiones distintas.
 
 El código nunca decide qué significa algo. Comprueba la estructura: que una cita sea exacta, que un id exista, que una revisión no se haya movido. El significado queda para el modelo, y todo lo que el modelo escribe tiene que apuntar a un registro guardado.
 

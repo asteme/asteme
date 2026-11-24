@@ -156,7 +156,7 @@ flowchart LR
   O --> R
 ```
 
-Avant une réponse, le message rappelle les souvenirs par le sens, et un appel au modèle lit la situation et décide lesquels y ont leur place. Après la réponse, l'échange est lu vers la mémoire, votre phrase gardée comme fondement de ce qui est appris. Plus tard, ce que vous écrivez ensuite est lu pour savoir ce que chaque souvenir utilisé a donné, et cela change ce qui sera rappelé la fois suivante. Quand elle est libre, elle relit les échanges qui se sont démarqués (une correction, une surprise, une promesse), compare des souvenirs qui peuvent se contredire et tire des leçons d'occasions distinctes.
+Avant une réponse, le message rappelle les souvenirs par le sens, et un appel au modèle lit la situation et décide lesquels y ont leur place. Après la réponse, l'échange est lu vers la mémoire, votre phrase gardée comme fondement de ce qui est appris. Plus tard, ce que vous écrivez ensuite est lu pour savoir ce que chaque souvenir utilisé a donné, et cela change ce qui sera rappelé la fois suivante. Quand elle est libre, elle relit les échanges qui se sont démarqués (une correction, une surprise, une promesse), compare des souvenirs qui peuvent se contredire ou dire deux fois la même chose (et n'en garde alors qu'un) et tire des leçons d'occasions distinctes.
 
 Le code ne décide jamais de ce que quelque chose veut dire. Il vérifie la structure : qu'une citation soit exacte, qu'un identifiant existe, qu'une révision n'ait pas bougé. Le sens est laissé au modèle, et tout ce que le modèle écrit doit pointer vers un enregistrement gardé.
 

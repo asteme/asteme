@@ -314,6 +314,7 @@
   #sheet .sheethead { position: sticky; top: 0; z-index: 3; margin: 0 -1.4rem .5rem; padding: 1.1rem 1.4rem .7rem; background: color-mix(in srgb, var(--bg) 90%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
   #sheet h2 { font-size: .8rem; font-weight: 600; letter-spacing: .06em; margin: 0; display: flex; align-items: center; }
   #sheet h2 button { margin-left: auto; font-weight: 400; letter-spacing: 0; }
+  #sheet .sheetback { display: block; margin: 0 0 .35rem -.1rem; padding: .1rem; font-size: .78rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
   #sheet h4.group { margin: 2.2rem 0 0; padding-top: 1.3rem; border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent); font-size: 1.02rem; font-weight: 600; letter-spacing: .01em; } #sheet h4.group:first-of-type { margin-top: 1.3rem; padding-top: 0; border-top: 0; } #sheet h4.group + h3 { margin-top: .9rem; }
   #sheet h3 { font-size: .78rem; font-weight: 600; margin: 1.4rem 0 .4rem; color: color-mix(in srgb, var(--ink) 62%, transparent); }
   #sheet p, #sheet li { font-size: .92rem; margin: 0 0 .5rem; }

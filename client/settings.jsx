@@ -226,8 +226,8 @@ function Judge({ snapshot: s, ctx }) {
       </Field>
       <Field label={t("judgeMode")} hint={t("judgeModeHint_" + v.judgeMode)}>
         <Select value={v.judgeMode} disabled={state.busy} onChange={e => save({ judgeMode: e.target.value })}>
-          <option value="shadow">{t("judgeMode_shadow")}</option>
           <option value="judge">{t("judgeMode_judge")}</option>
+          <option value="shadow">{t("judgeMode_shadow")}</option>
           <option value="model">{t("judgeMode_model")}</option>
         </Select>
       </Field>

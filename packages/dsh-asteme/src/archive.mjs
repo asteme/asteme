@@ -10,6 +10,7 @@ import { readFileSync } from "node:fs";
 import { iso, isRead, isMark } from "./mind.mjs";
 import { cut } from "./log.mjs";
 import { TUNING } from "./recall.mjs";
+import { keptTrace } from "./attend.mjs";
 import { JUDGE } from "./judge.mjs";
 import { DIARY } from "./diary.locales.mjs";
 
@@ -100,6 +101,24 @@ export const archive = {
     if (rows) this.note("drop-unread", { rows, bytes, kinds: kinds.length });
     return { rows, bytes };
   },
+  /**
+   * Readings stored by versions before 0.12.2 carry a whole copy of every memory they considered, with its history (see keptTrace in attend.mjs). They
+   * are brought to what is kept now, a few hundred at a time so that nothing waits on it; what a reading says about why a reply was given is unchanged.
+   */
+  keepTraces({ most = 400 } = {}) {
+    const db = this.log.db, update = db.prepare("UPDATE attention SET data=? WHERE id=?");
+    const rows = db.prepare(`SELECT id,data FROM attention WHERE owner=? AND instr(data,'"feedback":[') > 0 LIMIT ?`).all(this.owner, most);
+    let bytes = 0, done = 0;
+    this.log.transaction(() => {
+      for (const row of rows) {
+        let trace; try { trace = JSON.parse(row.data); } catch { continue; }
+        const next = JSON.stringify(keptTrace(trace));
+        if (next.length < row.data.length) { update.run(next, row.id); bytes += row.data.length - next.length; done++; }
+      }
+    });
+    if (done) this.note("keep-traces", { rows: done, bytes });
+    return { rows: done, bytes, more: rows.length === most };
+  },
   /** Everything, as one JSON-ready object. */
   exportArchive({ vectors = false } = {}) {
     const tables = dumpTables(this.log.db, { vectors });
@@ -109,28 +128,56 @@ export const archive = {
   /**
    * What a developer needs beside the report, and no more. It has the same
    * shape as the complete copy, so the same tools read it, but it is not one:
-   * what tools printed and what the assistant wrote at length are cut to
-   * their beginnings, and pictures are left out. Three and a half megabytes
-   * of a real store were mostly tool output that no diagnosis read. What the
-   * user said is kept whole, since it is what recall is judged against. It is
-   * marked as reduced and cannot be brought back in as a copy.
+   * what the assistant wrote at length is cut to its beginning, what tools were
+   * given and printed is left out (its size is kept), readings keep what they
+   * decided and not copies of the memories they looked at, the receipts the
+   * store keeps so as not to do a thing twice are counted and not listed, and
+   * pictures are left out. A real store of three months gave fifty megabytes,
+   * nine tenths of it copies, and code from tool calls that no diagnosis
+   * reads. What the user said is kept whole, since it is what recall is judged
+   * against. It is marked as reduced and cannot be brought back in as a copy.
    */
-  exportEvidence({ toolChars = 240, replyChars = 900 } = {}) {
+  exportEvidence({ toolChars = 0, replyChars = 600, readings = 300 } = {}) {
     const full = this.exportArchive(), tables = { ...full.tables };
     const shorten = (table, column, change) => { const t = tables[table]; if (!t) return; const at = t.columns.indexOf(column); if (at < 0) return; tables[table] = { ...t, rows: t.rows.map(r => { const next = change(r[at], r); return next === r[at] ? r : r.map((v, n) => n === at ? next : v); }) }; };
     const trimmed = (text, n) => typeof text === "string" && text.length > n ? `${text.slice(0, n)} …[${text.length - n} more characters left out of this reduced copy]` : text;
     for (const table of ["events", "received"]) shorten(table, "data", (raw) => { let e; try { e = JSON.parse(raw); } catch { return raw; }
-      const n = e.role === "user" ? Infinity : e.role === "tool" || String(e.kind ?? "").startsWith("tool/") ? toolChars : replyChars;
-      if (typeof e.content !== "string" || e.content.length <= n) return raw; return JSON.stringify({ ...e, content: trimmed(e.content, n) }); });
+      const tool = e.role === "tool" || String(e.kind ?? "").startsWith("tool/"), n = e.role === "user" ? Infinity : tool ? toolChars : replyChars;
+      if (typeof e.content !== "string" || e.content.length <= n) return raw;
+      if (tool && !n) { const { content, ...rest } = e; return JSON.stringify({ ...rest, content: "", contentChars: content.length, ...(e.metadata ? { metadata: { ...e.metadata, ...(e.metadata.tool ? { tool: { name: e.metadata.tool.name, callId: e.metadata.tool.callId } } : {}) } } : {}) }); }
+      return JSON.stringify({ ...e, content: trimmed(e.content, n) }); });
+    // Rows of what tools did that nothing remembered rests on are counted by conversation, not listed: they were four fifths of the rows, and what a
+    // diagnosis reads of them is how many there were and how much they held. Rows something rests on stay. What a row repeats of its own columns (its id,
+    // its conversation, whose it is) is not written twice, and whose it is is written once for all (`scopes`).
+    const cited = new Set();
+    for (const table of ["experience", "experience_history", "experience_feedback", "attention", "episode"]) { const t = tables[table], at = t?.columns.indexOf("data"); if (!t || at < 0) continue;
+      for (const r of t.rows) for (const m of String(r[at]).matchAll(/"(?:id|request)":"([^"]{16,})"/g)) cited.add(m[1]); }
+    const scopes = {}, scopeKey = (v) => { const k = Object.keys(scopes).find((x) => scopes[x] === v) ?? `s${Object.keys(scopes).length + 1}`; scopes[k] = v; return k; };
+    const toolRows = { rows: 0, chars: 0, conversations: 0 }, toolSessions = new Set();
+    { const t = tables.events; if (t) { const at = t.columns.indexOf("data"), id = t.columns.indexOf("id"), sc = t.columns.indexOf("scope");
+      tables.events = { ...t, rows: t.rows.flatMap(r => { let e; try { e = JSON.parse(r[at]); } catch { return [r]; }
+        if (String(e.kind ?? "").startsWith("tool/") && !cited.has(r[id])) { toolRows.rows++; toolRows.chars += e.contentChars ?? (e.content ?? "").length; toolSessions.add(e.sessionId); return []; }
+        const { id: _id, sessionId: _s, scope: _scope, ...rest } = e;
+        return [r.map((v, n) => n === at ? JSON.stringify(rest) : n === sc ? scopeKey(v) : v)]; }) }; } }
+    toolRows.conversations = toolSessions.size;
+    // Readings: what was decided and how each memory was found, not copies of the memories; the newest few hundred of them (the report itself is worked
+    // out from all of them, and says how many were left out here).
+    shorten("attention", "data", (raw) => { try { const t = JSON.parse(raw), k = keptTrace(t); return k === t ? raw : JSON.stringify(k); } catch { return raw; } });
+    let olderReadings = 0;
+    if (tables.attention && tables.attention.rows.length > readings) { olderReadings = tables.attention.rows.length - readings; tables.attention = { ...tables.attention, rows: tables.attention.rows.slice(-readings) }; }
+    // Receipts: one row per tool call, per operation applied, per message shown, per pair judged. Counted by kind.
+    const receipts = {};
+    if (tables.state) { const key = tables.state.columns.indexOf("key");
+      tables.state = { ...tables.state, rows: tables.state.rows.filter(r => { const kind = /^(outcome|experience-op|shown|judged|outcome-check):/.exec(r[key])?.[1]; if (!kind) return true; receipts[kind] = (receipts[kind] ?? 0) + 1; return false; }) }; }
     // Rows that only mark that a tool ran, with nothing of what it did: counted and left out.
     let marks = 0;
     for (const table of ["events"]) { const t = tables[table], at = t?.columns.indexOf("data"); if (!t || at < 0) continue;
-      tables[table] = { ...t, rows: t.rows.filter(r => { try { const e = JSON.parse(r[at]); if (String(e.kind ?? "").startsWith("tool/") && !e.content) { marks++; return false; } } catch { /* kept as it is */ } return true; }) }; }
+      tables[table] = { ...t, rows: t.rows.filter(r => { try { const e = JSON.parse(r[at]); if (String(e.kind ?? "").startsWith("tool/") && !e.content && !e.contentChars) { marks++; return false; } } catch { /* kept as it is */ } return true; }) }; }
     // Pictures (faces, the wall) say nothing about how memory behaves.
     if (tables.state) { const key = tables.state.columns.indexOf("key"), data = tables.state.columns.indexOf("data");
       tables.state = { ...tables.state, rows: tables.state.rows.map(r => /^brain:(face|yourFace)$/.test(r[key]) ? r.map((v, n) => n === data ? JSON.stringify("(a picture, left out)") : v)
         : r[key] === "brain:look" ? r.map((v, n) => { if (n !== data) return v; try { const look = JSON.parse(v); return JSON.stringify(look?.wall ? { ...look, wall: "(a picture, left out)" } : look); } catch { return v; } }) : r) }; }
-    return { ...full, reduced: true, leftOut: { emptyToolRows: marks }, counts: Object.fromEntries(Object.entries(tables).map(([name, t]) => [name, t.rows.length])), tables };
+    return { ...full, reduced: true, scopes, leftOut: { emptyToolRows: marks, toolContent: "sizes only", toolRows, olderReadings, receipts, eventRowsRepeat: "id, sessionId and scope are the row's own columns; scope is a key of scopes" }, counts: Object.fromEntries(Object.entries(tables).map(([name, t]) => [name, t.rows.length])), tables };
   },
   /**
    * Adds what an archive (or the tables of a backup file) holds and this store

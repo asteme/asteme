@@ -124,6 +124,28 @@ export function openMind({
   const log = shared?.log ?? new Log(path, now),
     core = shared?.core ?? new Asteme({ log, identity, embed });
   const scope = { ...identity, projectId: "asteme" };
+  // The conversation as stored, read once and then only what was added since. Everything that draws or decides from the whole conversation reads it
+  // (fourteen places, three of them in every state the page asks for), and a conversation of a year is tens of thousands of records: read again
+  // each time, it was most of what opening the page waited on. Rows are only ever added at the end, except when something is erased or everything is
+  // wiped, and those are what the kept copy is checked against. It is frozen, so nothing can change it by mistake.
+  let kept = null;
+  const thread = () => {
+    const epoch = log.wipes ?? 0,
+      erased = log.state("erasure-revision", 0),
+      next = log.cursor(scope, THREAD);
+    if (kept && kept.epoch === epoch && kept.erased === erased && kept.next <= next) {
+      if (kept.next < next) kept = { ...kept, next, list: Object.freeze([...kept.list, ...log.events(scope, THREAD, kept.next)]) };
+      return kept.list;
+    }
+    kept = { epoch, erased, next, list: Object.freeze(log.events(scope, THREAD)) };
+    return kept.list;
+  };
+  // What is worked out from the whole conversation is kept with the copy it was worked out from, and worked out again when that copy changes.
+  const fromThread = (name, make) => {
+    const list = thread();
+    if (kept.made?.list !== list) kept.made = { list };
+    return name in kept.made ? kept.made[name] : (kept.made[name] = make(list));
+  };
   const listeners = new Set(),
     emit = (event) => {
       for (const l of listeners) {
@@ -199,7 +221,7 @@ export function openMind({
   };
   const add = (role, content, kind = `${role}/message`, metadata) => {
     log.ingest(scope, THREAD, [{ seq: log.cursor(scope, THREAD), role, kind, content, occurredAt: log.now(), ...(metadata ? { metadata } : {}) }]);
-    return log.events(scope, THREAD).at(-1);
+    return thread().at(-1);
   };
   // Work that is out with workers. Handles live in this process; what is kept
   // is enough to say, after a restart, what was lost.
@@ -520,7 +542,7 @@ export function openMind({
   const reactions = () => {
     const its = new Map(),
       theirs = new Map();
-    for (const e of log.events(scope, THREAD))
+    for (const e of thread())
       if (e.kind === "reaction") {
         try {
           const r = JSON.parse(e.content);
@@ -537,7 +559,7 @@ export function openMind({
   // What it said since the user last wrote, with when each was said and when it was first in front of the user, if it was. For it to know whether it was heard; nothing is done with this in code.
   const unanswered = (present) => {
     if (!feel().seen) return {};
-    const said = log.events(scope, THREAD).filter((e) => e.content && ["user", "assistant"].includes(e.role)),
+    const said = thread().filter((e) => e.content && ["user", "assistant"].includes(e.role)),
       seen = marks("brain:seen"),
       theirs = reactions().theirs;
     let end = said.length;
@@ -564,8 +586,7 @@ export function openMind({
     // An earlier message that came with files says so, by name, where the model reads it.
     // After a new page, only what was said since is in front of it (and the words it is answering, whenever they were said).
     const page = log.state("brain:page", null) ?? 0;
-    const recent = log
-      .events(scope, THREAD)
+    const recent = thread()
       .filter((e) => e.content && ["user", "assistant", "tool"].includes(e.role) && ((e.occurredAt ?? 0) > page || e.id === request.id))
       .slice(-cfg.recent)
       .map((e) =>
@@ -742,7 +763,7 @@ export function openMind({
         const files = (event.files ?? []).map(fileOf).filter(Boolean),
           listed = files.map(({ id, name, type, size }) => ({ id, name, type, size }));
         // Words are the user's; a message of files alone is recorded by their names.
-        const about = event.replyTo ? log.events(scope, THREAD).find((e) => e.id === event.replyTo && e.content) : null,
+        const about = event.replyTo ? thread().find((e) => e.id === event.replyTo && e.content) : null,
           replyTo = about ? { id: about.id, role: about.role, words: cut(about.content, 140) } : null;
         endTurn();
         request = add(
@@ -811,7 +832,7 @@ export function openMind({
           );
         }
         // It has this in front of it now: read, as a person's message is read when they take it up. Anything of the user's said before it and not yet taken up is read with it.
-        for (const e of log.events(scope, THREAD))
+        for (const e of thread())
           if (e.role === "user" && e.content && mark("brain:read", e.id, log.now())) emit({ type: "read", id: e.id, at: log.now() });
       } else if (event.kind === "worker") {
         const task = tasks.get(event.task);
@@ -1022,9 +1043,7 @@ export function openMind({
       log.save("brain:here", log.now());
       // Said in answer to one thing that was said before: it is named, so that "that one" has something to point at.
       const about =
-        typeof replyTo === "string"
-          ? log.events(scope, THREAD).find((e) => e.id === replyTo && e.content && ["user", "assistant"].includes(e.role))
-          : null;
+        typeof replyTo === "string" ? thread().find((e) => e.id === replyTo && e.content && ["user", "assistant"].includes(e.role)) : null;
       wake.stimulus({ kind: "user", text: text.trim(), ...(ids.length ? { files: ids } : {}), ...(about ? { replyTo: about.id } : {}) });
     },
     /** A file the user hands over: kept beside the store until a message carries it. */
@@ -1112,7 +1131,7 @@ export function openMind({
      * back as it comes. Nothing of the sound is kept.
      */
     async aloud(id, { as = "sound", voice: which, signal } = {}) {
-      const said = log.events(scope, THREAD).find((e) => e.id === id && e.role === "assistant" && e.content);
+      const said = thread().find((e) => e.id === id && e.role === "assistant" && e.content);
       if (!said) throw new Error("There is no such reply");
       const text = forVoice(said.content);
       if (as === "text") return plain({ text });
@@ -1123,7 +1142,7 @@ export function openMind({
     },
     /** The user puts a sign on something Asteme said, or takes it off with an empty one. It is not a message: nothing is thought about because of it, and Asteme learns of it the next time it thinks. */
     react(id, emoji) {
-      const said = log.events(scope, THREAD).find((e) => e.id === id && e.role === "assistant" && e.content);
+      const said = thread().find((e) => e.id === id && e.role === "assistant" && e.content);
       if (!said) throw new Error("There is no such reply");
       const sign = typeof emoji === "string" ? emoji.trim() : "";
       if (sign && (sign.length > 16 || !/^(\p{Extended_Pictographic}|\p{Emoji_Modifier}|\p{Regional_Indicator}|\u200d|\ufe0f)+$/u.test(sign)))
@@ -1167,7 +1186,7 @@ export function openMind({
     /** How many things Asteme has said that have not been in front of the user: for a mark on a tab or beside its name, where the conversation itself is not in view. Counted from when the conversation was last looked at, and from the user's own last words. */
     unseen() {
       const shown = log.state("brain:shown", 0) ?? 0,
-        events = log.events(scope, THREAD);
+        events = thread();
       let from = 0;
       events.forEach((e, i) => {
         if (e.role === "user" && e.content) from = i + 1;
@@ -1200,8 +1219,7 @@ export function openMind({
       log.save("brain:shown", log.now());
       if (!feel().seen) return plain({ seen: 0 });
       const mine = new Set(
-        log
-          .events(scope, THREAD)
+        thread()
           .filter((e) => e.role === "assistant" && e.content)
           .map((e) => e.id),
       );
@@ -1217,11 +1235,11 @@ export function openMind({
      * the thinking is ended. What Asteme already answered stays said.
      */
     async retract(id) {
-      const said = log.events(scope, THREAD).find((e) => e.id === id && e.role === "user" && e.content);
+      const said = thread().find((e) => e.id === id && e.role === "user" && e.content);
       if (!said) throw new Error("There is no such message of yours");
       if (thinking && origin === id) halt?.abort();
       // What was said in answer goes with it: the answer rests on the words that are being taken back, and may repeat them. So does work that was handed out for it and is still out.
-      const all = log.events(scope, THREAD),
+      const all = thread(),
         from = all.findIndex((e) => e.id === id),
         answers = [];
       for (let i = from + 1; i < all.length; i++) {
@@ -1452,7 +1470,7 @@ export function openMind({
         // It says hello once the scene of its waking is over, not under it: whoever shows the scene says how long that is (greetIn, at most half a minute).
         const hello = () => {
           greeting = null;
-          if (log.state("brain:born", null)?.at === born.at && !log.events(scope, THREAD).length)
+          if (log.state("brain:born", null)?.at === born.at && !thread().length)
             wake.stimulus({
               kind: "born",
               ...(typeof patch.language === "string" && /^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(patch.language) ? { language: patch.language } : {}),
@@ -1595,25 +1613,23 @@ export function openMind({
         }
         return list;
       };
-      const takenBack = new Map();
-      for (const e of log.events(scope, THREAD))
-        if (e.kind === "retraction") {
-          try {
-            const r = JSON.parse(e.content);
-            if (r?.of) takenBack.set(r.of, r.at ?? e.occurredAt);
-          } catch {
-            /* not one */
+      const takenBack = fromThread("takenBack", (list) => {
+        const back = new Map();
+        for (const e of list)
+          if (e.kind === "retraction") {
+            try {
+              const r = JSON.parse(e.content);
+              if (r?.of) back.set(r.of, r.at ?? e.occurredAt);
+            } catch {
+              /* not one */
+            }
           }
-        }
+        return back;
+      });
       const both = reactions(),
         reacted = new Map([...both.its, ...both.theirs]);
       // What a message answers is kept by its id alone and its words are looked up when shown: once that message is taken back, nothing of it is left standing in another.
-      const byId = new Map(
-          log
-            .events(scope, THREAD)
-            .filter((e) => e.content)
-            .map((e) => [e.id, e]),
-        ),
+      const byId = fromThread("byId", (list) => new Map(list.filter((e) => e.content).map((e) => [e.id, e]))),
         quoted = (id) => {
           const e = id && byId.get(id);
           return e ? { id: e.id, role: e.role, words: cut(e.content, 140) } : null;
@@ -1651,7 +1667,7 @@ export function openMind({
         ...[...r.unsure, ...r.stale].map((id) => ({ kind: "check", item: textOf(id) })).filter((c) => c.item),
       ].slice(0, 1);
       // Nothing said, nothing remembered and never woken: a store at its very beginning, a new one or one wiped clean.
-      const fresh = !log.state("brain:born", null) && !log.events(scope, THREAD).length && !core.items().length;
+      const fresh = !log.state("brain:born", null) && !thread().length && !core.items().length;
       return plain({
         fresh,
         born: !!log.state("brain:born", null),
@@ -1678,9 +1694,7 @@ export function openMind({
         page: log.state("brain:page", null) ?? 0,
         memories: core.items().length,
         messages: withTakenBack(
-          log
-            .events(scope, THREAD)
-            .filter((e) => e.content && ["user", "assistant"].includes(e.role))
+          fromThread("said", (list) => list.filter((e) => e.content && ["user", "assistant"].includes(e.role)))
             .slice(-200)
             .map((e) => ({
               id: e.id,

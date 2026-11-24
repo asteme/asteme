@@ -70,7 +70,7 @@ export class Host {
     this.retries = new Map();
     this.breaker = { failures: 0, until: 0, tokens: this.log.state("call-tokens", {}), onLearn: tokens => this.log.save("call-tokens", tokens) };
     this.readings = new Map();
-    if (!["shadow", "judge", "model"].includes(this.config.judgeMode)) this.config.judgeMode = "shadow";
+    if (!["shadow", "judge", "model"].includes(this.config.judgeMode)) this.config.judgeMode = "judge";
     this.fetch = input.fetch;
     this.setupJudge();
     profile(this.log, this.identity);
@@ -611,6 +611,8 @@ export class Host {
     try { await backupNow(this); } catch (e) { this.warn(e); }
     // Host bookkeeping an older version stored: no words, read by nothing.
     try { this.core.dropUnread(); } catch (e) { this.warn(e); }
+    // Readings kept in the old, larger form are brought down a few hundred a day; the space is given back to the disk by the next "reclaim".
+    try { this.core.keepTraces(); } catch (e) { this.warn(e); }
   }
   async search(agent, query) {
     await this.track(agent.session);

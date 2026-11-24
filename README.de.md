@@ -156,7 +156,7 @@ flowchart LR
   O --> R
 ```
 
-Vor einer Antwort ruft die Nachricht Erinnerungen nach Bedeutung ab, und ein Modellaufruf liest die Situation und entscheidet, welche dazugehören. Nach der Antwort wird der Austausch in die Erinnerung gelesen, und dein Satz bleibt als Grundlage für alles Gelernte stehen. Später wird aus dem, was du als Nächstes schreibst, gelesen, wie jede genutzte Erinnerung ausgegangen ist, und das verändert, was nächstes Mal abgerufen wird. Wenn nichts zu tun ist, liest es Austausche neu, die herausgestochen sind (eine Korrektur, eine Überraschung, ein Versprechen), vergleicht Erinnerungen, die sich widersprechen könnten, und zieht Lehren aus getrennten Anlässen.
+Vor einer Antwort ruft die Nachricht Erinnerungen nach Bedeutung ab, und ein Modellaufruf liest die Situation und entscheidet, welche dazugehören. Nach der Antwort wird der Austausch in die Erinnerung gelesen, und dein Satz bleibt als Grundlage für alles Gelernte stehen. Später wird aus dem, was du als Nächstes schreibst, gelesen, wie jede genutzte Erinnerung ausgegangen ist, und das verändert, was nächstes Mal abgerufen wird. Wenn nichts zu tun ist, liest es Austausche neu, die herausgestochen sind (eine Korrektur, eine Überraschung, ein Versprechen), vergleicht Erinnerungen, die sich widersprechen oder dasselbe zweimal sagen könnten (und behält dann eine davon), und zieht Lehren aus getrennten Anlässen.
 
 Der Code entscheidet nie, was etwas bedeutet. Er prüft Struktur: dass ein Zitat genau ist, dass eine ID existiert, dass sich eine Revision nicht bewegt hat. Die Bedeutung bleibt beim Modell, und alles, was das Modell schreibt, muss auf einen gespeicherten Datensatz zeigen.
 

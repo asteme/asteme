@@ -756,6 +756,35 @@ test("a kept reading still knows what its words were drawn from: taking back the
   assert.ok(!JSON.stringify(w.core.explain(ask.id) ?? {}).includes(scene), "taken back, it is gone from why the reply was given");
 });
 
+test("taking back the record a use was read from takes its scene out of every reading: what was considered, what was used and what was held back, from the oldest use too", async t => {
+  const w = world(t);
+  const item = w.learn(w.say("Put the decision first for the director", "a"), DIRECTOR_LIKE);
+  // Thirteen uses, each read from what the user said next; a candidate carries only the latest twelve of them.
+  const laters = [];
+  for (let n = 0; n < 13; n++) {
+    w.tick(86400000);
+    await w.attend(`Write brief number ${n} for the board`, { session: `s${n}`, scene: `Writing brief number ${n} for a board that skims`, admit: [{ id: item.id, anchor: `brief number ${n}` }] });
+    w.say("Decision first: fund it.", `s${n}`, "assistant"); w.tick(120000);
+    const later = w.say(`The board agreed to brief ${n} at once`, `s${n}`); laters.push(later);
+    await w.settle(later, { kind: "helped", applied: "yes", reply_quote: "Decision first" });
+  }
+  const oldest = "Writing brief number 0 for a board that skims";
+  // A reading now, where the oldest use's scene is the one the memory is found by, delivered, and also held back elsewhere.
+  const ask = w.say("Draft the board summary", "z");
+  const entry = { item: w.core.item(item.id), score: 0.8, fit: "strong", cue: oldest, origin: "helped", feedback: w.core.feedback().filter(f => f.item === item.id).slice(0, 12), stats: {}, entity: false, due: false };
+  w.core.trace({ request: ask.id, scene: { scene: "Writing for the board", need: "", entities: [] }, candidates: [entry],
+    decisions: [{ id: item.id, use: "silent", reason: "It changes this reply" }],
+    delivered: [{ id: item.id, use: "silent", text: item.text, matched: { scene: oldest, because: "helped" }, revision: item.revision, evidence: [] }],
+    heldBack: { suppressed: [{ id: "other", cue: oldest }] } });
+  assert.ok(JSON.stringify(w.core.explain(ask.id)).includes(oldest));
+  w.log.erase([laters[0].id]);
+  const after = JSON.stringify(w.core.explain(ask.id) ?? {});
+  assert.ok(!after.includes(oldest), "the scene of the use that was taken back is nowhere in why the reply was given");
+  // The reading of the first brief itself is kept: its own message was not taken back, though its scene is the one that use was filed under.
+  const first = w.log.events(scope, "s0").find(e => e.content === "Write brief number 0 for the board");
+  assert.ok(w.core.explain(first.id).readings.length >= 1, "the reading of a message that was not taken back stays");
+});
+
 test("a reading keeps what it decided and how each memory was found, not copies of the memories; readings kept the old way are brought down, and say the same", async t => {
   const w = world(t);
   const e = w.say("Put the decision first for the director", "a");

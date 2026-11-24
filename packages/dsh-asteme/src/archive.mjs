@@ -64,6 +64,7 @@ export const archive = {
     let rows = 0, bytes = 0;
     this.log.transaction(() => {
       const update = db.prepare("UPDATE events SET data=? WHERE id=?");
+      this.log.rewrote();
       for (const row of db.prepare("SELECT id,data FROM events WHERE erased=0 AND length(data)>? AND json_extract(data,'$.role')='tool'").all(keep + 400)) {
         if (cited.has(row.id)) continue;
         const e = JSON.parse(row.data);
@@ -92,6 +93,7 @@ export const archive = {
     let rows = 0, bytes = 0;
     this.log.transaction(() => {
       const remove = db.prepare("DELETE FROM events WHERE id=?");
+      this.log.rewrote();
       for (const kind of kinds)
         for (const row of db.prepare("SELECT id,length(data) AS size FROM events WHERE json_extract(data,'$.kind') IS ? AND coalesce(json_extract(data,'$.content'),'')=''").all(kind)) {
           if (cited.has(row.id)) continue;
@@ -189,6 +191,7 @@ export const archive = {
     if (source.version > ARCHIVE.version) throw Error("This archive was written by a newer version");
     if (source.reduced) throw Error("This is the reduced copy that goes with a report, not a complete copy: parts of it were left out, so it cannot be brought back in");
     const db = this.log.db, added = {}, local = new Set(tablesOf(db));
+    this.log.rewrote();
     const rowsOf = name => {
       const t = tables[name];
       if (!t || !local.has(name)) return null;

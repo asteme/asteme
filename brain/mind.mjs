@@ -126,15 +126,16 @@ export function openMind({
   const scope = { ...identity, projectId: "asteme" };
   // The conversation as stored, read once and then only what was added since. Everything that draws or decides from the whole conversation reads it
   // (fourteen places, three of them in every state the page asks for), and a conversation of a year is tens of thousands of records: read again
-  // each time, it was most of what opening the page waited on. Whether the kept copy still is the conversation is asked of the store each time, by
-  // how many records it holds and the last of them: rows written behind it (an archive brought back in), erased or wiped make it read again; rows
-  // only added at the end are added to it. (As first written it trusted the place reached in the conversation, and an archive brought back in under
-  // that place was never shown.) It is frozen, so nothing can change it by mistake.
+  // each time, it was most of what opening the page waited on. Whether the kept copy still is the conversation is asked each time: any write that is
+  // not an addition at the end (erasing, wiping, thinning, an archive brought in) is counted by the store (`rewrites`) and makes it read again, and so
+  // does a store whose count of records or last record is not what was read; rows only added at the end are added to it. (As first written it trusted
+  // the place reached in the conversation, then the count and the last record, and each time a way was found to change the records with those the
+  // same.) It is frozen, so nothing can change it by mistake.
   let kept = null;
   const counted = log.db.prepare("SELECT count(*) AS n, max(seq) AS top FROM events WHERE scope=? AND session_id=? AND erased=0");
   const thread = () => {
     const { n, top } = counted.get(scopeKey(scope), THREAD),
-      erased = log.state("erasure-revision", 0);
+      erased = log.rewrites ?? 0;
     if (kept && kept.erased === erased && kept.n === n && kept.top === top) return kept.list;
     if (kept && kept.erased === erased && n > kept.n && (kept.top ?? -1) < (top ?? -1)) {
       const added = log.events(scope, THREAD, (kept.top ?? -1) + 1);

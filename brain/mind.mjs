@@ -7,7 +7,7 @@
 // src/prompts.mjs). It has no hands: work goes to workers through one door
 // (acp.mjs), and what comes back is something it read, never something the
 // user said. docs/BRAIN.md has the reasons.
-import { Log, profile } from "../src/log.mjs";
+import { Log, profile, scopeKey } from "../src/log.mjs";
 import { Asteme, plain, accessibility, useStats } from "../src/core.mjs";
 import { Wakefulness, EVERY } from "./wake.mjs";
 import { forVoice, plainWav } from "./voice.mjs";
@@ -126,19 +126,26 @@ export function openMind({
   const scope = { ...identity, projectId: "asteme" };
   // The conversation as stored, read once and then only what was added since. Everything that draws or decides from the whole conversation reads it
   // (fourteen places, three of them in every state the page asks for), and a conversation of a year is tens of thousands of records: read again
-  // each time, it was most of what opening the page waited on. Rows are only ever added at the end, except when something is erased or everything is
-  // wiped, and those are what the kept copy is checked against. It is frozen, so nothing can change it by mistake.
+  // each time, it was most of what opening the page waited on. Whether the kept copy still is the conversation is asked of the store each time, by
+  // how many records it holds and the last of them: rows written behind it (an archive brought back in), erased or wiped make it read again; rows
+  // only added at the end are added to it. (As first written it trusted the place reached in the conversation, and an archive brought back in under
+  // that place was never shown.) It is frozen, so nothing can change it by mistake.
   let kept = null;
+  const counted = log.db.prepare("SELECT count(*) AS n, max(seq) AS top FROM events WHERE scope=? AND session_id=? AND erased=0");
   const thread = () => {
-    const epoch = log.wipes ?? 0,
-      erased = log.state("erasure-revision", 0),
-      next = log.cursor(scope, THREAD);
-    if (kept && kept.epoch === epoch && kept.erased === erased && kept.next <= next) {
-      if (kept.next < next) kept = { ...kept, next, list: Object.freeze([...kept.list, ...log.events(scope, THREAD, kept.next)]) };
-      return kept.list;
+    const { n, top } = counted.get(scopeKey(scope), THREAD),
+      erased = log.state("erasure-revision", 0);
+    if (kept && kept.erased === erased && kept.n === n && kept.top === top) return kept.list;
+    if (kept && kept.erased === erased && n > kept.n && (kept.top ?? -1) < (top ?? -1)) {
+      const added = log.events(scope, THREAD, (kept.top ?? -1) + 1);
+      if (kept.n + added.length === n) {
+        kept = { erased, n, top, list: Object.freeze([...kept.list, ...added]) };
+        return kept.list;
+      }
     }
-    kept = { epoch, erased, next, list: Object.freeze(log.events(scope, THREAD)) };
-    return kept.list;
+    const list = log.events(scope, THREAD);
+    kept = { erased, n, top, list: Object.freeze(list) };
+    return list;
   };
   // What is worked out from the whole conversation is kept with the copy it was worked out from, and worked out again when that copy changes.
   const fromThread = (name, make) => {

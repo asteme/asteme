@@ -28,6 +28,10 @@ const STOOD_OUT = { correction: "the user corrected something", surprise: "somet
   explicit: "the user asked for something to be remembered", commitment: "a promise was made", recurrence: "the same kind of situation had come up before" };
 const cosine = (a, b) => { let dot = 0, na = 0, nb = 0; for (let i = 0; i < a.length; i++) { dot += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i]; } return na && nb ? dot / Math.sqrt(na * nb) : 0; };
 
+// When two memories are close enough to be put side by side as perhaps the same thing (closeness above what an empty scene reaches, as recall measures it),
+// how many new ones are held against how many others at one look, and how many such pairs one look may add.
+const SAME = { close: 0.8, fresh: 300, against: 3000, most: 12 };
+
 export const sleep = {
   // A pair or a memory is judged once per state. If either side changes, the
   // question is open again.
@@ -95,6 +99,35 @@ export const sleep = {
       const names = (changed.entities ?? []).filter(n => !common.has(norm(n)));
       understandings.filter(o => o.id !== changed.id && (o.entities ?? []).some(e => names.some(n => sameEntity(e, n))))
         .slice(0, 2).forEach(other => pair(changed, other, 0.3, "A memory that changed names the same person or thing as another"));
+    }
+    // The same thing noted twice, in other words: two memories whose words mean nearly the same, whatever subject each was filed under and whether or not
+    // they name anyone. Only these two ways above put memories side by side, and a thing said again a week later in other words was neither: it stayed
+    // twice, and memories only grew. Each memory noted since the last look is held against every other, and the nearest is put side by side with it when
+    // it is very near; what to do (one, both, or one in place of the other) is decided there, as for any other pair. A few at a time.
+    const fresh = understandings.filter(i => LIVE.includes(i.status) && (i.lastEvidenceAt ?? i.learnedAt ?? 0) > since && i.text).slice(-SAME.fresh);
+    if (fresh.length && understandings.length >= 2 && this.embed) {
+      const live = understandings.filter(i => LIVE.includes(i.status) && i.text).slice(-SAME.against);
+      const vectors = await this.vectors(live.map(i => i.text), "passage");
+      const nulls = await this.vectors(TUNING.nullScenes, "query");
+      if (vectors && nulls) {
+        let put = 0;
+        for (const a of fresh) {
+          const va = vectors.get(a.text);
+          if (!va || ![...nulls.values()].some(n => cosine(n, va) < 0.999)) continue;
+          const floor = Math.max(...[...nulls.values()].map(n => cosine(n, va)));
+          let best = null, near = -1;
+          for (const b of live) {
+            if (b.id === a.id || (a.level === "lesson") !== (b.level === "lesson") || (a.premises ?? []).includes(b.id) || (b.premises ?? []).includes(a.id)) continue;
+            const s = cosine(va, vectors.get(b.text));
+            if (s > near) { near = s; best = b; }
+          }
+          if (best && (near - floor) / Math.max(1e-6, 1 - floor) >= SAME.close && put < SAME.most) {
+            const before = this.jobs().length;
+            pair(a, best, 0.5, "Two memories may say the same thing in other words");
+            if (this.jobs().length > before) put++;
+          }
+        }
+      }
     }
     // Possible lessons: two cases from different exchanges whose general
     // situations are each other's nearest, and nearer than an empty scene.
@@ -224,7 +257,7 @@ export const sleep = {
     if (!LIVE.includes(a.status) && !LIVE.includes(b.status)) return { skipped: "neither side is in use" };
     const events = this.records([a, b].flatMap(i => [...i.evidence, ...(i.against ?? [])].map(e => e.id)));
     const value = await infer("asteme-reconcile", reconcilePrompt({ now: iso(now), core: this.charter(),
-      a: this.detail(a), b: this.detail(b), outcomes: { [a.id]: this.outcomesOf(a), [b.id]: this.outcomesOf(b) }, RAW: pageRaw(events, 1000) }), 2600);
+      why: job.reasons ?? [], a: this.detail(a), b: this.detail(b), outcomes: { [a.id]: this.outcomesOf(a), [b.id]: this.outcomesOf(b) }, RAW: pageRaw(events, 1000) }), 2600);
     const verdicts = ["distinct", "supersede", "split", "merge", "retract", "ask"];
     if (!value || !verdicts.includes(value.verdict) || !Array.isArray(value.changes ?? [])) throw Error("Invalid reconcile response");
     // Only the two memories on the table, or a new question to the user.

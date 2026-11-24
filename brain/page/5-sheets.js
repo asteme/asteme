@@ -6,7 +6,40 @@ const get = async (path) => {
   if (!r.ok) throw new Error(v.error ?? "Failed");
   return v;
 };
+// What a sheet was opened over, the nearest last: a memory opened from the list is laid over the list, and going back finds the list as it was left (what was
+// typed, what was found, how far down it was read, the row that was pressed). Closing puts all of it away. (A memory opened from the list used to take its
+// place, and its only way out was to close: the list, and the search in it, were gone.)
+let below = [],
+  refillNow = null;
+const leaveMemory = () => {
+  if (flares.some((f) => f.held)) {
+    flares = flares.filter((f) => !f.held);
+    kick();
+  }
+  if (openId) {
+    openId = null;
+    report();
+  }
+};
+const sheetBack = (changed = false) => {
+  const b = below.pop();
+  if (!b) return closeSheet();
+  leaveMemory();
+  sheetBox.replaceChildren(...b.nodes);
+  sheetBox.dataset.title = b.key;
+  sheetBox.dataset.name = b.name;
+  refillNow = b.refill;
+  sheetBox.scrollTop = b.at;
+  (b.from?.isConnected ? b.from : sheetBox.querySelector("button"))?.focus({ preventScroll: true });
+  // What was changed in the one above (a memory forgotten) is not left standing in the list.
+  if (changed && b.refill)
+    void Promise.resolve(b.refill()).then(() => {
+      if (!sheetBox.contains(document.activeElement)) sheetBox.querySelector("input, button")?.focus({ preventScroll: true });
+    });
+};
 const closeSheet = () => {
+  below = [];
+  refillNow = null;
   sheetBox.classList.remove("on");
   document.body.classList.remove("sheet-on");
   if (flares.some((f) => f.held)) {
@@ -19,24 +52,45 @@ const closeSheet = () => {
   }
   if (!spaceOn) box.focus();
 };
-const sheet = (title, parts, key = title) => {
+const sheet = (title, parts, key = title, { over = false, refill = null } = {}) => {
   if (flares.some((f) => f.held)) flares = flares.filter((f) => !f.held);
   openId = null;
-  // The title, the way out and (in the settings) the parts stay at the top while what is under them is read.
+  const on = sheetBox.classList.contains("on"),
+    same = on && sheetBox.dataset.title === key;
+  if (over && on && !same)
+    below.push({
+      nodes: [...sheetBox.childNodes],
+      key: sheetBox.dataset.title,
+      name: sheetBox.dataset.name,
+      at: sheetBox.scrollTop,
+      from: document.activeElement,
+      refill: refillNow,
+    });
+  else if (!same && !over) below = [];
+  refillNow = refill;
+  // The title, the way out and (in the settings) the parts stay at the top while what is under them is read. Over another sheet, the way back to it is above the title.
   const head = el("div", "sheethead"),
     named = el("h2", null, title),
     shut = el("button", "bare muted", say("brainClose"));
   shut.type = "button";
   shut.onclick = closeSheet;
   named.append(shut);
+  if (below.length) {
+    const back = el("button", "bare muted sheetback", "‹ " + below.at(-1).name);
+    back.type = "button";
+    back.title = say("back");
+    back.onclick = () => sheetBack();
+    head.append(back);
+  }
   head.append(named);
   parts = parts.filter(Boolean);
   if (parts[0]?.classList?.contains("tabs")) head.append(parts.shift());
   // The same sheet drawn again after a change stays where it was read to, and the focus is not taken to the top.
-  const again = sheetBox.classList.contains("on") && sheetBox.dataset.title === key,
+  const again = same,
     at = sheetBox.scrollTop;
   sheetBox.replaceChildren(head, ...parts.filter(Boolean));
   sheetBox.dataset.title = key;
+  sheetBox.dataset.name = title;
   sheetBox.classList.add("on");
   document.body.classList.add("sheet-on");
   if (again) sheetBox.scrollTop = at;
@@ -71,10 +125,11 @@ const section = (title, lines) =>
         })(),
       ]
     : [];
+// Escape goes back one sheet, and from the first one, away.
 addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && sheetBox.classList.contains("on")) closeSheet();
+  if (e.key === "Escape" && sheetBox.classList.contains("on")) below.length ? sheetBack() : closeSheet();
 });
-const openMemory = async (id) => {
+const openMemory = async (id, over = false) => {
   let m;
   try {
     m = await get("/api/memory?id=" + encodeURIComponent(id));
@@ -85,7 +140,7 @@ const openMemory = async (id) => {
     try {
       await post("/api/change", { id: m.id, revision: m.revision, what });
       await load();
-      what === "forget" || what === "retire" ? closeSheet() : await openMemory(id);
+      what === "forget" || what === "retire" ? (below.length ? sheetBack(true) : closeSheet()) : await openMemory(id);
     } catch (e) {
       problem(e.message);
     }
@@ -106,14 +161,19 @@ const openMemory = async (id) => {
       button(say(m.paused ? "brainResume" : "brainPause"), act(m.paused ? "resume" : "pause")),
     );
   acts.append(button(say("brainForget"), forget));
-  sheet(say("kind_" + m.kind) + (m.private ? " · " + say("private") : "") + (m.paused ? " · " + say("paused") : ""), [
-    el("p", "big", m.text),
-    m.closes ? el("p", "muted", say("brainClosesWhen", { when: m.closes })) : null,
-    el("h3", null, say(m.grounds === "seen" ? "brainFromSeen" : "brainFromSaid")),
-    ...m.sources.map((q) => el("blockquote", null, q.quote)),
-    m.at ? el("p", "muted", say("brainLearnedOn", { time: time(m.at) })) : null,
-    acts,
-  ]);
+  sheet(
+    say("kind_" + m.kind) + (m.private ? " · " + say("private") : "") + (m.paused ? " · " + say("paused") : ""),
+    [
+      el("p", "big", m.text),
+      m.closes ? el("p", "muted", say("brainClosesWhen", { when: m.closes })) : null,
+      el("h3", null, say(m.grounds === "seen" ? "brainFromSeen" : "brainFromSaid")),
+      ...m.sources.map((q) => el("blockquote", null, q.quote)),
+      m.at ? el("p", "muted", say("brainLearnedOn", { time: time(m.at) })) : null,
+      acts,
+    ],
+    "memory:" + m.id,
+    { over },
+  );
   // The line to the star is there while the memory is open, and goes when it is closed.
   flares = flares.filter((f) => !f.held);
   flares.push({ ids: [m.id], t0: performance.now(), held: true });
@@ -138,7 +198,7 @@ const openAll = async (q = "") => {
     list.replaceChildren(
       ...(found.length
         ? found.map((m) => {
-            const b = button(m.private ? say("private") : m.text, () => openMemory(m.id), "row");
+            const b = button(m.private ? say("private") : m.text, () => openMemory(m.id, true), "row");
             b.title = say("kind_" + m.kind);
             return b;
           })
@@ -173,7 +233,7 @@ const openAll = async (q = "") => {
     places.hidden = !!input.value.trim();
   });
   places.hidden = !!q.trim();
-  sheet(say("brainAll"), [input, places, list]);
+  sheet(say("brainAll"), [input, places, list], say("brainAll"), { refill: fill });
   input.focus();
   await fill();
 };

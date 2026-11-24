@@ -729,8 +729,37 @@ test("beside a report goes what a diagnosis reads, not the whole store; and what
   const whole = w.core.exportArchive(), evidence = w.core.exportEvidence(), text = JSON.stringify(evidence);
   assert.ok(text.includes(said.content), "what the user said is whole");
   assert.ok(text.length < JSON.stringify(whole).length / 2 && !text.includes("A".repeat(100)) && !text.includes("x".repeat(400)) && !text.includes("word ".repeat(300)));
-  assert.deepEqual([evidence.reduced, evidence.leftOut.emptyToolRows, evidence.counts.events], [true, 1, whole.counts.events - 1]);
+  // What tools did that nothing rests on is counted, with how much it held; a row of it that a memory rests on stays.
+  assert.deepEqual([evidence.reduced, evidence.leftOut.toolRows, evidence.counts.events], [true, { rows: 2, chars: 3000, conversations: 1 }, whole.counts.events - 2]);
   assert.match(text, /more characters left out of this reduced copy/);
+  const seen = w.say("The invoice says net 30", "t", "tool");
+  w.learn(seen, { text: "Invoices are net 30", about: "invoices", concrete: "Paying an invoice", general: "Paying a supplier" });
+  const again = w.core.exportEvidence(), rows = again.tables.events.rows.map(r => r[again.tables.events.columns.indexOf("id")]);
+  assert.ok(rows.includes(seen.id) && again.leftOut.toolRows.rows === 2, "the one a memory rests on is listed");
+  assert.equal(Object.keys(again.scopes).length, 1, "whose it is, written once");
+});
+
+const DIRECTOR_LIKE = { text: "Lead with the decision for this director", about: "how this director reads", concrete: "Writing a memo for the director", general: "Writing a document for a busy decision maker" };
+
+test("a reading keeps what it decided and how each memory was found, not copies of the memories; readings kept the old way are brought down, and say the same", async t => {
+  const w = world(t);
+  const e = w.say("Put the decision first for the director", "a");
+  const item = w.learn(e, DIRECTOR_LIKE);
+  const old = { id: "old-1", request: e.id, at: w.now(), scene: { scene: "Writing for the director", need: "", entities: [] },
+    candidates: [{ item: w.core.item(item.id), score: 0.9, fit: "strong", cue: "Writing a memo for the director", origin: "concrete", feedback: Array.from({ length: 12 }, (_, n) => ({ kind: "helped", request: "r" + n, reason: "x".repeat(200), scene: { scene: "y".repeat(200), need: "z".repeat(200) } })), stats: {}, entity: false, due: false }],
+    decisions: [{ id: item.id, use: "silent", reason: "It changes this reply" }], delivered: [] };
+  w.log.db.prepare("INSERT INTO attention VALUES (?,?,?,?)").run(old.id, w.core.owner, e.id, JSON.stringify(old));
+  const before = w.core.explain(e.id).readings[0].considered;
+  const size = () => w.log.db.prepare("SELECT length(data) AS n FROM attention WHERE id=?").get(old.id).n, was = size();
+  assert.deepEqual(w.core.keepTraces(), { rows: 1, bytes: was - size(), more: false });
+  assert.ok(size() < was / 4, `${was} -> ${size()}`);
+  assert.deepEqual(w.core.explain(e.id).readings[0].considered, before, "why a reply was given reads the same");
+  assert.deepEqual(w.core.keepTraces().rows, 0, "once is enough");
+  // A new reading is kept small from the start.
+  const fresh = w.core.trace({ request: e.id, scene: old.scene, candidates: old.candidates, decisions: [], delivered: [] });
+  assert.equal(fresh.candidates[0].feedback.length, 12, "the one in hand is whole");
+  const stored = JSON.parse(w.log.db.prepare("SELECT data FROM attention WHERE id=?").get(fresh.id).data);
+  assert.deepEqual([stored.candidates[0].feedback, stored.candidates[0].item.evidence, stored.candidates[0].item.text], [undefined, undefined, item.text]);
 });
 
 test("a reading aloud is sent with what DSH already holds: the account's token when thinking with the account, otherwise the key in its credentials, and nothing when there is neither", async () => {

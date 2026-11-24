@@ -156,7 +156,7 @@ flowchart LR
   O --> R
 ```
 
-Before a reply, the message calls memories up by meaning, and one model call reads the situation and decides which belong. After the reply, the exchange is read into memory, your sentence kept as the ground for anything learned. Later, what you write next is read for how each used memory turned out, and that changes what is recalled next time. While idle, it rereads exchanges that stood out (a correction, a surprise, a promise), compares memories that may disagree, and draws lessons from separate occasions.
+Before a reply, the message calls memories up by meaning, and one model call reads the situation and decides which belong. After the reply, the exchange is read into memory, your sentence kept as the ground for anything learned. Later, what you write next is read for how each used memory turned out, and that changes what is recalled next time. While idle, it rereads exchanges that stood out (a correction, a surprise, a promise), compares memories that may disagree or say the same thing twice (and keeps one of the two), and draws lessons from separate occasions.
 
 The code never decides what something means. It checks structure: that a quote is exact, that an id exists, that a revision has not moved. Meaning is left to the model, and everything the model writes has to point at a stored record.
 

@@ -149,6 +149,8 @@ export function AstemePage({ model, t: hostT, openSession }) {
 
   // Arriving is arriving at the conversation: it takes the whole pane, and the
   // panel's own header and tabs come back when the user asks to manage things.
+  // The conversation is asked for at once, alongside the panel's own first reading and not after it: that reading is everything remembered (with a
+  // thousand memories, more than a megabyte and the better part of a second) and the conversation needs none of it.
   // One arrives there before anything is known: while the first reading is still on its way there is the conversation's own mark and nothing else,
   // standing where it will stand while the conversation opens, so that what is seen is one mark giving way to the conversation. (There was the panel's
   // header with its refresh turning, and "Loading…" with a spinner under it, and then the mark.) `landing` holds from the first moment until the tab is
@@ -207,7 +209,7 @@ export function AstemePage({ model, t: hostT, openSession }) {
             action={<Button onClick={() => (stack.length ? back() : model.refresh(s?.projectId))}>{stack.length ? t("back") : t("refresh")}</Button>}>
             {/* The tabs stay mounted underneath, so a draft or a search survives a look at something else. */}
             <div hidden={!!top}>
-              {(s ? s.canTalk : true) && <TabPanel idBase={idBase} tabKey="talk" active={shown === "talk"}><TalkTab ctx={ctx} active={!!s && shown === "talk" && !top} onManage={(to) => { if (to === "settings") nav.settings(); else nav.tab(["review", "memory", "activity", "charter"].includes(to) ? to : "review"); }} onOpenSession={openSession} onChanged={() => { stale.current = true; }} settingsAsked={talkSettings} /></TabPanel>}
+              {(s ? s.canTalk : true) && <TabPanel idBase={idBase} tabKey="talk" active={shown === "talk"}><TalkTab ctx={ctx} active={(landing || !!s) && shown === "talk" && !top} onManage={(to) => { if (to === "settings") nav.settings(); else nav.tab(["review", "memory", "activity", "charter"].includes(to) ? to : "review"); }} onOpenSession={openSession} onChanged={() => { stale.current = true; }} settingsAsked={talkSettings} /></TabPanel>}
               {s && <TabPanel idBase={idBase} tabKey="review" active={shown === "review"}><ReviewTab key={s.projectId} snapshot={s} ctx={ctx} /></TabPanel>}
               {s && <TabPanel idBase={idBase} tabKey="memory" active={shown === "memory"}><MemoryTab key={s.projectId} snapshot={s} ctx={ctx} /></TabPanel>}
               {s && <TabPanel idBase={idBase} tabKey="activity" active={shown === "activity"}><ActivityTab snapshot={s} ctx={ctx} /></TabPanel>}

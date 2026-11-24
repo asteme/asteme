@@ -447,3 +447,30 @@ test("a database written by 0.7 opens as it is: old items become cases and keep 
   assert.equal((await core.candidates({ scene: "Writing a brief for the board", need: "", entities: [] }))[0].item.id, "old-1");
   assert.equal(core.why("old-1").history[0].reason, "written by 0.7");
 });
+
+test("the same thing noted twice in other words is put side by side while asleep, and merged; what only shares a few words is not", async t => {
+  const { core, log, say, learn, tick, quote } = world(t);
+  // Filed under different subjects and naming no one: neither the subject nor a name brings these two together.
+  const first = learn(say("Put the decision first, the director only reads the opening", "mon"), { text: "Lead with the decision for the director", about: "memo style", concrete: "Writing a memo for the director", general: "Writing for a busy decision maker" });
+  const cooking = learn(say("I am allergic to peanuts", "mon"), { text: "Allergic to peanuts", about: "food", concrete: "Cooking dinner", general: "Planning a meal" });
+  await core.plan();
+  tick(DAY);
+  const again = learn(say("The board reads one line; give them the decision", "fri"), { text: "The board wants the decision up front", about: "how the board reads", concrete: "Preparing a summary for the board", general: "Writing a brief for an executive" });
+  await core.plan();
+  const jobs = core.jobs().filter(j => j.type === "reconcile");
+  assert.deepEqual(jobs.map(j => j.target), [[first.id, again.id].sort().join("|")], "the two that mean the same, and nothing else");
+  assert.match(jobs[0].reasons[0], /same thing in other words/);
+  const night = await core.sleep({ infer: scripted({
+    replay: { changes: [] }, revise: { reason: "Nothing to change", changes: [] }, integrate: { changes: [] }, imagine: { scenes: [] },
+    reconcile: () => ({ verdict: "merge", reason: "One preference said twice", changes: [
+      { op: "put", id: first.id, kind: "understanding", certainty: "explicit", reason: "Said twice", tested: "Two occasions", hypothesis: "Other readers are untested", entities: [], text: "Leads with the decision for busy readers", about: "memo style",
+        concrete: "Writing for the director or the board", general: "Writing for a busy decision maker", evidence: [...quote(log.event(first.evidence[0].id)), ...quote(log.event(again.evidence[0].id))] },
+      { op: "close", id: again.id, as: "retired", reason: "Said in the other one", evidence: quote(log.event(again.evidence[0].id)) },
+    ] }),
+  }) });
+  const merged = night.ran.find(r => r.type === "reconcile");
+  assert.equal(merged.verdict, "merge");
+  const live = core.items().filter(i => i.kind === "understanding").map(i => i.text).sort();
+  assert.deepEqual(live, ["Allergic to peanuts", "Leads with the decision for busy readers"], "two became one; the unrelated one is untouched");
+  assert.equal(core.item(cooking.id).status, "active");
+});

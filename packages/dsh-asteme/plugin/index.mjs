@@ -30,13 +30,18 @@ export const Config = z.object({
   timeoutMs: z.number().min(1000).max(900000).default(240000),
   prepareTimeoutMs: z.number().min(1000).max(120000).default(30000),
   // An optional decision model for the two yes/no steps. Off without a key.
-  // judgeMode: "shadow" lets the generative model decide and records the
-  // judge's answer beside it (and uses the judge when the model fails);
-  // "judge" lets the judge decide; "model" asks the judge only on failure.
+  // judgeMode: "judge" lets the judge decide, so a reply does not wait on the
+  // model to choose what to recall (the scene is read afterwards); "shadow"
+  // lets the generative model decide and records the judge's answer beside it
+  // (and uses the judge when the model fails); "model" asks the judge only on
+  // failure. "judge" is the default since 0.12.2: in use, the model's choice
+  // kept a reply waiting nine seconds at the median and up to thirty, the
+  // judge's took under half a second, and over 2,122 answers given side by
+  // side the two agreed on 84.5%. Without a judge the model chooses, as before.
   judgeKey: z.string(),
   judgeUrl: z.string(),
   judgeModel: z.string(),
-  judgeMode: z.string().default("shadow"),
+  judgeMode: z.string().default("judge"),
   // A daily copy of the store under backups/. 0 turns it off.
   backupEveryHours: z.number().min(0).default(24),
   backupKeep: z.number().min(1).default(14),

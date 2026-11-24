@@ -160,7 +160,7 @@ ${sources}
 INPUT:${JSON.stringify(input)}`;
 
 // Sleep. Two memories that may disagree, with everything each rests on.
-export const reconcilePrompt = (input) => `Two stored understandings, INPUT.a and INPUT.b, may disagree. Each comes with the evidence it rests on, any evidence recorded against it, its dates and how its use turned out. RAW holds the original records. Decide what the records support and return JSON {"verdict":"distinct"|"supersede"|"split"|"merge"|"retract"|"ask","reason":"","changes":[]}.
+export const reconcilePrompt = (input) => `Two stored understandings, INPUT.a and INPUT.b, may disagree, or may say the same thing in other words; INPUT.why says why they were put side by side. Each comes with the evidence it rests on, any evidence recorded against it, its dates and how its use turned out. RAW holds the original records. Decide what the records support and return JSON {"verdict":"distinct"|"supersede"|"split"|"merge"|"retract"|"ask","reason":"","changes":[]}.
 distinct: they do not actually disagree; they are about different things or are both true as stated. No changes.
 supersede: both were true in their own time and the later one holds now. Close the earlier one with {op:"close",id,as:"superseded",by:"the id that holds now",reason,evidence}. Go by the dates of the records, not by which understanding was written later.
 split: both are true, each under a condition the other lacks. Revise each with put and its id so that its text, concrete, general and tested state that condition. After this they must no longer be able to apply to the same situation with different advice.

@@ -62,16 +62,30 @@ export function renderExperience(items) {
 // What is kept of a reading. A candidate was kept with a whole copy of its memory and of the last twelve times that memory was used, at every reply:
 // thirty thousand characters a reading, nine tenths of a store a year old, and nothing read them back but the memory's words and how it was found
 // (why a reply was given, what a later outcome is filed under). That is what is kept now; the memory itself is in the store, by its id.
-const keptCandidate = (c) => {
+const keptCandidate = (c, sources) => {
   if (!c?.item) return c;
   const { item, score, sim, lift, closeness, fit, cue, origin, via, words, suppressed, against, accessibility, entity, due, stale, spread } = c;
-  // What the kept words were drawn from, by id: the memory's own records, and for a scene it was found by that was learned from a later use, that use's
-  // records. Taking any of them back finds this entry by these ids and removes it, as it found the whole copies before (see scrubTrace in log.mjs).
-  const from = (c.feedback ?? []).filter((f) => f.scene?.scene && (f.scene.scene === cue || f.scene.scene === against?.cue));
-  const rests = [...new Set([...(item.evidence ?? []).map((e) => e.id), ...from.flatMap((f) => [f.request, ...(f.evidence ?? []).map((e) => e.id)])].filter(Boolean))];
-  return { item: { id: item.id, revision: item.revision, kind: item.kind, level: item.level, text: cut(item.text, 160) }, rests, score, sim, lift, closeness, fit, cue, origin, via, words, suppressed, against, accessibility, entity, due, stale, spread };
+  // What the kept words were drawn from, by id: the memory's own records, and the records of the use a scene it was found or held back by was learned
+  // from (see cues in recall.mjs). Taking any of them back finds this entry by these ids and removes it (scrubTrace in log.mjs). A reading made before
+  // the cues said where they came from is given the same from the store (`sources`), when it is brought down.
+  // Failing both, what it carries of the memory's uses is read for them.
+  const carried = (scene) => (c.feedback ?? []).filter((f) => scene && f.scene?.scene === scene).flatMap((f) => [f.request, ...(f.evidence ?? []).map((e) => e.id)]);
+  const cueFrom = c.cueFrom ?? sources?.(item.id, cue) ?? carried(cue), againstFrom = against ? (against.from ?? sources?.(item.id, against.cue) ?? carried(against.cue)) : [];
+  const rests = [...new Set([...(item.evidence ?? []).map((e) => e.id), ...cueFrom, ...againstFrom].filter(Boolean))];
+  return { item: { id: item.id, revision: item.revision, kind: item.kind, level: item.level, text: cut(item.text, 160) }, rests, score, sim, lift, closeness, fit, cue, origin, via, words, suppressed, against: against && { ...against, from: againstFrom }, accessibility, entity, due, stale, spread };
 };
-export const keptTrace = (trace) => (Array.isArray(trace?.candidates) && trace.candidates.some(c => c?.item && (c.feedback || c.item.evidence)) ? { ...trace, candidates: trace.candidates.map(keptCandidate) } : trace);
+// `sources(item, scene)` gives the records a scene of that memory was learned from; it is used only for readings kept before cues said so themselves.
+export const keptTrace = (trace, sources = null) => {
+  if (!Array.isArray(trace?.candidates)) return trace;
+  const old = trace.candidates.some(c => c?.item && (c.feedback || c.item.evidence));
+  if (!old && !sources) return trace;
+  const next = { ...trace, candidates: trace.candidates.map(c => (c?.item && (c.feedback || c.item.evidence || !c.rests) ? keptCandidate(c, sources) : c)) };
+  if (sources) {
+    if (Array.isArray(trace.delivered)) next.delivered = trace.delivered.map(d => d?.matched?.scene && !d.matched.from ? { ...d, matched: { ...d.matched, from: sources(d.id, d.matched.scene) } } : d);
+    if (Array.isArray(trace.heldBack?.suppressed)) next.heldBack = { ...trace.heldBack, suppressed: trace.heldBack.suppressed.map(x => x?.cue && !x.from ? { ...x, from: sources(x.id, x.cue), ...(x.against?.cue && !x.against.from ? { against: { ...x.against, from: sources(x.id, x.against.cue) } } : {}) } : x) };
+  }
+  return next;
+};
 
 export const attend = {
   traces(request) {
@@ -371,7 +385,7 @@ export const attend = {
         if (use !== "not-now" && (item.status !== "doubtful" || use === "check"))
           base.delivered.push({ ...item, grounds: readNotSaid ? "seen" : "said", use, ...(judged ? { by: "judge", confidence: d.confidence } : { relevance: d.reason, anchor: d.anchor }),
             ...(typeof d.expect === "string" && d.expect.trim() ? { expect: cut(d.expect.trim(), 240) } : {}),
-            matched: { scene: candidate.cue, kind: candidate.origin, ...(candidate.fit ? { fit: candidate.fit } : {}), ...(candidate.via ? { via: candidate.via } : {}) },
+            matched: { scene: candidate.cue, kind: candidate.origin, ...(candidate.cueFrom?.length ? { from: candidate.cueFrom } : {}), ...(candidate.fit ? { fit: candidate.fit } : {}), ...(candidate.via ? { via: candidate.via } : {}) },
             ...(candidate.stale ? { stale: true } : {}), ...(candidate.conflict?.length ? { conflict: candidate.conflict } : {}) });
       }
       // Overshoot trims the oldest extras instead of erasing the whole note.

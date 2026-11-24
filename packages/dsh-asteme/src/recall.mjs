@@ -119,20 +119,26 @@ export const recall = {
     return out;
   },
   // The scenes a memory answers to, and the scenes it has learned to stay out of.
+  // Each cue says which records it was drawn from (`from`): none for the memory's own words, and for a scene learned from a later use, that use's records.
+  // What is kept of a reading carries these ids, so that taking a record back finds exactly the entries that hold words drawn from it, and no others.
   cues(item, feedback = []) {
-    const positive = [], negative = [], seen = new Set();
-    const add = (list, sign, text, origin) => {
-      if (!text || seen.has(sign + text)) return;
-      seen.add(sign + text); list.push({ text, origin });
+    const positive = [], negative = [], seen = new Map();
+    const add = (list, sign, text, origin, from = []) => {
+      if (!text) return;
+      const had = seen.get(sign + text);
+      if (had) { for (const id of from) if (!had.from.includes(id)) had.from.push(id); return; }
+      const cue = { text, origin, from: [...from] };
+      seen.set(sign + text, cue); list.push(cue);
     };
+    const sources = f => [f.request, ...(f.evidence ?? []).map(e => e.id)].filter(Boolean);
     add(positive, "+", item.concrete, "encoded");
     add(positive, "+", item.general, "anticipated");
     for (const text of item.imagined ?? []) add(positive, "+", text, "imagined");
     for (const f of feedback) {
       const scene = f.scene?.scene;
-      if (["helped", "missed"].includes(f.kind)) add(positive, "+", scene, f.kind);
+      if (["helped", "missed"].includes(f.kind)) add(positive, "+", scene, f.kind, sources(f));
       // A scene where the content was wrong stops counting once the content is revised.
-      else if (f.kind === "irrelevant" || (f.kind === "wrong" && f.revision === item.revision)) add(negative, "-", scene, f.kind);
+      else if (f.kind === "irrelevant" || (f.kind === "wrong" && f.revision === item.revision)) add(negative, "-", scene, f.kind, sources(f));
     }
     if (!positive.length) add(positive, "+", item.text, "encoded");
     return { positive, negative };
@@ -183,13 +189,13 @@ export const recall = {
       if (!mine) { if (!this._words || this._words.size > 60000) this._words = new Map(); this._words.set(wordsKey, mine = contentWords([item.text, item.concrete, item.general, ...(item.entities ?? [])].join(" "))); }
       const due = item.kind === "concern" && item.trigger?.at && Date.parse(item.trigger.at) <= now && (!item.trigger.until || now <= Date.parse(item.trigger.until));
       return {
-        item, sim: best.sim, lift, closeness, cue: best.text, origin: best.origin,
+        item, sim: best.sim, lift, closeness, cue: best.text, origin: best.origin, cueFrom: best.from ?? [],
         fit: closeness === null ? null : closeness >= TUNING.fit.strong ? "strong" : closeness >= TUNING.fit.moderate ? "moderate" : "weak",
         // The present message and the memory use some of the same content words.
         words: delivery && [...asked].some(t => mine.has(t)),
         // Closer to a scene where it failed than to any scene where it belongs.
         suppressed: delivery && !!worst && worst.sim > best.sim + TUNING.negativeMargin,
-        ...(worst ? { against: { cue: worst.text, sim: worst.sim } } : {}),
+        ...(worst ? { against: { cue: worst.text, sim: worst.sim, from: worst.from ?? [] } } : {}),
         feedback: feedback.slice(0, 12), stats, accessibility: accessibility(item, stats),
         entity: (item.entities ?? []).some(e => !common.has(norm(e)) && named.some(n => sameEntity(e, n))), due: !!due,
         stale: isStale(item, feedback, now),
@@ -250,7 +256,7 @@ export const recall = {
       }
     return {
       candidates,
-      suppressed: rows.filter(r => r.suppressed).map(r => ({ id: r.item.id, cue: r.cue, sim: r.sim, against: r.against })),
+      suppressed: rows.filter(r => r.suppressed).map(r => ({ id: r.item.id, cue: r.cue, from: r.cueFrom, sim: r.sim, against: r.against })),
       below: rows.filter(r => !r.suppressed && !eligible(r)).length,
       crowded: wide.length - candidates.length,
     };

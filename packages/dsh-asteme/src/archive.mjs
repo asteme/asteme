@@ -110,11 +110,21 @@ export const archive = {
   keepTraces({ most = 400 } = {}) {
     const db = this.log.db, update = db.prepare("UPDATE attention SET data=? WHERE id=?");
     const rows = db.prepare(`SELECT id,data FROM attention WHERE owner=? AND instr(data,'"feedback":[') > 0 LIMIT ?`).all(this.owner, most);
+    // Which records each scene of a memory was learned from, as the store knows it now: what an old reading did not say about where its words came from.
+    const learned = new Map();
+    if (rows.length)
+      for (const f of this.feedback()) {
+        const scene = f.scene?.scene;
+        if (!scene) continue;
+        const key = `${f.item}\u0000${scene}`, ids = learned.get(key) ?? learned.set(key, []).get(key);
+        for (const id of [f.request, ...(f.evidence ?? []).map(e => e.id)]) if (id && !ids.includes(id)) ids.push(id);
+      }
+    const sources = (item, scene) => (scene ? learned.get(`${item}\u0000${scene}`) ?? [] : []);
     let bytes = 0, done = 0;
     this.log.transaction(() => {
       for (const row of rows) {
         let trace; try { trace = JSON.parse(row.data); } catch { continue; }
-        const next = JSON.stringify(keptTrace(trace));
+        const next = JSON.stringify(keptTrace(trace, sources));
         if (next.length < row.data.length) { update.run(next, row.id); bytes += row.data.length - next.length; done++; }
       }
     });

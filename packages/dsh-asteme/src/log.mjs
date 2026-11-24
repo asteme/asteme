@@ -61,6 +61,14 @@ export class Log {
   close() {
     this.db.close();
   }
+  /**
+   * Counts the writes to the conversation's records other than adding at the end: erasing, wiping, thinning, bringing an archive in. Whoever keeps a
+   * copy of records read before (the conversation, in brain/mind.mjs) reads again when it has moved: how many rows there are, and which is last, can
+   * come out the same after any of them (a store wiped and an archive of the same length brought in).
+   */
+  rewrote() {
+    this.rewrites = (this.rewrites ?? 0) + 1;
+  }
   onErase(fn) {
     this.erasers.push(fn);
   }
@@ -73,6 +81,7 @@ export class Log {
    * and the like); it holds no conversation.
    */
   wipe({ keep = [] } = {}, again = false) {
+    this.rewrote();
     const tables = this.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all().map(r => r.name);
     const removed = {};
     // Work that was under way when this ran still holds what was erased, and
@@ -289,6 +298,7 @@ export class Log {
       .run(actual - reservation.estimate, reservation.key, reservation.day);
   }
   erase(ids) {
+    this.rewrote();
     this.transaction(() => {
       this.save("erasure-revision", this.state("erasure-revision", 0) + 1);
       const affected = new Set();
@@ -318,11 +328,18 @@ export class Log {
         }
         const references = [...ids, ...dependent];
         erasedReferences = references;
+        // What was learned from a use whose records are erased goes with them, and so do its words wherever a reading kept them: the scene a memory was
+        // found by, or held back by, or delivered under. They are found by the words themselves, since a reading need not name the records they came from.
+        const words = new Set();
         if (exists("experience_feedback")) for (const row of this.db.prepare("SELECT rowid,data FROM experience_feedback").all())
-          if (references.some(id => row.data.includes(id))) this.db.prepare("DELETE FROM experience_feedback WHERE rowid=?").run(row.rowid);
+          if (references.some(id => row.data.includes(id))) {
+            try { const f = JSON.parse(row.data); for (const w of [f.scene?.scene, f.scene?.need, f.reason]) if (typeof w === "string" && w.trim().length >= 12) words.add(w); } catch { /* its ids are enough */ }
+            this.db.prepare("DELETE FROM experience_feedback WHERE rowid=?").run(row.rowid);
+          }
+        const said = [...words].map(w => JSON.stringify(w).slice(1, -1));
         for (const row of this.db.prepare("SELECT id,data FROM attention").all()) {
-          if (!references.some(id => row.data.includes(id))) continue;
-          const kept = scrubTrace(row.data, references);
+          if (!references.some(id => row.data.includes(id)) && !said.some(w => row.data.includes(w))) continue;
+          const kept = scrubTrace(row.data, references, said);
           if (kept) this.db.prepare("UPDATE attention SET data=? WHERE id=?").run(kept, row.id);
           else this.db.prepare("DELETE FROM attention WHERE id=?").run(row.id);
         }
@@ -469,10 +486,10 @@ export { randomUUID };
  * reading cannot be kept: its own request is gone, it is not a reading made
  * before a reply, or something removed is still in it after scrubbing.
  */
-export function scrubTrace(text, references) {
+export function scrubTrace(text, references, words = []) {
   const trace = JSON.parse(text);
   if (!Array.isArray(trace.candidates) || references.includes(trace.request)) return null;
-  const has = value => { const s = JSON.stringify(value) ?? ""; return references.some(id => s.includes(id)); };
+  const has = value => { const s = JSON.stringify(value) ?? ""; return references.some(id => s.includes(id)) || words.some(w => s.includes(w)); };
   for (const key of ["candidates", "decisions", "delivered", "undecided", "outcomes"])
     if (Array.isArray(trace[key])) trace[key] = trace[key].filter(entry => !has(entry));
   for (const key of ["heldBack", "shadow", "immediate"]) if (trace[key] !== undefined && has(trace[key])) delete trace[key];
@@ -480,5 +497,7 @@ export function scrubTrace(text, references) {
   trace.text = "";
   trace.scrubbed = true;
   const out = JSON.stringify(trace);
+  // The words are looked for only among what the reading holds about memories (above): its own scene was read from its own message, which is not erased,
+  // and is often the very scene a later use was filed under.
   return references.some(id => out.includes(id)) ? null : out;
 }

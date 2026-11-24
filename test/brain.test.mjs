@@ -1113,4 +1113,15 @@ test("the conversation it keeps in hand is the stored one: rows written behind i
   assert.ok(!mind.snapshot().messages.some(m => m.text === "third"));
   mind.log.wipe({ keep: [] });
   assert.deepEqual(mind.snapshot().messages, []);
+  // Wiped, then an archive of exactly as many rows, ending at the same place, brought in: the new words are shown, not the old.
+  const from = mind.log.cursor(scope, "thread");
+  mind.log.ingest(scope, "thread", [...Array.from({ length: 100 - from }, (_, n) => ({ seq: from + n, skip: true })), { ...said(0, "old one"), seq: 100 }, { ...said(1, "old two", "assistant"), seq: 101 }]);
+  const old = mind.snapshot().messages.map(m => m.text);
+  const other = openMind({ embed: situationEmbedder(), infer: async () => ({}) });
+  t.after(() => other.close());
+  other.log.ingest(scope, "thread", Array.from({ length: 102 }, (_, n) => n < 100 ? { seq: n, skip: true } : said(n, n === 100 ? "new one" : "new two", n === 100 ? "user" : "assistant")));
+  const archive = other.core.exportArchive();
+  mind.log.wipe({ keep: [] });
+  mind.core.importArchive(archive);
+  assert.deepEqual([old, mind.snapshot().messages.map(m => m.text)], [["old one", "old two"], ["new one", "new two"]], "the same count and the same last place, other words");
 });

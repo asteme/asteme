@@ -79,8 +79,6 @@ export class Log {
     // would write it back when it finishes. `epoch` lets it notice (see
     // `rewipe` and the guard in core.mjs).
     if (!again) { this.epoch = (this.epoch ?? 0) + 1; this.lastWipe = { keep }; }
-    // Counted every time, a second pass too: whoever keeps a copy of what was read (the conversation, in brain/mind.mjs) reads again after either.
-    this.wipes = (this.wipes ?? 0) + 1;
     this.transaction(() => {
       for (const name of tables) {
         if (name === "cursors") continue;

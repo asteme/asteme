@@ -1089,3 +1089,28 @@ test("laid flat, the whole sky keeps what is joined by a line together, and the 
     if (tied.length) assert.ok(Math.min(...tied.map(c => Math.hypot((m.u - c.u) * 0.9 * 1100, (m.v - c.v) * 0.7 * 860))) < 140, `${m.id} stands alone`);
   }
 });
+
+test("the conversation it keeps in hand is the stored one: rows written behind it (an archive brought in), taken back, or wiped are read, and rows added at the end are added", async t => {
+  const mind = openMind({ embed: situationEmbedder(), infer: async () => ({}) });
+  t.after(() => mind.close());
+  const scope = { userId: "local", agentId: "assistant", projectId: "asteme" }, at = Date.parse("2026-11-20T09:00:00Z");
+  const said = (seq, text, role = "user") => ({ seq, role, kind: `${role}/message`, content: text, occurredAt: at + seq * 60000 });
+  // A place in the order with no row in it (something not kept), as there are in a real conversation.
+  mind.log.ingest(scope, "thread", [said(0, "first"), { seq: 1, skip: true }, said(2, "second", "assistant")]);
+  assert.deepEqual(mind.snapshot().messages.map(m => m.text), ["first", "second"]);
+  mind.log.ingest(scope, "thread", [said(3, "third")]);
+  assert.deepEqual(mind.snapshot().messages.map(m => m.text), ["first", "second", "third"], "added at the end");
+  // An archive brought in writes a row behind what was read: it is shown, in its place.
+  const copy = mind.core.exportArchive(), events = copy.tables.events, data = events.columns.indexOf("data"), id = events.columns.indexOf("id");
+  const row = [...events.rows[0]], e = JSON.parse(row[data]);
+  row[id] = "behind-" + e.id; row[data] = JSON.stringify({ ...e, id: row[id], seq: 1, content: "from the archive", occurredAt: at + 30000 });
+  row[events.columns.indexOf("seq")] = 1;
+  mind.core.importArchive({ ...copy, tables: { events: { ...events, rows: [row] } } });
+  assert.deepEqual(mind.snapshot().messages.map(m => m.text), ["first", "from the archive", "second", "third"], "brought in behind, and shown in its place");
+  // Taken back, and wiped.
+  const third = mind.snapshot().messages.find(m => m.text === "third");
+  mind.log.erase([third.id]);
+  assert.ok(!mind.snapshot().messages.some(m => m.text === "third"));
+  mind.log.wipe({ keep: [] });
+  assert.deepEqual(mind.snapshot().messages, []);
+});

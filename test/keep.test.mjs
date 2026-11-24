@@ -741,6 +741,21 @@ test("beside a report goes what a diagnosis reads, not the whole store; and what
 
 const DIRECTOR_LIKE = { text: "Lead with the decision for this director", about: "how this director reads", concrete: "Writing a memo for the director", general: "Writing a document for a busy decision maker" };
 
+test("a kept reading still knows what its words were drawn from: taking back the message a scene was learned from takes the scene out of why a reply was given", async t => {
+  const w = world(t);
+  const said = w.say("Put the decision first for the director", "a");
+  const item = w.learn(said, DIRECTOR_LIKE);
+  const later = w.say("The board pack: lead with the ask, they skim", "b");
+  const scene = "Preparing the board pack for members who skim";
+  const candidate = { item: w.core.item(item.id), score: 0.8, fit: "strong", cue: scene, origin: "helped",
+    feedback: [{ kind: "helped", request: later.id, reason: "It helped", scene: { scene, need: "" }, evidence: [{ id: later.id, quote: later.content }] }], stats: {}, entity: false, due: false };
+  const ask = w.say("Draft the board summary", "c");
+  w.core.trace({ request: ask.id, scene: { scene: "Writing for the board", need: "", entities: [] }, candidates: [candidate], decisions: [], delivered: [] });
+  assert.ok(JSON.stringify(w.core.explain(ask.id)).includes(scene), "the scene it was found by is shown");
+  w.log.erase([later.id]);
+  assert.ok(!JSON.stringify(w.core.explain(ask.id) ?? {}).includes(scene), "taken back, it is gone from why the reply was given");
+});
+
 test("a reading keeps what it decided and how each memory was found, not copies of the memories; readings kept the old way are brought down, and say the same", async t => {
   const w = world(t);
   const e = w.say("Put the decision first for the director", "a");

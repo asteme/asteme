@@ -65,7 +65,11 @@ export function renderExperience(items) {
 const keptCandidate = (c) => {
   if (!c?.item) return c;
   const { item, score, sim, lift, closeness, fit, cue, origin, via, words, suppressed, against, accessibility, entity, due, stale, spread } = c;
-  return { item: { id: item.id, revision: item.revision, kind: item.kind, level: item.level, text: cut(item.text, 160) }, score, sim, lift, closeness, fit, cue, origin, via, words, suppressed, against, accessibility, entity, due, stale, spread };
+  // What the kept words were drawn from, by id: the memory's own records, and for a scene it was found by that was learned from a later use, that use's
+  // records. Taking any of them back finds this entry by these ids and removes it, as it found the whole copies before (see scrubTrace in log.mjs).
+  const from = (c.feedback ?? []).filter((f) => f.scene?.scene && (f.scene.scene === cue || f.scene.scene === against?.cue));
+  const rests = [...new Set([...(item.evidence ?? []).map((e) => e.id), ...from.flatMap((f) => [f.request, ...(f.evidence ?? []).map((e) => e.id)])].filter(Boolean))];
+  return { item: { id: item.id, revision: item.revision, kind: item.kind, level: item.level, text: cut(item.text, 160) }, rests, score, sim, lift, closeness, fit, cue, origin, via, words, suppressed, against, accessibility, entity, due, stale, spread };
 };
 export const keptTrace = (trace) => (Array.isArray(trace?.candidates) && trace.candidates.some(c => c?.item && (c.feedback || c.item.evidence)) ? { ...trace, candidates: trace.candidates.map(keptCandidate) } : trace);
 

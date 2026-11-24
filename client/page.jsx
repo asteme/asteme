@@ -149,7 +149,13 @@ export function AstemePage({ model, t: hostT, openSession }) {
 
   // Arriving is arriving at the conversation: it takes the whole pane, and the
   // panel's own header and tabs come back when the user asks to manage things.
-  const talking = !!(ready && s.canTalk && tab === "talk" && !top);
+  // One arrives there before anything is known: while the first reading is still on its way there is the conversation's own mark and nothing else,
+  // standing where it will stand while the conversation opens, so that what is seen is one mark giving way to the conversation. (There was the panel's
+  // header with its refresh turning, and "Loading…" with a spinner under it, and then the mark.) `landing` holds from the first moment until the tab is
+  // set, so the panel's own tabs are not drawn for a moment in between either.
+  const landing = !arrived.current && (arriveAt() === "talk" || unseenNow > 0) && (s ? ready && !!s.canTalk : !state.error);
+  const shown = landing ? "talk" : tab;
+  const talking = landing || !!(ready && s.canTalk && shown === "talk" && !top);
   return (
     <div className={talking ? "asteme-page asteme-page--talk" : "asteme-page"} ref={root} style={scheme ? { colorScheme: scheme } : undefined} aria-busy={state.loading || state.busy}
       onKeyDown={e => { if (e.key === "Escape" && stack.length && !e.defaultPrevented) back(); }}>
@@ -190,26 +196,26 @@ export function AstemePage({ model, t: hostT, openSession }) {
       </div>
 
       <div className="ast-body" ref={body}>
-        {!s ? (
-          state.error
-            ? <Notice tone="danger" role="alert" detail={state.error.message} action={<Button variant="primary" onClick={() => model.refresh()}>{t("retry")}</Button>}>{t("loadFailed")}</Notice>
-            : <p className="ast-loading" role="status"><Spinner />{t("loading")}</p>
-        ) : !ready ? (
+        {!s && state.error ? (
+          <Notice tone="danger" role="alert" detail={state.error.message} action={<Button variant="primary" onClick={() => model.refresh()}>{t("retry")}</Button>}>{t("loadFailed")}</Notice>
+        ) : !s && !landing ? (
+          <p className="ast-loading" role="status"><Spinner />{t("loading")}</p>
+        ) : s && !ready ? (
           <Notice tone="warning" role="status">{t("restartRequired")}</Notice>
         ) : (
           <Boundary resetKey={`${tab}:${stack.length}:${top?.id ?? top?.key ?? ""}`} message={t("viewFailed")}
-            action={<Button onClick={() => (stack.length ? back() : model.refresh(s.projectId))}>{stack.length ? t("back") : t("refresh")}</Button>}>
+            action={<Button onClick={() => (stack.length ? back() : model.refresh(s?.projectId))}>{stack.length ? t("back") : t("refresh")}</Button>}>
             {/* The tabs stay mounted underneath, so a draft or a search survives a look at something else. */}
             <div hidden={!!top}>
-              {s.canTalk && <TabPanel idBase={idBase} tabKey="talk" active={tab === "talk"}><TalkTab ctx={ctx} active={tab === "talk" && !top} onManage={(to) => { if (to === "settings") nav.settings(); else nav.tab(["review", "memory", "activity", "charter"].includes(to) ? to : "review"); }} onOpenSession={openSession} onChanged={() => { stale.current = true; }} settingsAsked={talkSettings} /></TabPanel>}
-              <TabPanel idBase={idBase} tabKey="review" active={tab === "review"}><ReviewTab key={s.projectId} snapshot={s} ctx={ctx} /></TabPanel>
-              <TabPanel idBase={idBase} tabKey="memory" active={tab === "memory"}><MemoryTab key={s.projectId} snapshot={s} ctx={ctx} /></TabPanel>
-              <TabPanel idBase={idBase} tabKey="activity" active={tab === "activity"}><ActivityTab snapshot={s} ctx={ctx} /></TabPanel>
-              <TabPanel idBase={idBase} tabKey="charter" active={tab === "charter"}><CharterTab snapshot={s} ctx={ctx} onDirty={setSaveBar} /></TabPanel>
+              {(s ? s.canTalk : true) && <TabPanel idBase={idBase} tabKey="talk" active={shown === "talk"}><TalkTab ctx={ctx} active={!!s && shown === "talk" && !top} onManage={(to) => { if (to === "settings") nav.settings(); else nav.tab(["review", "memory", "activity", "charter"].includes(to) ? to : "review"); }} onOpenSession={openSession} onChanged={() => { stale.current = true; }} settingsAsked={talkSettings} /></TabPanel>}
+              {s && <TabPanel idBase={idBase} tabKey="review" active={shown === "review"}><ReviewTab key={s.projectId} snapshot={s} ctx={ctx} /></TabPanel>}
+              {s && <TabPanel idBase={idBase} tabKey="memory" active={shown === "memory"}><MemoryTab key={s.projectId} snapshot={s} ctx={ctx} /></TabPanel>}
+              {s && <TabPanel idBase={idBase} tabKey="activity" active={shown === "activity"}><ActivityTab snapshot={s} ctx={ctx} /></TabPanel>}
+              {s && <TabPanel idBase={idBase} tabKey="charter" active={shown === "charter"}><CharterTab snapshot={s} ctx={ctx} onDirty={setSaveBar} /></TabPanel>}
             </div>
-            {top?.type === "memory" && <MemoryDetail key={top.id} id={top.id} snapshot={s} ctx={ctx} />}
-            {top?.type === "habit" && <HabitDetail key={top.key} habitKey={top.key} snapshot={s} ctx={ctx} />}
-            {top?.type === "settings" && <SettingsView snapshot={s} ctx={ctx} onTalkSettings={() => { setStack([]); setTab("talk"); setTalkSettings(n => n + 1); }} />}
+            {s && top?.type === "memory" && <MemoryDetail key={top.id} id={top.id} snapshot={s} ctx={ctx} />}
+            {s && top?.type === "habit" && <HabitDetail key={top.key} habitKey={top.key} snapshot={s} ctx={ctx} />}
+            {s && top?.type === "settings" && <SettingsView snapshot={s} ctx={ctx} onTalkSettings={() => { setStack([]); setTab("talk"); setTalkSettings(n => n + 1); }} />}
           </Boundary>
         )}
       </div>

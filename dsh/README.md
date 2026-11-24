@@ -1,19 +1,22 @@
 # dsh-asteme
 
-The DeepSeek Harness plugin bundle for [Asteme](https://github.com/asteme/asteme),
-long-term memory for AI agents.
+[Asteme](https://github.com/asteme/asteme) inside [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness): someone you talk to, and the same one each time. It remembers what you tell it together with the situation it applies to, brings a memory back when that situation comes up again, and changes what comes to mind from how using it turned out. It can hand work to a DSH agent and tell you how it went.
 
-**Status: in development.** The source lives in the private `asteme/asteme`
-repository. This repository is generated from it; do not edit it by hand.
+It runs on your computer. Everything it remembers is in one SQLite file.
 
-Install from this repository with the DSH plugin dialog:
+**Status: in development.** Behavior may change, and it may fail or lose data. Do not rely on it for anything important yet.
+
+## Install
+
+In DSH, open Plugins and add `dsh-asteme`. Or from a terminal:
 
 ```
-https://github.com/asteme/dsh-asteme.git
+dsh plugin --profile web add dsh-asteme
 ```
 
-Or build it from the source repository with `npm run bundle` and install the
-resulting `dist-dsh` directory from disk.
+Then send one message in a DSH session (Asteme speaks with the model you use there), and open ASTEME in the side bar.
+
+The source, the documentation in eight languages and the issues are at <https://github.com/asteme/asteme>. The site: <https://asteme.github.io/asteme/>.
 
 Apache-2.0: see LICENSE and NOTICE. The name and the mark are the project's own.
 

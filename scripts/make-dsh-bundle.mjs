@@ -44,6 +44,7 @@ const manifest = {
   name: "dsh-asteme",
   version: pkg.version,
   description: pkg.description,
+  keywords: pkg.keywords,
   type: "module",
   main: "./plugin/index.mjs",
   exports: {

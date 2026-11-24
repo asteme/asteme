@@ -240,19 +240,26 @@ test("however long the mark hangs, and however often, a line that was taken down
   }
 });
 
-test("sending a line takes leave asked for from the site a moment before, by the one who sends, and a little work", async () => {
+test("sending a line takes leave asked for from the site a moment before, by the one who sends, and a little work", async (t) => {
   const env = room(), body = { text: "a line that is fine", lang: "en" };
+  // The clock stands still for these: what is tested is how long ago leave was asked for, and doing the work takes as long as the machine takes
+  // (on a slow one more than the wait itself, and "at once" was then no longer at once). `later` moves it on from where it stands.
+  const real = Date.now, stood = real();
+  Date.now = () => stood;
+  t.after(() => { Date.now = real; });
   const post = (more, ip) => ask(env, "/line", { method: "POST", origin: site, ip, body: { ...body, ...more } });
   assert.equal((await ask(env, "/pass")).status, 403, "leave is given to the site only");
   assert.equal((await post({})).status, 403, "none");
   const l = await leave(env);
   assert.equal((await post(l)).status, 403, "at once: a person has not written anything yet");
+  assert.equal((await later(LIMITS.wait * 1000 - 1, () => post(l))).status, 403, "a moment before the wait is over");
   assert.equal((await later(LIMITS.wait * 1000 + 50, () => post({ ...l, answer: "not the work" }))).status, 403);
   assert.equal((await later(LIMITS.wait * 1000 + 50, () => post(l, "198.51.100.77"))).status, 403, "from somewhere else");
   assert.equal((await later(LIMITS.passHours * 3600000 + 1000, () => post(l))).status, 403, "long after");
   assert.equal((await post({ ...l, pass: await passFor({ SALT: "guessed" }, "x", Date.now() - 5000) })).status, 403, "made up");
   assert.equal([...env.kept.keys()].length, 0, "none of this was kept or counted");
-  assert.equal((await later(LIMITS.wait * 1000 + 50, () => post(l))).status, 202);
+  assert.equal((await later(LIMITS.wait * 1000, () => post(l))).status, 202, "once the wait is over");
+  Date.now = real;
   // All the visitors of a day together send no more than the free plan can keep.
   env.kept.set(`day:${new Date().toISOString().slice(0, 10)}`, { value: String(LIMITS.everyone) });
   assert.equal((await send(env, "one more than the day holds", { ip: "198.51.100.8" })).status, 503);

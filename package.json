@@ -1,14 +1,19 @@
 {
   "name": "asteme",
-  "version": "0.12.1-rc.10",
+  "version": "0.12.1-rc.11",
   "description": "Asteme: someone to talk to whose memory does not fade. It recalls by situation, learns from how each use turned out, and every memory can be traced to words you said.",
   "keywords": [
     "memory",
+    "long-term-memory",
     "agent",
     "assistant",
-    "long-term-memory",
+    "companion",
+    "conversation",
+    "local-first",
+    "sqlite",
+    "mcp",
     "dsh-plugin",
-    "local-first"
+    "deepseek-harness"
   ],
   "homepage": "https://github.com/asteme/asteme",
   "bugs": "https://github.com/asteme/asteme/issues",

@@ -756,33 +756,62 @@ test("a kept reading still knows what its words were drawn from: taking back the
   assert.ok(!JSON.stringify(w.core.explain(ask.id) ?? {}).includes(scene), "taken back, it is gone from why the reply was given");
 });
 
-test("taking back the record a use was read from takes its scene out of every reading: what was considered, what was used and what was held back, from the oldest use too", async t => {
+test("taking back the record a use was read from takes what was learned from it out of every reading, and nothing else: short scenes, the oldest use, and another memory found by the same words", async t => {
+  const w = world(t);
+  const mine = w.learn(w.say("Put the decision first for the director", "a"), DIRECTOR_LIKE);
+  const theirs = w.learn(w.say("Reports for the clinic go out on Monday", "b"), { text: "Clinic reports go out on Monday", about: "clinic", concrete: "Writing the clinic report for a busy board", general: "Writing a report for a busy executive" });
+  const scene = "memo";
+  // The same four-letter scene, learned from two separate uses: one of each memory.
+  const use = async (item, session, word) => {
+    w.tick(86400000);
+    await w.attend(`Handle ${word}`, { session, scene, admit: [{ id: item.id, anchor: word }] });
+    w.say("Done.", session, "assistant"); w.tick(120000);
+    const later = w.say(`That worked for ${word}`, session);
+    await w.settle(later, { kind: "helped", applied: "yes", reply_quote: "Done" });
+    return later;
+  };
+  const mineLater = await use(mine, "m1", "mine");
+  for (let n = 0; n < 12; n++) await use(mine, `m${n + 2}`, `mine ${n}`);
+  await use(theirs, "t1", "theirs");
+  // Now a reading found by that scene, using both memories.
+  w.tick(86400000);
+  const now = await w.attend("Handle the next one", { session: "z", scene, admit: [{ id: mine.id, anchor: "next" }, { id: theirs.id, anchor: "next" }] });
+  const why = () => w.core.explain(now.request.id).readings.at(-1);
+  const before = why();
+  assert.deepEqual(before.considered.filter(c => c.matched?.scene === scene).map(c => c.id).sort(), [mine.id, theirs.id].sort(), "both were found by the scene");
+  assert.equal(before.delivered.filter(d => d.matched?.scene === scene).length, 2);
+  // The first use of one memory is taken back: only what was learned from it goes.
+  w.log.erase([mineLater.id]);
+  const after = why();
+  assert.deepEqual([after.considered.map(c => c.id), after.delivered.map(d => d.id)], [[theirs.id], [theirs.id]], "the other memory, found by the same words, stays");
+  assert.ok(w.core.item(theirs.id) && w.core.item(mine.id), "both memories stay");
+});
+
+test("a reading kept before cues named their records is given them from the store when it is brought down, so taking a record back still finds it; what was held back loses only that entry", async t => {
   const w = world(t);
   const item = w.learn(w.say("Put the decision first for the director", "a"), DIRECTOR_LIKE);
-  // Thirteen uses, each read from what the user said next; a candidate carries only the latest twelve of them.
   const laters = [];
   for (let n = 0; n < 13; n++) {
     w.tick(86400000);
-    await w.attend(`Write brief number ${n} for the board`, { session: `s${n}`, scene: `Writing brief number ${n} for a board that skims`, admit: [{ id: item.id, anchor: `brief number ${n}` }] });
-    w.say("Decision first: fund it.", `s${n}`, "assistant"); w.tick(120000);
-    const later = w.say(`The board agreed to brief ${n} at once`, `s${n}`); laters.push(later);
-    await w.settle(later, { kind: "helped", applied: "yes", reply_quote: "Decision first" });
+    await w.attend(`Handle case ${n}`, { session: `s${n}`, scene: `Writing memo ${n} for the board`, admit: [{ id: item.id, anchor: `case ${n}` }] });
+    w.say("Done.", `s${n}`, "assistant"); w.tick(120000);
+    const later = w.say(`That worked for case ${n}`, `s${n}`); laters.push(later);
+    await w.settle(later, { kind: "helped", applied: "yes", reply_quote: "Done" });
   }
-  const oldest = "Writing brief number 0 for a board that skims";
-  // A reading now, where the oldest use's scene is the one the memory is found by, delivered, and also held back elsewhere.
+  const oldest = "Writing memo 0 for the board";
   const ask = w.say("Draft the board summary", "z");
-  const entry = { item: w.core.item(item.id), score: 0.8, fit: "strong", cue: oldest, origin: "helped", feedback: w.core.feedback().filter(f => f.item === item.id).slice(0, 12), stats: {}, entity: false, due: false };
-  w.core.trace({ request: ask.id, scene: { scene: "Writing for the board", need: "", entities: [] }, candidates: [entry],
+  // As 0.12.1 kept it: a whole copy, the latest twelve uses, and no word of where the scene came from.
+  const old = { id: "kept-in-0.12.1", request: ask.id, at: w.now(), scene: { scene: "Writing for the board", need: "", entities: [] },
+    candidates: [{ item: w.core.item(item.id), score: 0.8, fit: "strong", cue: oldest, origin: "helped", feedback: w.core.feedback().filter(f => f.item === item.id).slice(-12), stats: {} }],
     decisions: [{ id: item.id, use: "silent", reason: "It changes this reply" }],
-    delivered: [{ id: item.id, use: "silent", text: item.text, matched: { scene: oldest, because: "helped" }, revision: item.revision, evidence: [] }],
-    heldBack: { suppressed: [{ id: "other", cue: oldest }] } });
-  assert.ok(JSON.stringify(w.core.explain(ask.id)).includes(oldest));
+    delivered: [{ ...w.core.item(item.id), use: "silent", matched: { scene: oldest, kind: "helped" } }],
+    heldBack: { suppressed: [{ id: item.id, cue: oldest, sim: 0.4 }, { id: "another", cue: "Something else entirely", sim: 0.3 }], belowFloor: 0 } };
+  w.log.db.prepare("INSERT INTO attention VALUES (?,?,?,?)").run(old.id, w.core.owner, ask.id, JSON.stringify(old));
+  assert.equal(w.core.keepTraces().rows, 1);
   w.log.erase([laters[0].id]);
-  const after = JSON.stringify(w.core.explain(ask.id) ?? {});
-  assert.ok(!after.includes(oldest), "the scene of the use that was taken back is nowhere in why the reply was given");
-  // The reading of the first brief itself is kept: its own message was not taken back, though its scene is the one that use was filed under.
-  const first = w.log.events(scope, "s0").find(e => e.content === "Write brief number 0 for the board");
-  assert.ok(w.core.explain(first.id).readings.length >= 1, "the reading of a message that was not taken back stays");
+  const kept = JSON.parse(w.log.db.prepare("SELECT data FROM attention WHERE id=?").get(old.id).data);
+  assert.deepEqual([kept.candidates.length, kept.delivered.length, kept.heldBack.suppressed.map(x => x.id)], [0, 0, ["another"]]);
+  assert.ok(!JSON.stringify(kept).includes(oldest));
 });
 
 test("a reading keeps what it decided and how each memory was found, not copies of the memories; readings kept the old way are brought down, and say the same", async t => {

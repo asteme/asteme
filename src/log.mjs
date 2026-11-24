@@ -328,18 +328,13 @@ export class Log {
         }
         const references = [...ids, ...dependent];
         erasedReferences = references;
-        // What was learned from a use whose records are erased goes with them, and so do its words wherever a reading kept them: the scene a memory was
-        // found by, or held back by, or delivered under. They are found by the words themselves, since a reading need not name the records they came from.
-        const words = new Set();
         if (exists("experience_feedback")) for (const row of this.db.prepare("SELECT rowid,data FROM experience_feedback").all())
-          if (references.some(id => row.data.includes(id))) {
-            try { const f = JSON.parse(row.data); for (const w of [f.scene?.scene, f.scene?.need, f.reason]) if (typeof w === "string" && w.trim().length >= 12) words.add(w); } catch { /* its ids are enough */ }
-            this.db.prepare("DELETE FROM experience_feedback WHERE rowid=?").run(row.rowid);
-          }
-        const said = [...words].map(w => JSON.stringify(w).slice(1, -1));
+          if (references.some(id => row.data.includes(id))) this.db.prepare("DELETE FROM experience_feedback WHERE rowid=?").run(row.rowid);
+        // A reading names, beside each memory it held, the records its words were drawn from (the scene a memory was found, used or held back by, when
+        // that scene was learned from a later use): those entries are found by the erased ids and go, wherever they are, and no others do.
         for (const row of this.db.prepare("SELECT id,data FROM attention").all()) {
-          if (!references.some(id => row.data.includes(id)) && !said.some(w => row.data.includes(w))) continue;
-          const kept = scrubTrace(row.data, references, said);
+          if (!references.some(id => row.data.includes(id))) continue;
+          const kept = scrubTrace(row.data, references);
           if (kept) this.db.prepare("UPDATE attention SET data=? WHERE id=?").run(kept, row.id);
           else this.db.prepare("DELETE FROM attention WHERE id=?").run(row.id);
         }
@@ -486,18 +481,18 @@ export { randomUUID };
  * reading cannot be kept: its own request is gone, it is not a reading made
  * before a reply, or something removed is still in it after scrubbing.
  */
-export function scrubTrace(text, references, words = []) {
+export function scrubTrace(text, references) {
   const trace = JSON.parse(text);
   if (!Array.isArray(trace.candidates) || references.includes(trace.request)) return null;
-  const has = value => { const s = JSON.stringify(value) ?? ""; return references.some(id => s.includes(id)) || words.some(w => s.includes(w)); };
+  const has = value => { const s = JSON.stringify(value) ?? ""; return references.some(id => s.includes(id)); };
   for (const key of ["candidates", "decisions", "delivered", "undecided", "outcomes"])
     if (Array.isArray(trace[key])) trace[key] = trace[key].filter(entry => !has(entry));
+  // What was held back is a list of its own: only the entries that hold what was erased go.
+  if (Array.isArray(trace.heldBack?.suppressed)) trace.heldBack = { ...trace.heldBack, suppressed: trace.heldBack.suppressed.filter(entry => !has(entry)) };
   for (const key of ["heldBack", "shadow", "immediate"]) if (trace[key] !== undefined && has(trace[key])) delete trace[key];
   // The note given to the assistant may have carried the removed words.
   trace.text = "";
   trace.scrubbed = true;
   const out = JSON.stringify(trace);
-  // The words are looked for only among what the reading holds about memories (above): its own scene was read from its own message, which is not erased,
-  // and is often the very scene a later use was filed under.
   return references.some(id => out.includes(id)) ? null : out;
 }

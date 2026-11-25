@@ -956,11 +956,11 @@ const draw = (t = performance.now()) => {
       g.textAlign = "center";
       g.textBaseline = "middle";
       g.fillStyle = color;
-      g.font = "600 12.5px system-ui, sans-serif";
+      g.font = lettered(12.5, 600);
       g.globalAlpha = 0.9 * stay;
       g.fillText(say("brainFirstStar"), p.x, p.y + 36 + 6 * (1 - open));
       if (words) {
-        g.font = "14px system-ui, sans-serif";
+        g.font = lettered(14);
         g.globalAlpha = 0.7 * Math.min(1, Math.max(0, k * 6 - 0.6)) * Math.min(1, (1 - k) * 3.2);
         g.fillText(fitWords(words, wide), p.x, p.y + 60 + 6 * (1 - open));
       }
@@ -982,7 +982,7 @@ const draw = (t = performance.now()) => {
   }
   // Close in, a lesson says what it is.
   if (e > 0.9 && cam.k >= 0.9 && !found) {
-    g.font = "12px system-ui, sans-serif";
+    g.font = lettered(12);
     g.textBaseline = "middle";
     const put = [];
     // The nearer ones first; one that would lie over another already written is left unsaid.
@@ -1024,7 +1024,7 @@ const draw = (t = performance.now()) => {
           Math.min(560, innerWidth - p.x - 44 - (document.body.classList.contains("sheet-on") ? Math.min(innerWidth * 0.4, 520) : 0)),
         ),
         lines = wordsOf(s, (room * 13) / size, a < 0.5);
-      g.font = `${size.toFixed(2)}px system-ui, sans-serif`;
+      g.font = lettered(size.toFixed(2));
       const said = Math.max(0, (s.gw - 0.86) / 0.14) * wheel.said;
       g.globalAlpha = Math.min(1, (on ? 1.5 : 1) * rowLight(s.go)) * said * said;
       s.lw = (lines.w * size) / 13;
@@ -1050,7 +1050,7 @@ const draw = (t = performance.now()) => {
       const s = all.get(gather.ids[gather.at]),
         p = s && at.get(s.id);
       if (p && s.gw > 0.86) {
-        g.font = "11px system-ui, sans-serif";
+        g.font = lettered(11);
         g.textAlign = "right";
         g.globalAlpha = 0.5 * ((s.gw - 0.86) / 0.14) * Math.max(0, 1 - Math.abs(s.go));
         g.fillText(`${gather.at + 1} / ${gather.ids.length}`, p.x - 30, p.y);
@@ -1083,7 +1083,7 @@ const draw = (t = performance.now()) => {
     g.stroke();
     if (!back) {
       g.globalAlpha = 0.7 * seen;
-      g.font = "11px system-ui, sans-serif";
+      g.font = lettered(11);
       g.textBaseline = "alphabetic";
       g.fillText(w.to, x + 11, y + 4);
     }
@@ -1425,7 +1425,7 @@ const wordsOf = (s, room, two) => {
   s.cuts ??= new Map();
   let lines = s.cuts.get(key);
   if (lines) return lines;
-  g.font = "13px system-ui, sans-serif";
+  g.font = lettered(13);
   const text = (s.private ? say("private") : (s.text ?? "")).replace(/\s+/g, " ");
   if (!two || g.measureText(text).width <= room) lines = [fitWords(text, room)];
   else {

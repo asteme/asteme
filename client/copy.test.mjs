@@ -22,3 +22,16 @@ test("choosing a language in Settings shows that language, for every language of
   }
   assert.equal(translate("xx")("settings"), en.settings);
 });
+
+test("a conversation already open inside DSH is opened again in the language chosen, and a change of theme does not open it again", async () => {
+  // The conversation is a page of its own in a frame, given its words when it is made: a language chosen afterwards reaches it only by making it
+  // again. Its address is made from the panel's language and made anew when that changes; the mark stays over it while it loads.
+  const { readFile } = await import("node:fs/promises");
+  const talk = await readFile(new URL("./talk.jsx", import.meta.url), "utf8");
+  assert.match(talk, /const lang = t\("_lang"\) \|\| "";/);
+  const address = /const src = React\.useMemo\(\(\) => door \? `([^`]+)` : "", \[([^\]]+)\]\);/.exec(talk);
+  assert.ok(address, "the frame's address is made in one place");
+  assert.match(address[1], /&lang=\$\{encodeURIComponent\(lang\)\}/);
+  assert.deepEqual(address[2].split(",").map(d => d.trim()), ["door", "lang"], "made again for a new door or a new language, and for nothing else");
+  assert.match(talk, /setLoaded\(false\); \}, \[door, lang\]\);/);
+});

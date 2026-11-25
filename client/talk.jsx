@@ -21,10 +21,12 @@ function Opening({ label, leaving = false }) {
 
 export function TalkTab({ ctx, active, onManage, onOpenSession, onChanged, settingsAsked = 0 }) {
   const { t, model, projectId } = ctx;
+  // The language the panel is in now. The conversation is opened in it, and opened again when it changes.
+  const lang = t("_lang") || "";
   const [door, setDoor] = React.useState(null), [error, setError] = React.useState(null), [busy, setBusy] = React.useState(false);
   // The page in the frame has loaded; until then the mark stays over it.
   const [loaded, setLoaded] = React.useState(false);
-  React.useEffect(() => { setLoaded(false); }, [door]);
+  React.useEffect(() => { setLoaded(false); }, [door, lang]);
   const start = React.useCallback(async () => {
     setBusy(true); setError(null);
     try { setDoor((await model.request("brain", { projectId })).url); } catch (e) { setError({ code: e.code, text: e.message }); } finally { setBusy(false); }
@@ -65,8 +67,9 @@ export function TalkTab({ ctx, active, onManage, onOpenSession, onChanged, setti
     for (; node && !bg; node = node.parentElement) bg = hex(getComputedStyle(node).backgroundColor);
     return (bg ? `&bg=${bg}` : "") + (ink ? `&ink=${ink}` : "");
   }, [door]);
-  // The address is made once. A later change of theme is told to the page; it must not load it again.
-  const src = React.useMemo(() => door ? `${door}&embed=1&lang=${encodeURIComponent(ctx.t("_lang") || "")}&theme=${typeof document === "undefined" ? (dark ? "dark" : "light") : look().theme}${colours}` : "", [door]);
+  // The address is made once for a language. A later change of theme is told to the page; it must not load it again. A change of language does
+  // load it again, in that language: a page is given its words when it is made. What was being typed is kept by the page and by the store.
+  const src = React.useMemo(() => door ? `${door}&embed=1&lang=${encodeURIComponent(lang)}&theme=${typeof document === "undefined" ? (dark ? "dark" : "light") : look().theme}${colours}` : "", [door, lang]);
   // Asked from the panel's settings: the conversation opens its own. The page may still be loading, so it is told again when it says it is ready.
   const wantSettings = React.useRef(0);
   React.useEffect(() => { if (!settingsAsked || !door) return undefined; wantSettings.current = settingsAsked; const tell = () => frame.current?.contentWindow?.postMessage({ asteme: "settings" }, new URL(door).origin); tell(); const again = setTimeout(tell, 1200); return () => clearTimeout(again); }, [settingsAsked, door]);

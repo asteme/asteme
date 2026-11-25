@@ -61,6 +61,7 @@ standalone/         the core without a host: brain.mjs (library), mcp.mjs (MCP s
 5. What use teaches about recall is derived from outcomes, not stored beside the memory.
 6. Editing the settings panel requires the DSH client runtime; `client/preview/preview.html` runs without it.
 7. `brain/` is formatted with Prettier (`.prettierrc`, width 150): `npx prettier --write "brain/*.mjs" "brain/page/*.js"`. The conversation page is written as parts in `brain/page/` that share one scope; their order is the list in `brain/page.mjs`.
+8. The page's letters come from one list (`--face` in `brain/page/style.css`); nothing names faces of its own, not even what is drawn on a canvas (`lettered()`). After touching it, `node scripts/faces.mjs` says which faces a browser on your machine really used for Chinese and for Japanese.
 
 ## Reporting a problem
 

@@ -32,6 +32,15 @@ const cosine = (a, b) => { let dot = 0, na = 0, nb = 0; for (let i = 0; i < a.le
 // how many new ones are held against how many others at one look, and how many such pairs one look may add.
 const SAME = { close: 0.8, fresh: 300, against: 3000, most: 12 };
 
+// A model call whose answer is thrown away, with an error that says so, when something was taken back while the model was answering: what it read
+// may be among what was taken back, and what it wrote may carry it.
+export const afterErasure = (core, infer) => async (...args) => {
+  const before = core.log.state("erasure-revision", 0), epoch = core.log.epoch ?? 0;
+  const value = await infer(...args);
+  if (before !== core.log.state("erasure-revision", 0) || epoch !== (core.log.epoch ?? 0)) throw Object.assign(new Error("Something was taken back while this was being read"), { erasedMeanwhile: true });
+  return value;
+};
+
 export const sleep = {
   // A pair or a memory is judged once per state. If either side changes, the
   // question is open again.
@@ -350,6 +359,9 @@ export const sleep = {
   // --- One night ----------------------------------------------------------------
   async sleep({ infer, now = this.log.now(), budget = 6 } = {}) {
     const erased = this.log.state("erasure-revision", 0), intact = () => erased === this.log.state("erasure-revision", 0);
+    // What a model wrote after reading records is not applied when one of them was taken back while it was writing: the job stays, untried, and is
+    // read again from what is left. (It was checked only between jobs, after the job had applied what it was given.)
+    const guarded = afterErasure(this, infer);
     const report = { at: now, ran: [], failed: [], left: 0 };
     const run = { replay: this.replay, reconcile: this.reconcile, revise: this.revise, integrate: this.integrate, imagine: this.imagine };
     const tried = new Set();
@@ -364,14 +376,14 @@ export const sleep = {
         const finish = (state, patch) => this.log.db.prepare("UPDATE job SET state=?,data=? WHERE id=?")
           .run(state, JSON.stringify({ at: job.at, attempts: job.attempts ?? 0, reasons: job.reasons, ...patch, finishedAt: now }), job.id);
         try {
-          const result = await run[job.type].call(this, job, infer, now);
+          const result = await run[job.type].call(this, job, guarded, now);
           if (!intact()) break;
           if (!result.skipped) budget--;
           finish("done", { result });
           report.ran.push({ type: job.type, target: job.target, why: job.reasons, ...result });
         } catch (e) {
           // Stopped from outside (the program closing, the plugin loaded again) is not the job failing: it stays as it was, untried, and is not reported as something that went wrong.
-          if (e?.name === "AbortError" || /\babort(ed)?\b/i.test(String(e?.message ?? ""))) break;
+          if (e?.name === "AbortError" || e?.erasedMeanwhile || /\babort(ed)?\b/i.test(String(e?.message ?? ""))) break;
           budget--;
           const attempts = (job.attempts ?? 0) + 1;
           // Tried again on later nights, then set aside with the reason kept.
@@ -381,7 +393,7 @@ export const sleep = {
       }
     }
     if (budget > 0 && intact() && (this.promotable(now).length || this.demotable(now).length))
-      report.habits = await this.consolidate({ infer, now });
+      report.habits = await this.consolidate({ infer: guarded, now }).catch(e => { if (e?.erasedMeanwhile) return null; throw e; });
     report.left = this.jobs().length;
     this.log.save(`sleep-last:${this.owner}`, report);
     return report;

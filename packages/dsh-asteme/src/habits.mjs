@@ -2,6 +2,7 @@
 // Promotion into the always-present core is gated by program-visible
 // repetition, then worded by the model. Every habit keeps the source items and
 // exact quotes, so it can be demoted or erased later.
+import { afterErasure } from "./sleep.mjs";
 import { digest, cut } from "./log.mjs";
 import { iso, isEvidence } from "./mind.mjs";
 import { LIVE, norm } from "./memory.mjs";
@@ -193,6 +194,7 @@ export const habits = {
     });
   },
   async consolidate({ infer, now = this.log.now() }) {
+    infer = afterErasure(this, infer);
     const candidates = this.promotable(now), drops = this.demotable(now);
     const report = { at: now, basis: { candidates: candidates.map(c => ({ id: c.item.id, basis: c.basis })), drops: drops.map(d => d.key) }, applied: [], rejected: [] };
     if (!candidates.length && !drops.length) return report;

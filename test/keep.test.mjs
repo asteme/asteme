@@ -807,11 +807,87 @@ test("a reading kept before cues named their records is given them from the stor
     delivered: [{ ...w.core.item(item.id), use: "silent", matched: { scene: oldest, kind: "helped" } }],
     heldBack: { suppressed: [{ id: item.id, cue: oldest, sim: 0.4 }, { id: "another", cue: "Something else entirely", sim: 0.3 }], belowFloor: 0 } };
   w.log.db.prepare("INSERT INTO attention VALUES (?,?,?,?)").run(old.id, w.core.owner, ask.id, JSON.stringify(old));
-  assert.equal(w.core.keepTraces().rows, 1);
+  assert.equal(w.core.keepTraces().rows, 1, "only the old one needed bringing down");
+  assert.equal(w.core.keepTraces().rows, 0, "and it is done once");
   w.log.erase([laters[0].id]);
   const kept = JSON.parse(w.log.db.prepare("SELECT data FROM attention WHERE id=?").get(old.id).data);
   assert.deepEqual([kept.candidates.length, kept.delivered.length, kept.heldBack.suppressed.map(x => x.id)], [0, 0, ["another"]]);
   assert.ok(!JSON.stringify(kept).includes(oldest));
+});
+
+// A store as 0.12.1 left it: a memory used thirteen times, each use read from what the user wrote next, and readings that copied memories whole.
+async function oldStore(t) {
+  const w = world(t);
+  const item = w.learn(w.say("Put the decision first for the director", "a"), DIRECTOR_LIKE);
+  const other = w.learn(w.say("Reports for the clinic go out on Monday", "b"), { text: "Clinic reports go out on Monday", about: "clinic", concrete: "Writing the clinic report for a busy board", general: "Writing a report for a busy executive" });
+  const laters = [];
+  for (let n = 0; n < 13; n++) {
+    w.tick(86400000);
+    await w.attend(`Handle case ${n}`, { session: `s${n}`, scene: `Writing memo ${n} for the board`, admit: [{ id: item.id, anchor: `case ${n}` }] });
+    w.say("Done.", `s${n}`, "assistant"); w.tick(120000);
+    const later = w.say(`That worked for case ${n}`, `s${n}`); laters.push(later);
+    await w.settle(later, { kind: "helped", applied: "yes", reply_quote: "Done" });
+  }
+  const oldest = "Writing memo 0 for the board";
+  const old = (id, request, shape) => { const trace = { id, request, at: w.now(), scene: { scene: "Writing for the board", need: "", entities: [] }, decisions: [], delivered: [], ...shape };
+    w.log.db.prepare("INSERT INTO attention VALUES (?,?,?,?)").run(id, w.core.owner, request, JSON.stringify(trace)); };
+  const whole = () => ({ item: w.core.item(item.id), score: 0.8, fit: "strong", cue: oldest, origin: "helped", feedback: w.core.feedback().filter(f => f.item === item.id).slice(-12), stats: {} });
+  const ask = w.say("Draft the board summary", "z"), ask2 = w.say("Another summary", "y");
+  old("used", ask.id, { candidates: [whole(), { item: w.core.item(other.id), score: 0.5, fit: "moderate", cue: "Writing the clinic report for a busy board", origin: "encoded", feedback: [], stats: {} }],
+    decisions: [{ id: item.id, use: "silent", reason: `Found by "${oldest}"` }, { id: other.id, use: "not-now", reason: "Not this time" }],
+    delivered: [{ ...w.core.item(item.id), use: "silent", matched: { scene: oldest, kind: "helped" } }] });
+  // Every candidate held back: it copied nothing and names no sources.
+  old("held", ask2.id, { candidates: [], heldBack: { suppressed: [{ id: item.id, cue: oldest, sim: 0.4 }, { id: other.id, cue: "Writing the clinic report for a busy board", sim: 0.3 }], belowFloor: 0 } });
+  return { w, item, other, laters, oldest, ask, ask2 };
+}
+const readingOf = (w, id) => { const row = w.log.db.prepare("SELECT data FROM attention WHERE id=?").get(id); return row && JSON.parse(row.data); };
+
+for (const order of ["brought down, then taken back", "taken back, then brought down"])
+  test(`a store kept by 0.12.1, ${order}: what was learned from the use goes from every reading, what a reading decided about that memory with it, and nothing about another memory`, async t => {
+    const { w, item, other, laters, oldest } = await oldStore(t);
+    const steps = [() => w.core.keepTraces(), () => w.log.erase([laters[0].id])];
+    for (const step of order.startsWith("brought") ? steps : steps.reverse()) step();
+    const used = readingOf(w, "used"), held = readingOf(w, "held");
+    assert.deepEqual([used.candidates.map(c => c.item.id), used.decisions.map(d => d.id), used.delivered.map(d => d.id)], [[other.id], [other.id], []]);
+    assert.deepEqual(held.heldBack.suppressed.map(x => x.id), [other.id]);
+    assert.ok(!JSON.stringify([used, held]).includes(oldest), "the scene of the use taken back is nowhere, the reason that quoted it included");
+    assert.ok(w.core.item(item.id) && w.core.item(other.id), "both memories stay");
+  });
+
+test("a reading goes when any record it was made from is taken back, not only its request: it read the records just before it", async t => {
+  const w = world(t);
+  const item = w.learn(w.say("Put the decision first for the director", "a"), DIRECTOR_LIKE);
+  const before = w.say("My manager is Kenji, keep that between us", "x"), request = w.say("Draft the memo for the director", "x");
+  const trace = await w.core.prepare({ request, recent: [before, request], infer: scripted({ scene: { scene: "Writing a memo for the director", need: "", entities: [] },
+    select: { decisions: [{ id: item.id, use: "silent", reason: "It changes this reply", anchor: "memo" }] } }) });
+  assert.ok(readingOf(w, trace.id).read.includes(before.id), "what it read is named");
+  w.log.erase([before.id]);
+  assert.equal(readingOf(w, trace.id), undefined, "the reading is gone with what it read");
+  // A reading kept by 0.12.1 names nothing it read: the records just before its request are taken to have been read.
+  const { w: v } = await oldStore(t);
+  const earlier = v.say("Something private said just before", "k"), asked = v.say("A question after it", "k");
+  const later = Array.from({ length: 30 }, (_, n) => v.say(`Line ${n}`, "k")), far = v.say("A question long after", "k");
+  for (const [id, request] of [["near", asked.id], ["far", far.id]])
+    v.log.db.prepare("INSERT INTO attention VALUES (?,?,?,?)").run(id, v.core.owner, request, JSON.stringify({ id, request, at: v.now(), scene: { scene: "A scene read from what was said", need: "", entities: [] }, candidates: [], decisions: [], delivered: [] }));
+  v.log.erase([earlier.id]);
+  assert.deepEqual([readingOf(v, "near"), !!readingOf(v, "far")], [undefined, true], "a reading that does not say what it read goes when a record just before it is taken back; one far after stays");
+  void later;
+});
+
+test("what a background step read is not written back over a reading that was scrubbed meanwhile, and a scene read while something was taken back is not kept", async t => {
+  const w = world(t);
+  const item = w.learn(w.say("Put the decision first for the director", "a"), DIRECTOR_LIKE);
+  const used = w.learn(w.say("Board packs go out on Fridays", "q"), { text: "Board packs go out on Fridays", about: "board packs", concrete: "Sending the board pack", general: "Preparing papers for the board" });
+  w.tick(86400000);
+  const r = await w.attend("Send the board memo", { session: "x", scene: "Writing a memo for the board", admit: [{ id: item.id, anchor: "memo" }] });
+  w.log.db.prepare("UPDATE attention SET data=json_set(data,'$.sceneLater',1) WHERE id=?").run(r.trace.id);
+  const quote = w.log.event(item.evidence[0].id).content;
+  // While the scene is being read, the memory's ground is taken back.
+  await w.core.sceneLater({ infer: async () => { w.log.erase([item.evidence[0].id]); return { scene: "Writing to the board", need: "", entities: [] }; } });
+  const after = readingOf(w, r.trace.id);
+  assert.ok(!after || !JSON.stringify(after).includes(quote), "what was taken back does not come back");
+  assert.ok(!after || after.scene?.from !== "later", "the scene read meanwhile is not kept");
+  void used;
 });
 
 test("a reading keeps what it decided and how each memory was found, not copies of the memories; readings kept the old way are brought down, and say the same", async t => {
@@ -894,4 +970,27 @@ test("a reflection is sent the readings of its own conversation: this turn's who
   const earlier = sent.find(x => x.id === first.trace.id), own = sent.find(x => x.id === now.trace.id);
   assert.deepEqual(earlier.decisions.map(d => d.id), [item.id], "of an earlier reading, only what was passed");
   assert.equal(own.decisions.length, now.trace.decisions.length, "its own decisions whole");
+});
+
+test("what a model wrote after reading records is not kept when one of them was taken back while it wrote: an outcome, and a night's work", async t => {
+  const w = world(t);
+  const item = w.learn(w.say("Put the decision first for the director", "a"), DIRECTOR_LIKE);
+  w.tick(86400000);
+  await w.attend("Write the board memo", { session: "x", scene: "Writing a memo for the board", admit: [{ id: item.id, anchor: "memo" }] });
+  w.say("Decision first: fund it.", "x", "assistant"); w.tick(120000);
+  const later = w.say("The board agreed at once, thanks to my friend Aiko", "x");
+  // The outcome is being read when what the user wrote next is taken back.
+  const report = await w.core.outcomes({ infer: async () => { w.log.erase([later.id]); return { feedback: [{ item: item.id, kind: "helped", reason: "Aiko's board agreed", evidence: [{ id: later.id, quote: later.content }] }] }; } });
+  assert.deepEqual([report.applied.length, w.core.feedback().length], [0, 0], "nothing is recorded from it");
+  // A night's work: a pair of memories is being reconciled when the ground of one is taken back.
+  const two = w.learn(w.say("Lead with the ask for the board", "c"), { ...DIRECTOR_LIKE, text: "Lead with the ask", about: "how this director reads" });
+  w.core.enqueue("reconcile", [item.id, two.id].sort().join("|"), 0.6, { reasons: ["Two memories are about the same subject"] });
+  const night = await w.core.sleep({ infer: async (purpose) => {
+    if (purpose !== "asteme-reconcile") return { changes: [], scenes: [], reason: "skip" };
+    w.log.erase([two.evidence[0].id]);
+    return { verdict: "merge", reason: "Same", changes: [{ op: "put", id: item.id, kind: "understanding", certainty: "explicit", reason: "Said twice", tested: "Two", hypothesis: "", entities: [],
+      text: "Lead with the decision or the ask", about: "how this director reads", concrete: "Writing a memo", general: "Writing for a busy reader", evidence: [{ id: item.evidence[0].id, quote: w.log.event(item.evidence[0].id).content }] }] };
+  } });
+  assert.equal(night.ran.filter(r => r.type === "reconcile").length, 0, "the reconcile was not applied");
+  assert.equal(w.core.item(item.id).text, item.text, "the memory is as it was");
 });

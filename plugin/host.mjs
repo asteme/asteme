@@ -605,9 +605,9 @@ export class Host {
   }
   // A copy of the whole store, once a day by default. Copies are local files.
   async keep() {
-    // Readings kept in the old, larger form are brought down a few hundred at each round until none is left, soon after an update: until then a record
-    // taken back is found in them only by what they copied. The space is given back to the disk by the next "reclaim".
-    if (!this.tracesKept) try { if (!this.core.keepTraces().more) this.tracesKept = true; } catch (e) { this.tracesKept = true; this.warn(e); }
+    // Readings kept in the old, larger form (or brought in from an archive) are brought down a few hundred at each round until none is left; once all
+    // are, a round asks one indexed question and finds nothing. The space is given back to the disk by the next "reclaim".
+    try { this.core.keepTraces(); } catch (e) { this.warn(e); }
     const every = this.config.backupEveryHours ?? 24;
     if (!every || this.log.now() < (Number(this.log.state("backup-after", 0)) || 0)) return;
     this.log.save("backup-after", this.log.now() + every * 3600000);

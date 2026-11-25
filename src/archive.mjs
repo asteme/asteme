@@ -109,7 +109,10 @@ export const archive = {
    */
   keepTraces({ most = 400 } = {}) {
     const db = this.log.db, update = db.prepare("UPDATE attention SET data=? WHERE id=?");
-    const rows = db.prepare(`SELECT id,data FROM attention WHERE owner=? AND instr(data,'"feedback":[') > 0 LIMIT ?`).all(this.owner, most);
+    // Every reading is gone through once, in the order kept, not only those that copied memories: one whose every candidate was held back copied none,
+    // and named no sources either. Where it got to is kept, so a later call starts there.
+    const at = `traces-kept-at:${this.owner}`, from = Number(this.log.state(at, 0)) || 0;
+    const rows = db.prepare(`SELECT rowid,id,data FROM attention WHERE owner=? AND rowid>? ORDER BY rowid LIMIT ?`).all(this.owner, from, most);
     // Which records each scene of a memory was learned from, as the store knows it now: what an old reading did not say about where its words came from.
     const learned = new Map();
     if (rows.length)
@@ -125,8 +128,9 @@ export const archive = {
       for (const row of rows) {
         let trace; try { trace = JSON.parse(row.data); } catch { continue; }
         const next = JSON.stringify(keptTrace(trace, sources));
-        if (next.length < row.data.length) { update.run(next, row.id); bytes += row.data.length - next.length; done++; }
+        if (next !== row.data) { update.run(next, row.id); bytes += Math.max(0, row.data.length - next.length); done++; }
       }
+      if (rows.length) this.log.save(at, rows.at(-1).rowid);
     });
     if (done) this.note("keep-traces", { rows: done, bytes });
     return { rows: done, bytes, more: rows.length === most };

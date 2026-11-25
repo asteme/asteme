@@ -1,6 +1,6 @@
 {
   "name": "asteme-core",
-  "version": "0.12.2-rc.4",
+  "version": "0.12.2-rc.5",
   "description": "Host-independent experience, attention and reflection.",
   "type": "module",
   "exports": {

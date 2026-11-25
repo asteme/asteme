@@ -34,6 +34,25 @@ let past = [],
 // (inside DSH the page's address changes with each start, and what a browser keeps is kept by address).
 let draftTimer = null,
   draftSaid = null;
+// The store is told what the box holds now. As the page goes away it is told on a request that outlives the page, and nothing is done with the answer.
+const tellDraft = (leaving = false) => {
+  clearTimeout(draftTimer);
+  draftTimer = null;
+  const text = box.value;
+  if (text === draftSaid) return;
+  draftSaid = text;
+  if (leaving)
+    void fetch(api("/api/draft"), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text }),
+      keepalive: true,
+    }).catch(() => {});
+  else
+    post("/api/draft", { text }).catch(() => {
+      draftSaid = null;
+    });
+};
 const keepDraft = () => {
   try {
     if (box.value) localStorage.setItem(DRAFT, box.value);
@@ -42,15 +61,16 @@ const keepDraft = () => {
     /* not kept on this device */
   }
   clearTimeout(draftTimer);
-  draftTimer = setTimeout(() => {
-    const text = box.value;
-    if (text === draftSaid) return;
-    draftSaid = text;
-    post("/api/draft", { text }).catch(() => {
-      draftSaid = null;
-    });
-  }, 500);
+  draftTimer = setTimeout(() => tellDraft(), 500);
 };
+// What is waiting to be told to the store is sent as the page goes. A page left inside the half second used to leave the store with what it had before.
+// A box emptied and the page opened again at once (a reload; inside DSH, a change of language) came back with the words that had been wiped: this browser
+// holds nothing for an emptied box, which is also what it holds when it never kept anything, so the store's older words were put back. And words typed
+// just before the program was closed were not there after it. Only what is waiting is sent: a page left untouched says nothing, and what the store
+// holds stays.
+addEventListener("pagehide", () => {
+  if (draftTimer !== null) tellDraft(true);
+});
 // What was kept with the store is put back when the page is first read, if nothing nearer was kept here.
 const draftFrom = (text) => {
   if (typeof text !== "string" || !text || box.value) return;

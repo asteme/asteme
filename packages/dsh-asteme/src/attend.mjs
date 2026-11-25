@@ -109,20 +109,29 @@ export const attend = {
     let read = 0;
     for (const row of rows) {
       const trace = JSON.parse(row.data), request = this.log.event(trace.request);
-      const save = () => this.log.db.prepare("UPDATE attention SET data=? WHERE id=?").run(JSON.stringify(keptTrace(trace)), row.id);
-      if (!request || request.erased) { trace.sceneLater = false; save(); continue; }
+      // What is written is laid over the reading as it is when it is written, never the copy read before the model was asked: something may have been
+      // taken back meanwhile, and the reading scrubbed of it (a copy written back over it brought what was taken back in again).
+      const save = (patch) => this.log.transaction(() => {
+        const now = this.log.db.prepare("SELECT data FROM attention WHERE id=?").get(row.id);
+        if (!now) return;
+        this.log.db.prepare("UPDATE attention SET data=? WHERE id=?").run(JSON.stringify(keptTrace({ ...JSON.parse(now.data), ...patch })), row.id);
+      });
+      if (!request || request.erased) { save({ sceneLater: false }); continue; }
       const events = this.log.events(request.scope, request.sessionId), at = events.findIndex(e => e.id === request.id);
       const recent = events.slice(0, at + 1).filter(e => e.content && ["user", "assistant", "tool"].includes(e.role)).slice(-8);
-      trace.sceneTries = (trace.sceneTries ?? 0) + 1;
+      const tries = (trace.sceneTries ?? 0) + 1, erased = this.log.state("erasure-revision", 0), patch = { sceneTries: tries };
       try {
         const scene = await infer("asteme-scene", scenePrompt({ now: iso(now), core: this.charter(), RAW: pageRaw(recent) }), 1800);
+        // A scene read from records of which one was taken back while it was read is not kept: it is read again next time, from what is left.
+        if (erased !== this.log.state("erasure-revision", 0)) continue;
         if (scene && typeof scene.scene === "string" && typeof scene.need === "string" && Array.isArray(scene.entities)) {
-          trace.scene = { scene: scene.scene, need: scene.need, entities: scene.entities, from: "later" };
-          trace.sceneLater = false; read++;
+          Object.assign(patch, { scene: { scene: scene.scene, need: scene.need, entities: scene.entities, from: "later" }, sceneLater: false,
+            read: [...new Set([...(trace.read ?? []), ...recent.map(e => e.id)])] });
+          read++;
         }
-      } catch (e) { trace.sceneError = e.message; }
-      if (trace.sceneTries >= 2) trace.sceneLater = false;
-      save();
+      } catch (e) { patch.sceneError = e.message; }
+      if (tries >= 2) patch.sceneLater = false;
+      save(patch);
     }
     return read;
   },
@@ -156,7 +165,9 @@ export const attend = {
     const erased = this.log.state("erasure-revision", 0);
     // The charter in force is recorded with every reading, so a later change
     // to it can never be mistaken for the ground an earlier answer stood on.
-    const base = { request: request.id, erased, charter: digest(this.charter()).slice(0, 16), scene: null, candidates: [], decisions: [], delivered: [], text: "" };
+    // What the reading was made from: the records shown to the model. Its scene, its reasons and its note are written from them, so taking any of them
+    // back takes the reading away (scrubTrace in log.mjs).
+    const base = { request: request.id, read: [...new Set([request.id, ...(recent ?? []).map(e => e.id)])], erased, charter: digest(this.charter()).slice(0, 16), scene: null, candidates: [], decisions: [], delivered: [], text: "" };
     // With nothing remembered, a reading can change nothing about the reply,
     // so the reply is not made to wait for one. What the message says is
     // still read into memory afterwards, by reflection.
@@ -385,7 +396,7 @@ export const attend = {
         if (use !== "not-now" && (item.status !== "doubtful" || use === "check"))
           base.delivered.push({ ...item, grounds: readNotSaid ? "seen" : "said", use, ...(judged ? { by: "judge", confidence: d.confidence } : { relevance: d.reason, anchor: d.anchor }),
             ...(typeof d.expect === "string" && d.expect.trim() ? { expect: cut(d.expect.trim(), 240) } : {}),
-            matched: { scene: candidate.cue, kind: candidate.origin, ...(candidate.cueFrom?.length ? { from: candidate.cueFrom } : {}), ...(candidate.fit ? { fit: candidate.fit } : {}), ...(candidate.via ? { via: candidate.via } : {}) },
+            matched: { scene: candidate.cue, kind: candidate.origin, from: candidate.cueFrom ?? [], ...(candidate.fit ? { fit: candidate.fit } : {}), ...(candidate.via ? { via: candidate.via } : {}) },
             ...(candidate.stale ? { stale: true } : {}), ...(candidate.conflict?.length ? { conflict: candidate.conflict } : {}) });
       }
       // Overshoot trims the oldest extras instead of erasing the whole note.

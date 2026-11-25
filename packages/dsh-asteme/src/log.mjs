@@ -29,6 +29,9 @@ const decode = (row) => (row ? JSON.parse(row.data) : null);
  * versions ignore do not raise it.
  */
 export const STORE_FORMAT = 1;
+// The most records a reading is shown before its request (8 in DSH, 14 in Asteme's own conversation by default), with room to spare: used only to find,
+// on erasure, readings made before readings named what they read.
+export const READ_WINDOW = 24;
 
 /** Sources retain the v0.3 schema and IDs; notes and checkpoints share this database. */
 export class Log {
@@ -301,6 +304,17 @@ export class Log {
     this.rewrote();
     this.transaction(() => {
       this.save("erasure-revision", this.state("erasure-revision", 0) + 1);
+      // A reading made before readings named the records they read (0.12.1 and earlier) read its request and the records just before it: at most
+      // READ_WINDOW of them. The requests whose window held an erased record are found now, while the records still say where they were.
+      const window = new Set();
+      for (const id of ids) {
+        const e = this.event(id);
+        if (!e || !Number.isInteger(e.seq)) continue;
+        const after = this.db.prepare("SELECT data FROM events WHERE scope=? AND session_id=? AND seq>=? AND erased=0 ORDER BY seq LIMIT ?")
+          .all(scopeKey(e.scope), e.sessionId, e.seq, READ_WINDOW * 8).map(decode)
+          .filter(x => x.content && ["user", "assistant", "tool"].includes(x.role)).slice(0, READ_WINDOW);
+        for (const x of after) window.add(x.id);
+      }
       const affected = new Set();
       for (const id of ids) {
         const e = this.event(id);
@@ -328,13 +342,19 @@ export class Log {
         }
         const references = [...ids, ...dependent];
         erasedReferences = references;
-        if (exists("experience_feedback")) for (const row of this.db.prepare("SELECT rowid,data FROM experience_feedback").all())
-          if (references.some(id => row.data.includes(id))) this.db.prepare("DELETE FROM experience_feedback WHERE rowid=?").run(row.rowid);
+        // The scenes learned from those uses, by memory: a reading that held that memory by one of them drew on what is erased, whether or not it says so.
+        const learned = [];
+        if (exists("experience_feedback")) for (const row of this.db.prepare("SELECT rowid,item,data FROM experience_feedback").all())
+          if (references.some(id => row.data.includes(id))) {
+            try { const scene = JSON.parse(row.data).scene?.scene; if (scene) learned.push({ item: row.item, scene }); } catch { /* its ids are enough */ }
+            this.db.prepare("DELETE FROM experience_feedback WHERE rowid=?").run(row.rowid);
+          }
         // A reading names, beside each memory it held, the records its words were drawn from (the scene a memory was found, used or held back by, when
         // that scene was learned from a later use): those entries are found by the erased ids and go, wherever they are, and no others do.
-        for (const row of this.db.prepare("SELECT id,data FROM attention").all()) {
-          if (!references.some(id => row.data.includes(id))) continue;
-          const kept = scrubTrace(row.data, references);
+        const learnedItems = new Set(learned.map(l => l.item));
+        for (const row of this.db.prepare("SELECT id,request,data FROM attention").all()) {
+          if (!references.some(id => row.data.includes(id)) && !window.has(row.request) && ![...learnedItems].some(id => row.data.includes(id))) continue;
+          const kept = scrubTrace(row.data, references, { learned, window });
           if (kept) this.db.prepare("UPDATE attention SET data=? WHERE id=?").run(kept, row.id);
           else this.db.prepare("DELETE FROM attention WHERE id=?").run(row.id);
         }
@@ -481,14 +501,32 @@ export { randomUUID };
  * reading cannot be kept: its own request is gone, it is not a reading made
  * before a reply, or something removed is still in it after scrubbing.
  */
-export function scrubTrace(text, references) {
+export function scrubTrace(text, references, { learned = [], window = new Set() } = {}) {
   const trace = JSON.parse(text);
   if (!Array.isArray(trace.candidates) || references.includes(trace.request)) return null;
+  // What the reading was made from (its scene, its reasons, its note were written from these records): any of them taken back, the reading goes. A
+  // reading that does not say what it read is taken to have read the records just before its request (`window`, from erase).
+  if (Array.isArray(trace.read) ? trace.read.some(id => references.includes(id)) : window.has(trace.request)) return null;
   const has = value => { const s = JSON.stringify(value) ?? ""; return references.some(id => s.includes(id)); };
-  for (const key of ["candidates", "decisions", "delivered", "undecided", "outcomes"])
-    if (Array.isArray(trace[key])) trace[key] = trace[key].filter(entry => !has(entry));
-  // What was held back is a list of its own: only the entries that hold what was erased go.
-  if (Array.isArray(trace.heldBack?.suppressed)) trace.heldBack = { ...trace.heldBack, suppressed: trace.heldBack.suppressed.filter(entry => !has(entry)) };
+  const scenes = new Map();
+  for (const { item, scene } of learned) (scenes.get(item) ?? scenes.set(item, new Set()).get(item)).add(scene);
+  const drawn = (id, ...cues) => cues.some(cue => cue && scenes.get(id)?.has(cue));
+  const idOf = entry => typeof entry === "string" ? entry : entry?.item?.id ?? entry?.id ?? entry?.item;
+  // The memories whose part of the reading drew on what is taken back: by the records an entry names, or by a scene learned from an erased use.
+  const touched = new Set();
+  const mark = (list, cuesOf = () => []) => { for (const entry of list ?? []) if (has(entry) || drawn(idOf(entry), ...cuesOf(entry))) touched.add(idOf(entry)); };
+  mark(trace.candidates, c => [c?.cue, c?.against?.cue]);
+  mark(trace.delivered, d => [d?.matched?.scene]);
+  mark(trace.heldBack?.suppressed, x => [x?.cue, x?.against?.cue]);
+  for (const key of ["decisions", "undecided", "outcomes", "askedWhy"]) mark(trace[key]);
+  mark(trace.shadow?.decisions);
+  // Everything the reading holds about such a memory goes: what was considered, what was decided and why (a reason may quote the scene), what was
+  // delivered, what was held back. What it holds about other memories stays.
+  const about = entry => touched.has(idOf(entry)) || has(entry);
+  for (const key of ["candidates", "decisions", "delivered", "undecided", "outcomes", "askedWhy"])
+    if (Array.isArray(trace[key])) trace[key] = trace[key].filter(entry => !about(entry));
+  if (Array.isArray(trace.heldBack?.suppressed)) trace.heldBack = { ...trace.heldBack, suppressed: trace.heldBack.suppressed.filter(entry => !about(entry)) };
+  if (Array.isArray(trace.shadow?.decisions)) trace.shadow = { ...trace.shadow, decisions: trace.shadow.decisions.filter(entry => !about(entry)) };
   for (const key of ["heldBack", "shadow", "immediate"]) if (trace[key] !== undefined && has(trace[key])) delete trace[key];
   // The note given to the assistant may have carried the removed words.
   trace.text = "";

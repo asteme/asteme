@@ -191,6 +191,8 @@ export const outcome = {
             reason: `Read from what the user wrote next (${Math.round(r.confidence * 100)}% sure)` }));
       };
       const marker = {};
+      // Read from what the user wrote next: taken back while it was being read, nothing is recorded and the delivery is read again later.
+      const erased = this.log.state("erasure-revision", 0);
       let list;
       if (judge && mode === "judge") list = await viaJudge();
       else {
@@ -203,6 +205,7 @@ export const outcome = {
         }
         if (beside) await beside;
       }
+      if (erased !== this.log.state("erasure-revision", 0)) continue;
       const byId = new Map(usable.map(i => [i.id, i]));
       this.log.transaction(() => {
         for (const f of list) {

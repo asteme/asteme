@@ -985,6 +985,50 @@ test("the conversation with Asteme cannot be one that is not remembered: a mark 
   assert.match(heard.find(e => e.type === "error").text, /Nothing came back/);
 });
 
+test("an opened memory says how its uses have gone, counted by situation, in words the page is given in every language", async t => {
+  const mind = openMind({ embed: situationEmbedder(), infer: async () => { throw Error("not asked"); } });
+  t.after(() => mind.close());
+  const scope = { userId: "local", agentId: "assistant", projectId: "asteme" };
+  mind.log.ingest(scope, "s1", [{ seq: 0, role: "user", kind: "user/message", content: "Lead with the decision for this director", occurredAt: mind.log.now() }]);
+  const e = mind.log.events(scope, "s1")[0];
+  const a = mind.core.apply([{ op: "put", kind: "understanding", certainty: "explicit", reason: "Stated", text: e.content, about: "decision first", concrete: "Writing a memo for the director",
+    general: "Writing for a busy decision maker", tested: "One occasion", hypothesis: "Others untested", entities: [], evidence: [{ id: e.id, quote: e.content }] }], [e]).applied[0].id;
+  assert.deepEqual(mind.memory(a).uses, { helped: 0, missed: 0, irrelevant: 0, wrong: 0, unused: 0 });
+  // It helped in two situations (one of them twice) and did not belong in one: situations are counted, not replies.
+  const row = (kind, scene, request) => ({ item: a, kind, request, revision: 1, scene: { scene } }), real = mind.core.feedback;
+  mind.core.feedback = () => [row("helped", "A pitch for an investor", "r1"), row("helped", "A pitch for an investor", "r2"), row("helped", "A note to the board", "r3"), row("irrelevant", "A birthday card", "r4")];
+  try { assert.deepEqual(mind.memory(a).uses, { helped: 2, missed: 0, irrelevant: 1, wrong: 0, unused: 0 }); } finally { mind.core.feedback = real; }
+  const { pageWords } = await import("../brain/server.mjs");
+  const keys = ["useSoFar", "helpedOnce", "helpedTimes", "missedOnce", "missedTimes", "misplacedOnce", "misplacedTimes", "wasWrong", "unusedOnce", "unusedTimes", "listComma"];
+  for (const lang of ["en", "ja", "zh", "de", "es", "fr", "pt", "ru"]) assert.deepEqual(keys.filter(k => !pageWords(lang)[k]), [], lang);
+  // The page's own rule for the line, run as it is written.
+  const { readFile } = await import("node:fs/promises"), vm = await import("node:vm");
+  const src = await readFile(new URL("../brain/page/5-sheets.js", import.meta.url), "utf8"), words = pageWords("en");
+  const box = vm.createContext({ say: (k, v = {}) => words[k].replace(/\{(\w+)\}/g, (_, n) => v[n]) });
+  vm.runInContext(src.slice(src.indexOf("const usesSaid = "), src.indexOf("const openMemory = ")) + "\nthis.usesSaid = usesSaid;", box);
+  assert.equal(box.usesSaid({ helped: 2, missed: 0, irrelevant: 1, wrong: 0, unused: 0 }), "helped in 2 situations, was out of place once");
+  assert.equal(box.usesSaid({ helped: 0, missed: 0, irrelevant: 0, wrong: 0, unused: 0 }), "", "nothing is said of what has not happened, and the sheet then says nothing of uses");
+});
+
+test("a day in another year says its year wherever the page says when something happened, as the day lines do", async () => {
+  const { readFile } = await import("node:fs/promises"), vm = await import("node:vm");
+  const src = await readFile(new URL("../brain/page/0-base.js", import.meta.url), "utf8");
+  const box = vm.createContext({ document: { documentElement: { lang: "en-US" } } });
+  vm.runInContext(src.slice(src.indexOf("const yearOf = "), src.indexOf("// To the end of the conversation.")) + "\nthis.time = time; this.when = when;", box);
+  const year = new Date().getFullYear(), long = new Date(year - 3, 2, 3, 23, 40).getTime(), lately = new Date(year, 0, 2, 9, 5).getTime();
+  assert.match(box.time(long), new RegExp(String(year - 3)), "learned three years ago is not learned this March");
+  assert.match(box.when(long), new RegExp(String(year - 3)));
+  assert.doesNotMatch(box.time(lately), new RegExp(String(year)), "this year's days are said as before");
+});
+
+test("the Portuguese words are Brazil's, as the README and the site are, and the page tells the browser so", async () => {
+  const { pt } = await import("../client/locales/pt.mjs");
+  assert.equal(pt._lang, "pt-BR");
+  // Forms that are Portugal's and not Brazil's: one of them once headed every memory ("Registado").
+  const european = /Registad[oa]|\bregisto\b|predefini|por si(?! só)|\b(?:está|estava|estão|estou) a \p{L}+r\b|\bA usar\b|ecrã|ficheiro|utilizador|telemóvel/u;
+  assert.deepEqual(Object.entries(pt).filter(([, v]) => typeof v === "string" && european.test(v)).map(([k]) => k), []);
+});
+
 test("every word the page asks for by name is one the door gives it, in English at least", async () => {
   const { readFile } = await import("node:fs/promises"); const { PAGE_SCRIPTS } = await import("../brain/page.mjs"); const copy = await import("../client/copy.mjs");
   const door = await readFile(new URL("../brain/server.mjs", import.meta.url), "utf8"), shared = new Set([...door.match(/const SHARED = \[(.*?)\]/s)[1].matchAll(/"([^"]+)"/g)].map(m => m[1]));

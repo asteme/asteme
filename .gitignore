@@ -12,3 +12,4 @@ dist-dsh/
 
 # The built site: made by scripts/make-site.mjs, published by the pages workflow.
 site/dist/
+__pycache__/

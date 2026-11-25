@@ -106,3 +106,7 @@
   --ast-disabled-opacity: 0.5;
 }
 
+/* Chinese and Japanese share characters but not their shapes: a page in Japanese is drawn with Japanese faces first. */
+.asteme-page:lang(ja) {
+  --ast-font: "Segoe UI", "Yu Gothic UI", "Meiryo UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans CJK JP", system-ui, sans-serif;
+}

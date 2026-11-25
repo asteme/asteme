@@ -39,6 +39,12 @@ for (const name of ["cordis.patch.yml", "icon.svg", "LICENSE", "NOTICE"]) {
   await cp(join(root, name), join(out, name));
 }
 await cp(join(root, "dsh", "README.md"), join(out, "README.md"));
+// The plugin catalogs show pictures of a plugin from a screenshots.json beside its package.json, with paths relative to that file. They belong to the
+// copy in the repository only: the manifest's `files` leaves them out of what npm carries.
+if (gitPackage) {
+  await cp(join(root, "dsh", "screenshots"), join(out, "screenshots"), { recursive: true });
+  await cp(join(root, "dsh", "screenshots.json"), join(out, "screenshots.json"));
+}
 
 const manifest = {
   name: "dsh-asteme",
@@ -62,7 +68,7 @@ const manifest = {
   homepage: "https://github.com/asteme/asteme",
   bugs: { url: "https://github.com/asteme/asteme/issues" },
   engines: {
-    node: ">=22.5.0",
+    node: ">=22.13.0",
     // DSH compares with prereleases included (app-boot/plugin-compatibility),
     // so one lower bound admits every later release candidate.
     dsh: ">=0.2.2-rc.1",

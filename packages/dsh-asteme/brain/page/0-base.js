@@ -155,9 +155,7 @@ const applyLook = (k = {}) => {
   ownInk = COLOUR(k.ink) ? k.ink : "";
   dress();
   // Any typeface the device has, and letters of the size asked for (the older small, medium and large are still understood).
-  document.body.style.fontFamily = k.font
-    ? `"${k.font}", system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", sans-serif`
-    : "";
+  document.body.style.fontFamily = k.font ? `"${k.font}", system-ui, -apple-system, "Segoe UI", var(--cjk), sans-serif` : "";
   document.body.style.fontSize = (k.px ?? { s: 14.5, l: 18 }[k.size] ?? 16) + "px";
   document.body.classList.toggle("no-tips", k.tips === false);
   if (typeof kick === "function") kick();
@@ -199,15 +197,19 @@ for (const [id, inner, w, stroke, label] of [
 }
 $("send").removeAttribute("title");
 $("skylabel").textContent = say("brainSkyLabel");
-const time = (at) =>
-  new Date(at).toLocaleString(document.documentElement.lang, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+// A day in another year says its year, as the day lines in the conversation do: "learned March 3" of three years ago is not this March.
+const yearOf = (d) => (d.getFullYear() !== new Date().getFullYear() ? { year: "numeric" } : {});
+const time = (at) => {
+  const d = new Date(at);
+  return d.toLocaleString(document.documentElement.lang, { ...yearOf(d), month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+};
 // A time said short: the hour when it is today, the day when it is not.
 const when = (at) => {
   const d = new Date(at),
     lang = document.documentElement.lang;
   return d.toDateString() === new Date().toDateString()
     ? d.toLocaleTimeString(lang, { hour: "numeric", minute: "2-digit" })
-    : d.toLocaleDateString(lang, { month: "short", day: "numeric" });
+    : d.toLocaleDateString(lang, { ...yearOf(d), month: "short", day: "numeric" });
 };
 // To the end of the conversation. Once the conversation is drawn, this is its own doing (carry, where it is drawn): what was on the page is seen to travel there.
 let carryNow = null;

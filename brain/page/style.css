@@ -14,7 +14,10 @@
   :root { --soft: color-mix(in srgb, var(--ink) 64%, transparent); --edge: color-mix(in srgb, var(--ink) 12%, transparent); --hover: color-mix(in srgb, var(--ink) 8%, transparent); --go: var(--ink); --go-ink: var(--bg); }
   * { box-sizing: border-box; }
   html, body { height: 100%; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.75 system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", sans-serif; display: flex; flex-direction: column; overflow: hidden; }
+  /* Chinese and Japanese share characters but not their shapes: each is drawn with its own faces first. */
+  :root { --cjk: "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", "Noto Sans CJK JP"; }
+  :root:lang(zh) { --cjk: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans SC", "Noto Sans CJK SC"; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.75 system-ui, -apple-system, "Segoe UI", var(--cjk), sans-serif; display: flex; flex-direction: column; overflow: hidden; }
   /* A picture of the user's own may stand behind the sky, darkened and blurred as they like. */
   #wall { position: fixed; inset: -2rem; z-index: 0; background: center / cover no-repeat; display: none; }
   #wall::after { content: ""; position: absolute; inset: 0; background: var(--bg); opacity: var(--dim, .45); }

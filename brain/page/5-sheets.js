@@ -129,6 +129,18 @@ const section = (title, lines) =>
 addEventListener("keydown", (e) => {
   if (e.key === "Escape" && sheetBox.classList.contains("on")) below.length ? sheetBack() : closeSheet();
 });
+// How its uses have gone, in one line: where it helped, where it was needed and missing, where it did not belong, whether it turned out wrong,
+// and how often it was offered and left unused. Nothing is said of a kind that has not happened.
+const usesSaid = (u) =>
+  [
+    u.helped && say(u.helped === 1 ? "helpedOnce" : "helpedTimes", { n: u.helped }),
+    u.missed && say(u.missed === 1 ? "missedOnce" : "missedTimes", { n: u.missed }),
+    u.irrelevant && say(u.irrelevant === 1 ? "misplacedOnce" : "misplacedTimes", { n: u.irrelevant }),
+    u.wrong && say("wasWrong"),
+    u.unused && say(u.unused === 1 ? "unusedOnce" : "unusedTimes", { n: u.unused }),
+  ]
+    .filter(Boolean)
+    .join(say("listComma"));
 const openMemory = async (id, over = false) => {
   let m;
   try {
@@ -169,6 +181,8 @@ const openMemory = async (id, over = false) => {
       el("h3", null, say(m.grounds === "seen" ? "brainFromSeen" : "brainFromSaid")),
       ...m.sources.map((q) => el("blockquote", null, q.quote)),
       m.at ? el("p", "muted", say("brainLearnedOn", { time: time(m.at) })) : null,
+      // How its uses have gone, once there is something to say: a use not yet read for how it went is not "not used".
+      ...(m.uses && usesSaid(m.uses) ? [el("h3", null, say("useSoFar")), el("p", "muted", usesSaid(m.uses))] : []),
       acts,
     ],
     "memory:" + m.id,

@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://github.com/asteme/asteme/actions/workflows/test.yml"><img src="https://github.com/asteme/asteme/actions/workflows/test.yml/badge.svg" alt="tests"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-3c6eb4" alt="license: Apache-2.0"></a>
-  <img src="https://img.shields.io/badge/node-%E2%89%A5%2022.5-3c873a" alt="node 22.5 or newer">
+  <img src="https://img.shields.io/badge/node-%E2%89%A5%2022.13-3c873a" alt="node 22.13 or newer">
 </p>
 
 <p align="center">
@@ -14,9 +14,18 @@
 
 <p align="center"><a href="https://asteme.github.io/asteme/zh/">网站</a></p>
 
+**一个可以交谈、带长期记忆的本地 AI。** 它运行在你自己的电脑上，用你选的语言模型，把记得的一切放在一个 SQLite 文件里；可以作为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的插件、作为一个独立的页面，或者作为任何智能体都能调用的 MCP 记忆服务器来用。
+
+下面这段短片长一分钟：很久以前说过的一句话，在该出现的时候回来了；一个约定守住了；最后，星空把它记得的一切摆在眼前。打开声音的话，背景里有钢琴声。
+
 https://github.com/user-attachments/assets/9ee8df30-5355-444a-a890-49af275b5738
 
-**状态：开发中。** Asteme 仍在构建当中。行为可能变化，也可能失败或丢数据。在重要的事情上还不要依赖它。
+<details>
+<summary>短片里的内容（文字版）</summary>
+
+快过年的一个晚上。“快过年了。年假还没批下来，周五才知道”。Asteme 的回答，来自去年除夕说过的一句话：“去年除夕，你说春联是你爸自己踩着凳子贴的，贴歪了。”点开这条记忆，对话旁边就是它所依据的原话，和说这句话的日子。Asteme 说周五晚上来问，到了周五晚上，它先开口：“年假批下来了吗？”“批下来了。抢到了腊月二十八的票”“好。今年的春联你来贴。”最后是星空：打一个“家”字，说过的所有关于家的事，一条一条从星星里出来。这些都是虚构的，不是任何人的真实对话。
+
+</details>
 
 # ASTEME
 
@@ -31,7 +40,11 @@ Asteme 是一个你与之交谈的“谁”，而且每次都是同一个。你�
 
 两者在同一套机制上说话、记忆、守约。各自有各自的存储：插件使用 harness 配置档（profile）的存储，独立的大脑使用它设置文件里的存储，或者用 `--person <name>` 为每个人各用一个存储。`export` 和 `import` 会写出并读回一个完整的人，所以一个人可以在两者之间迁移。除此之外，它们看不到彼此的存储。
 
+**状态：开发中。** Asteme 仍在构建当中。行为可能变化，也可能失败或丢数据。在重要的事情上还不要依赖它。
+
 ## 它有什么不同
+
+给语言模型配的记忆，大多就是检索：把和这条消息相似的文字找出来，摆到模型面前。Asteme 也从这里开始，不同的是在这前后发生的事。
 
 **唤起记忆的是情形，不是字面。** 你曾经改过一份备忘录：“结论放前面，总监只看前三行。”几天后，你要求一页给投资人的材料。没有一个词相同，但情形是一样的（一个时间很少、却必须做决定的读者），于是这条记忆回来了。
 
@@ -43,11 +56,11 @@ Asteme 是一个你与之交谈的“谁”，而且每次都是同一个。你�
 
 **它会自己开口。** 你放在心上的事，它会一直记着，不设时间。过一阵子回来，它可能会问起后来怎么样了，也可能什么也不说：这由它自己决定；它心里留着什么，你都能看到，也能收回。
 
-**它把记得的东西展示出来。** 每条记忆都是对话背后那片天空里的一颗星，越容易想起来就越亮。抓住空白的天空，你就进到它们中间了。
+**它记得什么，你都看得见。** 每条记忆都是对话背后那片天空里的一颗星，越容易想起来就越亮。抓住空白的天空，你就进到它们中间了。
 
 ## 一分钟试用
 
-Node 22.5 或更高版本。不需要安装任何东西，也不需要 API 密钥。
+Node 22.13 或更高版本。不需要安装任何东西，也不需要 API 密钥。
 
 ```
 git clone https://github.com/asteme/asteme.git
@@ -74,12 +87,14 @@ Night. Sleep.
 想在没有模型的情况下看看这个对话，就运行页面自带的预览：
 
 ```
-DEMO=1 ALL=900 node brain/preview.mjs 4173 ja
+DEMO=1 ALL=900 node brain/preview.mjs 4173 zh
 ```
 
 然后在这台电脑上打开 `http://127.0.0.1:4173/?token=preview`（在 PowerShell 里，先设好这两个变量：`$env:DEMO=1; $env:ALL=900`）。里面没有任何人的真实对话。
 
 ## 使用方式
+
+**需要什么。** Node 22.13 或更高版本。一个语言模型：在 DeepSeek Harness 里，就是你在那里已经在用的那个；独立运行或通过 MCP 时，任何兼容 OpenAI 的接口都可以（一个 URL、一个模型名和一个密钥）。依赖大约 400 MB；第一次使用时会下载一次约 120 MB 的嵌入模型（multilingual-e5-small，存放在 `~/.cache/asteme/models`，在你自己的电脑上运行）。上面的演示只需要 Node。
 
 ### 在 DeepSeek Harness 里
 
@@ -87,7 +102,7 @@ DEMO=1 ALL=900 node brain/preview.mjs 4173 ja
 
 - 对话占满整个画面。记忆在旁边打开；“设置”讲的是这个对话：它长什么样、Asteme 本身（名字、形象、说话方式、心情）、声音和思考。“记忆”讲的是它记得的一切：搜索、星空，以及在 DSH 里每一处照料记忆的地方。记忆相关的设置也在 DSH 自己的设置里，位于 Asteme 之下。
 - 不属于对话的东西都在面板里：确认、记忆、动态、章程、设置。
-- harness 自己的对话没有变化：那是智能体在一个会话里干活。Asteme 是一条横跨所有这些、一直延续下去的对话，而且它可以先开口。
+- 在 harness 自己的会话里，智能体照常用它自己的工具干活，而在那里说话的也是 Asteme：同一个名字、同一种说话方式、同一份记忆。唯一的例外是 Asteme 为了把工作交出去而自己开的会话：那里仍是原本的 DeepSeek Harness，Asteme 的东西一样也不给。和 Asteme 的对话横跨所有这些会话一直延续下去，而且它可以先开口。
 
 ### 独立运行
 

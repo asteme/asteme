@@ -18,7 +18,7 @@
 
 下面这段短片长一分钟：很久以前说过的一句话，在该出现的时候回来了；一个约定守住了；最后，星空把它记得的一切摆在眼前。打开声音的话，背景里有钢琴声。
 
-https://github.com/user-attachments/assets/9ee8df30-5355-444a-a890-49af275b5738
+https://github.com/user-attachments/assets/b7079524-fc25-4d16-adae-b91ec0b35eee
 
 <details>
 <summary>短片里的内容（文字版）</summary>

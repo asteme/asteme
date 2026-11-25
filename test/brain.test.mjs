@@ -1096,6 +1096,37 @@ test("what is being written is kept with the store until it is sent or emptied, 
   assert.equal(mind.snapshot().draft, "", "sent, it is no longer a draft");
 });
 
+test("what is waiting to be kept with the store is sent as the page goes, and a page left untouched says nothing", async () => {
+  const { readFile } = await import("node:fs/promises"), vm = await import("node:vm");
+  const start = await readFile(new URL("../brain/page/8-start.js", import.meta.url), "utf8");
+  const timers = [], posted = [], sent = [], heard = {};
+  const page = vm.createContext({
+    box: { value: "" }, localStorage: { setItem() {}, removeItem() {} }, api: (path) => "door" + path,
+    setTimeout: (fn) => timers.push(fn), clearTimeout: (id) => { if (id) timers[id - 1] = null; },
+    post: (path, body) => (posted.push([path, body]), Promise.resolve({})), fetch: (url, how) => (sent.push([url, how]), Promise.resolve()),
+    addEventListener: (type, fn) => { heard[type] = fn; },
+  });
+  vm.runInContext(start.slice(start.indexOf('const DRAFT = "asteme-draft";'), start.indexOf("// What was kept with the store is put back")) + "\nthis.keepDraft = keepDraft;", page);
+  const wait = () => { const fn = timers.at(-1); timers[timers.length - 1] = null; fn?.(); };
+  // Left untouched, even before the page was told what the store holds: nothing is said, so what the store holds stays.
+  heard.pagehide();
+  assert.deepEqual([posted.length, sent.length], [0, 0]);
+  // Typed, and the half second passes: the store is told in the ordinary way, and leaving after that has nothing to add.
+  page.box.value = "old words"; page.keepDraft(); wait();
+  assert.equal(JSON.stringify(posted), '[["/api/draft",{"text":"old words"}]]');
+  heard.pagehide();
+  assert.equal(sent.length, 0);
+  // Wiped, and the page goes before the half second is up (a reload; inside DSH, a change of language): the store is told now, on a request that outlives the page.
+  page.box.value = ""; page.keepDraft(); heard.pagehide();
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0][0], "door/api/draft");
+  assert.deepEqual([sent[0][1].method, sent[0][1].keepalive, sent[0][1].body], ["POST", true, '{"text":""}']);
+  assert.equal(timers.at(-1), null, "what was waiting is not sent a second time");
+  // Typed just before the program is closed: those words are the ones the store has. Told once, however many times the page is hidden.
+  page.box.value = "typed just now"; page.keepDraft(); heard.pagehide(); heard.pagehide();
+  assert.deepEqual([sent.length, sent[1][1].body, posted.length], [2, '{"text":"typed just now"}', 1]);
+});
+
 test("how it is told to speak when it is first woken goes into its charter, not into a mood for the day", async t => {
   const mind = openMind({ embed: situationEmbedder(), infer: answerFor(() => undefined) }); t.after(() => mind.close());
   const me = mind.self({ born: true, greet: false, name: "Mina", userName: "Boss", tone: "  Plainly, like a friend  " });

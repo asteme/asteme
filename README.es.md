@@ -18,7 +18,7 @@
 
 Un minuto: algo dicho hace mucho vuelve cuando llega su momento, se cumple una promesa y el cielo muestra todo lo que Asteme recuerda. Si activas el sonido, suena un piano de fondo. El vídeo está en inglés.
 
-https://github.com/user-attachments/assets/b20a3d7d-69fa-41f3-a4e0-5f9b14073b19
+https://github.com/user-attachments/assets/fb9aff91-1248-4deb-847e-577771f62fae
 
 <details>
 <summary>Lo que muestra el vídeo, en palabras</summary>

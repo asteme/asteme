@@ -18,7 +18,7 @@
 
 下の動画は 1 分ほどです。ずっと前に話したことが、その場面が来たときに戻ってきます。約束が守られます。最後に、覚えていることのすべてが星空に並びます。音を出すと、ピアノが流れます。
 
-https://github.com/user-attachments/assets/f7880bf0-6b96-46db-a997-ff650ac58cd3
+https://github.com/user-attachments/assets/f61bccb9-1cf6-4f27-bb3f-9420c776a8bd
 
 <details>
 <summary>動画の内容（文章で）</summary>

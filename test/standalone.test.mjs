@@ -71,3 +71,15 @@ test("the MCP server lists its tools and answers calls line by line", async t =>
   assert.match(replies.find(r => r.id === 3).result.content[0].text, /^Nothing from memory applies\. \(request /);
   assert.deepEqual([replies.find(r => r.id === 4).result.isError, replies.find(r => r.id === null).error.code], [true, -32700]);
 });
+
+test("every package asks for the Node that has node:sqlite without a flag (22.13), and the README says the same", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const read = (path) => readFile(new URL("../" + path, import.meta.url), "utf8");
+  const floors = [JSON.parse(await read("package.json")).engines.node, JSON.parse(await read("src/package.json")).engines.node, /node: "([^"]+)"/.exec(await read("scripts/make-dsh-bundle.mjs"))[1]];
+  assert.deepEqual([...new Set(floors)], [">=22.13.0"]);
+  for (const lang of ["", ".ja", ".zh", ".es", ".fr", ".de", ".ru", ".pt"]) {
+    const readme = await read(`README${lang}.md`);
+    assert.doesNotMatch(readme, /Node 22\.5\b|%2022\.5-/, `README${lang}.md`);
+    assert.match(readme, /Node 22\.13\b/, `README${lang}.md`);
+  }
+});

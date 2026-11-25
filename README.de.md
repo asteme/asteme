@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://github.com/asteme/asteme/actions/workflows/test.yml"><img src="https://github.com/asteme/asteme/actions/workflows/test.yml/badge.svg" alt="tests"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-3c6eb4" alt="license: Apache-2.0"></a>
-  <img src="https://img.shields.io/badge/node-%E2%89%A5%2022.5-3c873a" alt="node 22.5 or newer">
+  <img src="https://img.shields.io/badge/node-%E2%89%A5%2022.13-3c873a" alt="node 22.13 or newer">
 </p>
 
 <p align="center">
@@ -14,9 +14,18 @@
 
 <p align="center"><a href="https://asteme.github.io/asteme/de/">Website</a></p>
 
+**Eine lokale KI mit Langzeitgedächtnis, mit der du sprichst.** Sie läuft auf deinem Rechner mit dem Sprachmodell deiner Wahl, bewahrt alles, woran sie sich erinnert, in einer einzigen SQLite-Datei auf und lässt sich als Plugin für [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness), als eigene Seite oder als MCP-Gedächtnisserver für jeden Agenten nutzen.
+
+Eine Minute: Etwas, das vor langer Zeit gesagt wurde, kommt zurück, wenn sein Moment da ist, ein Versprechen wird gehalten, und der Himmel zeigt alles, woran Asteme sich erinnert. Mit Ton ist dazu ein Klavier zu hören. Der Film ist auf Englisch.
+
 https://github.com/user-attachments/assets/b20a3d7d-69fa-41f3-a4e0-5f9b14073b19
 
-**Status: in Entwicklung.** Asteme wird noch gebaut. Das Verhalten kann sich ändern, und es kann versagen oder Daten verlieren. Verlass dich noch nicht für etwas Wichtiges darauf.
+<details>
+<summary>Was der Film zeigt, in Worten</summary>
+
+Ein Geburtstagsabend: „Heute Geburtstag. Fühlt sich an, als liefe mir die Zeit davon.“ Asteme antwortet mit einem Satz von vor drei Jahren: „Wenn ich mit vierzig das Buch noch nicht angefangen habe, erinnere mich daran, wer ich war.“ Die Erinnerung öffnet sich neben dem Gespräch, mit dem genauen Satz, auf dem sie beruht, und dem Tag, an dem er gesagt wurde. Asteme sagt, es werde am Samstagmorgen nachfragen, und am Samstagmorgen spricht es zuerst: „Was macht das Buch?“ „Zwei Seiten. Sie sind schlecht.“ „Zwei Seiten gibt es jetzt. An deinem Geburtstag gab es keine.“ Dann der Himmel: Ein Wort wird getippt, und alles, was je über das Buch gesagt wurde, tritt aus den Sternen hervor. Alles ist erfunden; es ist niemandes echtes Gespräch.
+
+</details>
 
 # ASTEME
 
@@ -31,7 +40,11 @@ Heute hat es zwei Formen:
 
 Beide sprechen, erinnern sich und halten Versprechen, auf derselben Maschinerie. Jede hat ihren eigenen Speicher: Das Plugin nutzt den Speicher des Harness-Profils, und das eigenständige Gehirn nutzt den Speicher aus seiner Einstellungsdatei oder einen Speicher pro Person mit `--person <name>`. `export` und `import` schreiben eine ganze Person heraus und lesen sie wieder ein, so lässt sich eine Person zwischen den beiden verschieben. Sonst sehen sie die Speicher des jeweils anderen nicht.
 
+**Status: in Entwicklung.** Asteme wird noch gebaut. Das Verhalten kann sich ändern, und es kann versagen oder Daten verlieren. Verlass dich noch nicht für etwas Wichtiges darauf.
+
 ## Was daran anders ist
+
+Gedächtnis für ein Sprachmodell ist meistens eine Suche: Text, der der Nachricht ähnelt, wird geholt und dem Modell vorgelegt. Auch Asteme beginnt dort; der Unterschied liegt in dem, was darum herum geschieht.
 
 **Die Situation erinnert, nicht der Wortlaut.** Du hast einmal ein Memo korrigiert: „Die Entscheidung zuerst, die Direktorin liest nur drei Zeilen.“ Tage später bittest du um eine Seite Präsentation für einen Investor. Kein Wort ist gemeinsam, aber es ist dieselbe Situation (ein Leser mit wenig Zeit, der entscheiden muss), und die Erinnerung kommt zurück.
 
@@ -47,7 +60,7 @@ Beide sprechen, erinnern sich und halten Versprechen, auf derselben Maschinerie.
 
 ## In einer Minute ausprobieren
 
-Node 22.5 oder neuer. Nichts zu installieren, kein API-Schlüssel.
+Node 22.13 oder neuer. Nichts zu installieren, kein API-Schlüssel.
 
 ```
 git clone https://github.com/asteme/asteme.git
@@ -74,12 +87,14 @@ Die Tests laufen genauso: `npm test`.
 Um das Gespräch ohne Modell anzusehen, starte die Vorschau der Seite selbst:
 
 ```
-DEMO=1 ALL=900 node brain/preview.mjs 4173 ja
+DEMO=1 ALL=900 node brain/preview.mjs 4173 de
 ```
 
 Öffne dann `http://127.0.0.1:4173/?token=preview` auf diesem Rechner (in PowerShell zuerst die beiden Variablen setzen: `$env:DEMO=1; $env:ALL=900`). Nichts darin ist das echte Gespräch von jemandem.
 
 ## Verwendung
+
+**Was es braucht.** Node 22.13 oder neuer. Ein Sprachmodell: im DeepSeek Harness das, das du dort ohnehin benutzt; für sich allein oder über MCP jeder OpenAI-kompatible Endpunkt (eine URL, ein Modellname und ein Schlüssel). Etwa 400 MB Abhängigkeiten, und beim ersten Gebrauch wird einmalig ein Embedding-Modell von etwa 120 MB heruntergeladen (multilingual-e5-small; es liegt in `~/.cache/asteme/models` und läuft auf deinem Rechner). Die Demo oben braucht nur Node.
 
 ### Im DeepSeek Harness
 
@@ -87,7 +102,7 @@ Installiere das Plugin `dsh-asteme` (Plugins → Plugin hinzufügen; es kommt vo
 
 - Das Gespräch füllt den Bildschirm. Erinnerungen öffnen sich daneben; „Einstellungen“ betrifft das Gespräch: wie es aussieht, Asteme selbst (Name, Gesicht, Art zu sprechen, Stimmung), Stimme und Denken. „Erinnerung“ betrifft alles, was es sich merkt: die Suche, die Sterne und im DSH jeder Ort, an dem Erinnerung gepflegt wird. Die Erinnerungseinstellungen stehen auch in den Einstellungen von DSH selbst, unter Asteme.
 - Das Feld behält, was nicht ins Gespräch gehört: Prüfung, Erinnerung, Aktivität, Charta, Einstellungen.
-- Die Gespräche des Harness selbst bleiben unverändert: Das sind Agenten, die in einer Sitzung Arbeit tun. Asteme ist ein Gespräch, das über alle hinweg weitergeht, und es kann zuerst sprechen.
+- In den eigenen Sitzungen des Harness tut der Agent seine Arbeit wie zuvor, mit seinen eigenen Werkzeugen, und auch dort spricht Asteme: derselbe Name, dieselbe Art zu sprechen, dasselbe Gedächtnis. Die Ausnahme ist eine Sitzung, die Asteme selbst öffnet, um Arbeit abzugeben: Sie bleibt schlicht DeepSeek Harness und bekommt nichts von Asteme. Das Gespräch mit Asteme geht über alle hinweg weiter, und Asteme kann zuerst sprechen.
 
 ### Für sich allein
 

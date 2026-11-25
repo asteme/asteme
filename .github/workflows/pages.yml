@@ -4,7 +4,7 @@ name: pages
 on:
   push:
     branches: [main]
-    paths: ["site/**", "brain/page/**", "brain/page.mjs", "brain/server.mjs", "client/copy.mjs", "client/locales/**", "client/icon.mjs", "public/media/**", "scripts/make-site.mjs", ".github/workflows/pages.yml"]
+    paths: ["site/**", "brain/page/**", "brain/page.mjs", "brain/server.mjs", "client/copy.mjs", "client/locales/**", "client/icon.mjs", "public/media/**", "docs/banner*.jpg", "scripts/make-site.mjs", ".github/workflows/pages.yml"]
   workflow_dispatch:
 permissions:
   contents: read

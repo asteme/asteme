@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://github.com/asteme/asteme/actions/workflows/test.yml"><img src="https://github.com/asteme/asteme/actions/workflows/test.yml/badge.svg" alt="tests"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-3c6eb4" alt="license: Apache-2.0"></a>
-  <img src="https://img.shields.io/badge/node-%E2%89%A5%2022.5-3c873a" alt="node 22.5 or newer">
+  <img src="https://img.shields.io/badge/node-%E2%89%A5%2022.13-3c873a" alt="node 22.13 or newer">
 </p>
 
 <p align="center">
@@ -14,9 +14,18 @@
 
 <p align="center"><a href="https://asteme.github.io/asteme/">Site</a></p>
 
+**A local AI you talk to, with long-term memory.** It runs on your computer with the language model you choose, keeps everything it remembers in one SQLite file, and comes as a [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) plugin, as a page of its own, or as an MCP memory server for any agent.
+
+One minute of it: something said long ago comes back when its moment comes, a promise is kept, and the sky shows everything Asteme remembers. A piano plays under it if you turn the sound on.
+
 https://github.com/user-attachments/assets/b20a3d7d-69fa-41f3-a4e0-5f9b14073b19
 
-**Status: in development.** Asteme is still being built. Behavior may change, and it may fail or lose data. Do not rely on it for anything important yet.
+<details>
+<summary>What the film shows, in words</summary>
+
+A birthday night: "Birthday today. Feels like time's running out." Asteme answers with a sentence from three years before: "If I haven't started the book by forty, remind me who I was." The memory opens beside the conversation, with the exact sentence it rests on and the day it was said. Asteme says it will ask on Saturday morning, and on Saturday morning it speaks first: "How's the book?" "Two pages. They're bad." "Two pages exist now. On your birthday there were none." Then the sky: one word is typed, and everything ever said about the book comes out of the stars. All of it is made up; it is nobody's real conversation.
+
+</details>
 
 # ASTEME
 
@@ -31,7 +40,11 @@ Today it has two shapes:
 
 Both talk, remember and keep promises, on the same machinery. Each has a store of its own: the plugin uses the harness profile's store, and the standalone brain uses the store in its settings file, or one store per person with `--person <name>`. `export` and `import` write and bring back a whole person, so a person can be moved between the two. They do not see each other's stores otherwise.
 
+**Status: in development.** Asteme is still being built. Behavior may change, and it may fail or lose data. Do not rely on it for anything important yet.
+
 ## What is different about it
+
+Most memory for a language model is a search: text that resembles the message is fetched and placed in front of the model. Asteme starts there too, and differs in what happens around it.
 
 **The situation recalls, not the wording.** You once corrected a memo: "put the decision first, the director only reads three lines." Days later you ask for a one-page pitch for an investor. No word is shared, but it is the same situation (a reader with little time who has to decide), and the memory comes back.
 
@@ -47,7 +60,7 @@ Both talk, remember and keep promises, on the same machinery. Each has a store o
 
 ## Try it in a minute
 
-Node 22.5 or newer. Nothing to install, no API key.
+Node 22.13 or newer. Nothing to install, no API key.
 
 ```
 git clone https://github.com/asteme/asteme.git
@@ -74,12 +87,14 @@ The tests run the same way: `npm test`.
 To look at the conversation without a model, run the page's own preview:
 
 ```
-DEMO=1 ALL=900 node brain/preview.mjs 4173 ja
+DEMO=1 ALL=900 node brain/preview.mjs 4173 en
 ```
 
 Then open `http://127.0.0.1:4173/?token=preview` on this computer (in PowerShell, set the two variables first: `$env:DEMO=1; $env:ALL=900`). Nothing in it is anyone's real conversation.
 
 ## Use it
+
+**What it needs.** Node 22.13 or newer. A language model: inside DeepSeek Harness, the one you already use there; on its own or over MCP, any OpenAI-compatible endpoint (a URL, a model name and a key). About 400 MB of dependencies, and on first use an embedding model of about 120 MB is downloaded once (multilingual-e5-small; it is kept in `~/.cache/asteme/models` and runs on your computer). The demo above needs only Node.
 
 ### In DeepSeek Harness
 
@@ -87,7 +102,7 @@ Install the plugin `dsh-asteme` (Plugins → Add plugin; it comes from npm, and 
 
 - The conversation fills the screen. Memories open beside it; "Settings" is about the conversation: how it looks, Asteme itself (name, face, way of speaking, mood), voice and thinking. "Memory" is about everything it remembers: search, the stars, and inside DSH each place where memory is looked after. The memory settings are also in DSH's own settings, under Asteme.
 - The panel keeps what does not belong in the conversation: review, memory, activity, charter, settings.
-- The harness's own conversations are unchanged: they are agents doing work in one session. Asteme is one conversation that goes on across all of them, and it can speak first.
+- In the harness's own sessions the agent does its work as before, with its own tools, and it is Asteme who speaks there too: the same name, the same way of speaking, the same memory. The exception is a session Asteme itself starts to hand work to: that one stays plain DeepSeek Harness and is given nothing of Asteme's. The conversation with Asteme goes on across all of them, and Asteme can speak first.
 
 ### On its own
 

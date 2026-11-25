@@ -24,6 +24,21 @@ test("the site is the conversation page itself, with its places filled and nothi
   }
 });
 
+test("a link to the site, pasted anywhere, shows what the page is: its title, its first sentence and the banner in that language", async () => {
+  const { existsSync } = await import("node:fs"), { fileURLToPath } = await import("node:url");
+  for (const lang of SITE_LANGUAGES) {
+    const page = buildPage(lang),
+      tag = (name) => new RegExp(`<meta property="og:${name}" content="([^"]*)">`).exec(page)?.[1];
+    const unescaped = (t) => t.replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+    assert.equal(unescaped(tag("title") ?? ""), CONTENT[lang].title, lang);
+    assert.equal(unescaped(tag("description") ?? ""), CONTENT[lang].first, lang);
+    assert.equal(tag("url"), "https://asteme.github.io/asteme/" + (lang === "en" ? "" : lang + "/"), lang);
+    // The picture is given by its whole address (a card is drawn far from the page), and it is one the build copies.
+    const picture = /^https:\/\/asteme\.github\.io\/asteme\/media\/(banner[.a-z]*\.jpg)$/.exec(tag("image") ?? "");
+    assert.ok(picture && existsSync(fileURLToPath(new URL("../docs/" + picture[1], import.meta.url))), `${lang}: the card's picture is not in docs/`);
+  }
+});
+
 // --- The lines visitors choose to share -------------------------------------------------------------------------------------------------------
 import worker, { LIMITS, clean, passFor, worked, given } from "../site/worker/worker.js";
 import { refuse } from "../site/worker/sieve.js";

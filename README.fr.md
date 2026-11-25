@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://github.com/asteme/asteme/actions/workflows/test.yml"><img src="https://github.com/asteme/asteme/actions/workflows/test.yml/badge.svg" alt="tests"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-3c6eb4" alt="license: Apache-2.0"></a>
-  <img src="https://img.shields.io/badge/node-%E2%89%A5%2022.5-3c873a" alt="node 22.5 or newer">
+  <img src="https://img.shields.io/badge/node-%E2%89%A5%2022.13-3c873a" alt="node 22.13 or newer">
 </p>
 
 <p align="center">
@@ -14,9 +14,18 @@
 
 <p align="center"><a href="https://asteme.github.io/asteme/fr/">Site</a></p>
 
+**Une IA locale à qui l'on parle, dotée d'une mémoire à long terme.** Elle tourne sur votre ordinateur avec le modèle de langage de votre choix, garde tout ce dont elle se souvient dans un seul fichier SQLite, et s'utilise comme plugin de [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness), comme une page à part entière ou comme serveur de mémoire MCP pour n'importe quel agent.
+
+Une minute : une phrase dite il y a longtemps revient quand son moment arrive, une promesse est tenue, et le ciel montre tout ce dont Asteme se souvient. Si vous mettez le son, un piano joue en fond. Le film est en anglais.
+
 https://github.com/user-attachments/assets/b20a3d7d-69fa-41f3-a4e0-5f9b14073b19
 
-**Statut : en développement.** Asteme est encore en construction. Le comportement peut changer, et il peut échouer ou perdre des données. Ne vous appuyez pas encore sur lui pour quoi que ce soit d'important.
+<details>
+<summary>Ce que montre le film, en quelques mots</summary>
+
+Un soir d'anniversaire : « C'est mon anniversaire aujourd'hui. J'ai l'impression que le temps m'est compté. » Asteme répond par une phrase dite trois ans plus tôt : « Si je n'ai pas commencé le livre à quarante ans, rappelle-moi qui j'étais. » Le souvenir s'ouvre à côté de la conversation, avec la phrase exacte sur laquelle il repose et le jour où elle a été dite. Asteme dit qu'elle posera la question samedi matin, et samedi matin elle parle la première : « Où en est le livre ? » « Deux pages. Elles sont mauvaises. » « Deux pages existent maintenant. Le jour de ton anniversaire, il n'y en avait aucune. » Puis le ciel : on tape un mot, et tout ce qui a été dit un jour sur le livre sort d'entre les étoiles. Tout est inventé ; ce n'est la conversation réelle de personne.
+
+</details>
 
 # ASTEME
 
@@ -31,7 +40,11 @@ Aujourd'hui, elle a deux formes :
 
 Les deux parlent, retiennent et tiennent parole, sur la même machinerie. Chacune a son propre magasin : le plugin utilise le magasin du profil du harness, et le cerveau autonome utilise le magasin de son fichier de réglages, ou un magasin par personne avec `--person <name>`. `export` et `import` écrivent et ramènent une personne entière, de sorte qu'une personne peut passer de l'un à l'autre. Sinon, ils ne voient pas le magasin de l'autre.
 
+**Statut : en développement.** Asteme est encore en construction. Le comportement peut changer, et elle peut échouer ou perdre des données. Ne vous appuyez pas encore sur elle pour quoi que ce soit d'important.
+
 ## Ce qui la distingue
+
+Pour un modèle de langage, la mémoire est le plus souvent une recherche : on va chercher le texte qui ressemble au message et on le place devant le modèle. Asteme commence là aussi, et se distingue par ce qui se passe autour.
 
 **C'est la situation qui rappelle, pas les mots.** Vous avez un jour corrigé une note : « mets la décision en premier, la directrice ne lit que trois lignes ». Des jours plus tard, vous demandez une page pour un investisseur. Aucun mot en commun, mais c'est la même situation (un lecteur pressé qui doit décider), et le souvenir revient.
 
@@ -39,15 +52,15 @@ Les deux parlent, retiennent et tiennent parole, sur la même machinerie. Chacun
 
 **Chaque souvenir aboutit à vos propres mots.** Chacun garde la phrase exacte dont il vient. Ouvrez un souvenir et vous voyez sur quoi il repose, où il s'applique, chaque fois qu'il a été utilisé et ce que cela a donné, et chaque modification qui lui a été faite. Si vous dites que quelque chose est faux, votre parole l'emporte sur celle du modèle.
 
-**Elle tient parole.** « Redemande-moi en juin » devient une promesse qu'Asteme porte lui-même, une seule fois ou répétée, et elle parle la première quand le moment arrive.
+**Elle tient parole.** « Redemande-moi en juin » devient une promesse qu'Asteme porte elle-même, une seule fois ou répétée, et elle parle la première quand le moment arrive.
 
-**Elle parle d'elle-même.** Ce qui te préoccupait lui reste en tête, sans heure fixée. Quand tu reviens après un moment, elle peut te demander comment cela s'est passé, ou ne rien dire : c'est à elle de décider, et ce qu'elle garde t'est montré, et tu peux le retirer.
+**Elle parle d'elle-même.** Ce qui vous préoccupait lui reste en tête, sans heure fixée. Quand vous revenez après un moment, elle peut vous demander comment cela s'est passé, ou ne rien dire : c'est à elle de décider, et ce qu'elle garde vous est montré, et vous pouvez le retirer.
 
 **Elle montre ce qu'elle retient.** Chaque souvenir est une étoile dans un ciel derrière la conversation, plus brillante quand il revient facilement à l'esprit. Saisissez le ciel vide et vous êtes parmi elles.
 
 ## L'essayer en une minute
 
-Node 22.5 ou plus récent. Rien à installer, aucune clé d'API.
+Node 22.13 ou plus récent. Rien à installer, aucune clé d'API.
 
 ```
 git clone https://github.com/asteme/asteme.git
@@ -74,12 +87,14 @@ Les tests se déroulent de la même manière : `npm test`.
 Pour regarder la conversation sans modèle, lancez l'aperçu de la page elle-même :
 
 ```
-DEMO=1 ALL=900 node brain/preview.mjs 4173 ja
+DEMO=1 ALL=900 node brain/preview.mjs 4173 fr
 ```
 
 Ouvrez ensuite `http://127.0.0.1:4173/?token=preview` sur cet ordinateur (dans PowerShell, définissez d'abord les deux variables : `$env:DEMO=1; $env:ALL=900`). Rien de ce qu'elle contient n'est la vraie conversation de qui que ce soit.
 
 ## L'utiliser
+
+**Ce qu'il lui faut.** Node 22.13 ou plus récent. Un modèle de langage : dans DeepSeek Harness, celui que vous y utilisez déjà ; seule ou par MCP, n'importe quel point de terminaison compatible OpenAI (une URL, un nom de modèle et une clé). Environ 400 Mo de dépendances, et au premier usage un modèle d'embeddings d'environ 120 Mo est téléchargé une seule fois (multilingual-e5-small ; il est conservé dans `~/.cache/asteme/models` et tourne sur votre ordinateur). La démo ci-dessus ne demande que Node.
 
 ### Dans DeepSeek Harness
 
@@ -87,7 +102,7 @@ Installez le plugin `dsh-asteme` (Plugins → Ajouter un plugin ; il vient de np
 
 - La conversation occupe tout l'écran. Les souvenirs s'ouvrent à côté ; « Réglages » concerne la conversation : son apparence, Asteme elle-même (nom, visage, façon de parler, humeur), la voix et la réflexion. « Mémoire » concerne tout ce qu'elle retient : la recherche, les étoiles et, dans DSH, chaque endroit où la mémoire est entretenue. Les réglages de mémoire sont aussi dans les réglages propres à DSH, sous Asteme.
 - Le panneau garde ce qui n'a pas sa place dans la conversation : revue, mémoire, activité, charte, réglages.
-- Les conversations propres au harness ne changent pas : ce sont des agents qui font du travail dans une session. Asteme est une conversation qui se poursuit à travers toutes, et elle peut parler la première.
+- Dans les sessions propres au harness, l'agent fait son travail comme avant, avec ses propres outils, et là aussi, c'est Asteme qui parle : le même nom, la même façon de parler, la même mémoire. L'exception est une session qu'Asteme ouvre elle-même pour confier un travail : celle-là reste DeepSeek Harness tel quel et ne reçoit rien d'Asteme. La conversation avec Asteme se poursuit à travers toutes ces sessions, et elle peut y parler la première.
 
 ### Seule
 

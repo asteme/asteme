@@ -322,7 +322,7 @@ const message = (m, fresh) => {
           "div",
           "day muted",
           d.toLocaleDateString(document.documentElement.lang, {
-            ...(d.getFullYear() !== new Date().getFullYear() ? { year: "numeric" } : {}),
+            ...yearOf(d),
             month: "long",
             day: "numeric",
             weekday: "short",

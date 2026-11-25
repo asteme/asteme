@@ -176,7 +176,8 @@ if (story) {
       text: t.text,
       strength: t.strength ?? 0.9,
       from: [],
-      at: now - (t.days ?? n) * 86400000,
+      at: t.at ?? now - (t.days ?? n) * 86400000,
+      ...(t.uses ? { uses: t.uses } : {}),
     });
     if (t.id) m.id = t.id;
     if (t.quote) quotes.set(m.id, t.quote);
@@ -364,6 +365,7 @@ const mind = {
         at: m.at,
         strength: m.strength,
         sources: [{ quote: quotes.get(m.id), role: "user", at: m.at }],
+        uses: { helped: 0, missed: 0, irrelevant: 0, wrong: 0, unused: 0, ...m.uses },
       };
     return {
       id: m.id,
@@ -377,6 +379,7 @@ const mind = {
       at: m.at,
       strength: m.strength,
       sources: [{ quote: "Put the decision in the first line. She only reads the first three lines of anything.", role: "user", at: m.at }],
+      uses: { helped: 2, missed: 0, irrelevant: 1, wrong: 0, unused: 0 },
     };
   },
   find: (q) =>
@@ -577,7 +580,11 @@ if (process.env.STAGE)
     }
     if (b.set) {
       if (b.set.clock !== undefined) clock = b.set.clock;
-      if (b.set.intentions) intentions = b.set.intentions;
+      // A promise kept or taken back is said as the real mind says it, so the page looks again.
+      if (b.set.intentions) {
+        intentions = b.set.intentions;
+        emit({ type: "intention" });
+      }
       if (b.set.messages) messages = b.set.messages;
       if (b.set.state) state = b.set.state;
       if (b.set.memories !== undefined) {

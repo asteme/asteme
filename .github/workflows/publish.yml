@@ -21,8 +21,10 @@ jobs:
         run: test "v$(node -p "require('./package.json').version")" = "${{ github.event.release.tag_name }}"
       - run: npm test
       - run: npm run bundle
+      # npm takes every README.* at the top of a package and shows whichever it finds first, which was the Chinese one for everybody. The English one
+      # links to the other seven on GitHub, so they are set aside for the publish only (this checkout is thrown away after).
       - name: Publish asteme
-        run: npm publish --provenance --access public --tag ${{ github.event.release.prerelease && 'next' || 'latest' }}
+        run: mkdir -p ../translations && mv README.*.md ../translations/ && npm publish --provenance --access public --tag ${{ github.event.release.prerelease && 'next' || 'latest' }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Publish dsh-asteme

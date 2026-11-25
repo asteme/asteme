@@ -1327,6 +1327,7 @@ export function openMind({
           return { quote: cut(e.quote, 300), role: ev?.role ?? "", at: ev?.occurredAt ?? null };
         }),
         helped: stats.helped,
+        uses: { helped: stats.helped, missed: stats.missed, irrelevant: stats.irrelevant, wrong: stats.wrong, unused: stats.unused },
         why: !!why,
       });
     },

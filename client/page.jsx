@@ -159,7 +159,7 @@ export function AstemePage({ model, t: hostT, openSession }) {
   const shown = landing ? "talk" : tab;
   const talking = landing || !!(ready && s.canTalk && shown === "talk" && !top);
   return (
-    <div className={talking ? "asteme-page asteme-page--talk" : "asteme-page"} ref={root} style={scheme ? { colorScheme: scheme } : undefined} aria-busy={state.loading || state.busy}
+    <div className={talking ? "asteme-page asteme-page--talk" : "asteme-page"} lang={t("_lang")} ref={root} style={scheme ? { colorScheme: scheme } : undefined} aria-busy={state.loading || state.busy}
       onKeyDown={e => { if (e.key === "Escape" && stack.length && !e.defaultPrevented) back(); }}>
       <div className="ast-top" hidden={talking}>
         <header className="ast-header">
@@ -250,7 +250,7 @@ export function AstemeSettingsSection({ model, t: hostT }) {
   const nothing = () => {};
   const ctx = { t, state, model, nav: { tab: nothing, memory: nothing, habit: nothing, settings: nothing, back: nothing }, projectId: s?.projectId, snapshot: s };
   return (
-    <div className="asteme-page asteme-page--section" aria-busy={state.loading || state.busy}>
+    <div className="asteme-page asteme-page--section" lang={t("_lang")} aria-busy={state.loading || state.busy}>
       {!s ? (state.error
         ? <Notice tone="danger" role="alert" detail={state.error.message} action={<Button variant="primary" onClick={() => model.refresh()}>{t("retry")}</Button>}>{t("loadFailed")}</Notice>
         : <p className="ast-loading" role="status"><Spinner />{t("loading")}</p>)

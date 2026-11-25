@@ -5,7 +5,7 @@ Read `README.md` for what the system does and `docs/BRAIN.md` for how the brain 
 ## Run it
 
 ```
-node --version     # 22.5 or newer (node:sqlite)
+node --version     # 22.13 or newer (node:sqlite without a flag)
 npm test           # the whole suite; no API key, no dependencies, no host
 npm run demo       # two weeks with one user, narrated, then why() and explain()
 npm run eval -- --selftest    # the eval harness with canned replies (wiring only)

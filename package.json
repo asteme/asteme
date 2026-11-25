@@ -1,6 +1,6 @@
 {
   "name": "asteme",
-  "version": "0.12.2-rc.5",
+  "version": "0.12.2-rc.6",
   "description": "Asteme: someone to talk to whose memory does not fade. It recalls by situation, learns from how each use turned out, and every memory can be traced to words you said.",
   "keywords": [
     "memory",
@@ -33,7 +33,7 @@
     "test": "node --test test/*.test.mjs test/legacy/*.test.mjs client/*.test.mjs",
     "build": "node client/build.mjs",
     "preview": "node client/preview/snapshot.mjs && node client/preview/build.mjs",
-    "demo": "node sandbox/demo.mjs",
+    "demo": "node --disable-warning=ExperimentalWarning sandbox/demo.mjs",
     "eval": "node eval/run.mjs",
     "bundle": "node scripts/make-dsh-bundle.mjs",
     "sync-dsh": "node scripts/sync-dsh-repo.mjs",
@@ -56,12 +56,11 @@
     "NOTICE",
     "TRADEMARKS.md",
     "README.md",
-    "README.ja.md",
     "CHANGELOG.md",
     "!brain/preview.mjs"
   ],
   "engines": {
-    "node": ">=22.5.0"
+    "node": ">=22.13.0"
   },
   "license": "Apache-2.0",
   "dependencies": {

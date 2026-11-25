@@ -79,6 +79,18 @@ const SHARED = [
   "tabMemory",
   "talkManage",
   "talkWindow",
+  // How a memory's uses have gone, in the words the DSH panel uses for the same thing.
+  "useSoFar",
+  "listComma",
+  "helpedOnce",
+  "helpedTimes",
+  "missedOnce",
+  "missedTimes",
+  "misplacedOnce",
+  "misplacedTimes",
+  "wasWrong",
+  "unusedOnce",
+  "unusedTimes",
 ];
 const LANGUAGES = ["en", "ja", "zh", "de", "es", "fr", "pt", "ru"];
 const same = (a, b) => {

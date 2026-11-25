@@ -135,6 +135,11 @@ const face = (role) => {
   else n.innerHTML = MARK;
   return n;
 };
+// What is drawn on the sky is lettered as the page is: the same faces in the same order, the person's own chosen face first. A canvas cannot read
+// the page's own names for them, so the list the page worked out is read from it, once, and again when the look changes.
+let skyFaces = "";
+const lettered = (px, weight = "") =>
+  `${weight ? weight + " " : ""}${px}px ${(skyFaces ||= getComputedStyle(document.body).fontFamily || "system-ui, sans-serif")}`;
 // The look this person was given: a picture behind the sky, a colour for the user's side, a text size.
 const applyLook = (k = {}) => {
   document.body.classList.toggle("walled", !!k.wall);
@@ -155,7 +160,8 @@ const applyLook = (k = {}) => {
   ownInk = COLOUR(k.ink) ? k.ink : "";
   dress();
   // Any typeface the device has, and letters of the size asked for (the older small, medium and large are still understood).
-  document.body.style.fontFamily = k.font ? `"${k.font}", system-ui, -apple-system, "Segoe UI", var(--cjk), sans-serif` : "";
+  document.body.style.fontFamily = k.font ? `"${k.font}", var(--face)` : "";
+  skyFaces = "";
   document.body.style.fontSize = (k.px ?? { s: 14.5, l: 18 }[k.size] ?? 16) + "px";
   document.body.classList.toggle("no-tips", k.tips === false);
   if (typeof kick === "function") kick();

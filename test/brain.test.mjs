@@ -1021,6 +1021,41 @@ test("a day in another year says its year wherever the page says when something 
   assert.doesNotMatch(box.time(lately), new RegExp(String(year)), "this year's days are said as before");
 });
 
+test("the page asks for its language's own faces before the system's, and what is drawn on the sky is lettered from the same list", async () => {
+  const { readFile } = await import("node:fs/promises"), vm = await import("node:vm");
+  const { PAGE_SCRIPTS } = await import("../brain/page.mjs");
+  const css = await readFile(new URL("../brain/page/style.css", import.meta.url), "utf8");
+  // "The system's font" on a Japanese or a Chinese Windows is itself a face with the shared characters, in that system's shapes: whatever stands
+  // after it is never asked. So the Latin face and the language's own faces stand before it.
+  const face = /--face:([^;]+);/.exec(css)[1], at = (name) => face.indexOf(name);
+  assert.ok(at('"Segoe UI"') >= 0 && at('"Segoe UI"') < at("var(--cjk)") && at("var(--cjk)") < at("system-ui") && at("system-ui") < at("var(--cjk-after)"), face);
+  const own = (rule) => new RegExp(rule.replace(/[()]/g, "\\$&") + " \\{ --cjk:([^;]+);").exec(css)[1];
+  assert.match(own(":root"), /"Yu Gothic UI"/);
+  assert.match(own(":root"), /"Hiragino Sans"/);
+  assert.match(own(":root:lang(zh)"), /"Microsoft YaHei UI"/);
+  assert.match(own(":root:lang(zh)"), /"PingFang SC"/);
+  // Faces a Linux system has would draw the Latin letters as well if they stood before the system's own.
+  assert.doesNotMatch(own(":root") + own(":root:lang(zh)"), /Noto/);
+  assert.match(css, /font: 16px\/1\.75 var\(--face\)/);
+  // A canvas cannot read the page's names, so no part of the page letters one by a list of its own.
+  for (const name of PAGE_SCRIPTS) {
+    const part = await readFile(new URL("../brain/page/" + name, import.meta.url), "utf8");
+    assert.doesNotMatch(part, /\.font = [^;\n]*(system-ui|sans-serif)/, name + " letters a canvas with its own list");
+  }
+  const base = await readFile(new URL("../brain/page/0-base.js", import.meta.url), "utf8");
+  let asked = 0, list = '"Segoe UI", "Microsoft YaHei UI", system-ui';
+  const box = vm.createContext({ document: { body: {} }, getComputedStyle: () => (asked++, { fontFamily: list }) });
+  vm.runInContext(base.slice(base.indexOf('let skyFaces = "";'), base.indexOf("// The look this person was given")) + "\nthis.lettered = lettered; this.again = () => (skyFaces = \"\");", box);
+  assert.equal(box.lettered(12.5, 600), '600 12.5px "Segoe UI", "Microsoft YaHei UI", system-ui');
+  assert.equal(box.lettered(11), '11px "Segoe UI", "Microsoft YaHei UI", system-ui');
+  assert.equal(asked, 1, "the list is read once, not at every star");
+  // When the look changes (a face of the person's own), it is read again; and that face is put before the page's list, not in place of it.
+  list = '"Georgia", ' + list;
+  box.again();
+  assert.equal(box.lettered(14), '14px "Georgia", "Segoe UI", "Microsoft YaHei UI", system-ui');
+  assert.match(base, /fontFamily = k\.font \? `"\$\{k\.font\}", var\(--face\)` : "";\n  skyFaces = "";/);
+});
+
 test("the Portuguese words are Brazil's, as the README and the site are, and the page tells the browser so", async () => {
   const { pt } = await import("../client/locales/pt.mjs");
   assert.equal(pt._lang, "pt-BR");

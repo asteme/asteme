@@ -504,7 +504,7 @@ const openLook = () => {
       ...shown.map((n) => {
         const b = el("button", n.toLowerCase() === now ? "on" : null, n);
         b.type = "button";
-        b.style.fontFamily = '"' + n.replace(/["\\]/g, "") + '", system-ui, sans-serif';
+        b.style.fontFamily = '"' + n.replace(/["\\]/g, "") + '", var(--face)';
         b.onclick = () => {
           font.value = n;
           for (const o of fonts.children) o.classList.toggle("on", o === b);

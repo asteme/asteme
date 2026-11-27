@@ -43,7 +43,7 @@ export function renderExperience(items, passages = []) {
   // What was said in an earlier conversation, as it was said. It is the record, so it needs no evidence line; what the assistant answered then is
   // only what it said then.
   const record = passages.length ? "From the record of earlier conversations, for this reply:\n\n" + passages.map(p => [
-    p.said ? `- ${p.use}: on ${iso(p.at)?.slice(0, 10)} the user said ${JSON.stringify(p.said)}. ID ${p.id}` : `- ${p.use}: from a conversation on ${iso(p.at)?.slice(0, 10)}. ID ${p.id}`,
+    p.said ? `- ${p.use}: on ${iso(p.at)?.slice(0, 10)} the user said ${JSON.stringify(p.said + (p.cutSaid ? " …" : ""))}. ID ${p.id}` : `- ${p.use}: from a conversation on ${iso(p.at)?.slice(0, 10)}. ID ${p.id}`,
     p.replied && `  You ${p.said ? "answered" : "said"} then: ${JSON.stringify(p.replied)}`,
     p.replied && "  What you answered then may have been wrong or have changed since; what the user said is what they said that day",
     p.sensitive && "  Sensitive: draw on it in the open, never unseen",
@@ -181,7 +181,9 @@ export const attend = {
     // to it can never be mistaken for the ground an earlier answer stood on.
     // What the reading was made from: the records shown to the model. Its scene, its reasons and its note are written from them, so taking any of them
     // back takes the reading away (scrubTrace in log.mjs).
-    const base = { request: request.id, read: [...new Set([request.id, ...(recent ?? []).map(e => e.id)])], erased, charter: digest(this.charter({ here: request.scope?.projectId ?? null })).slice(0, 16), scene: null, candidates: [], decisions: [], delivered: [], text: "" };
+    // Which standing asks were in front of this reply (with the instructions, not in the note): what the reply had, shown with it.
+    const inFront = this.standingAsks({ here: request.scope?.projectId ?? null }).map(a => a.id);
+    const base = { request: request.id, read: [...new Set([request.id, ...(recent ?? []).map(e => e.id)])], erased, charter: digest(this.charter({ here: request.scope?.projectId ?? null })).slice(0, 16), ...(inFront.length ? { inFront } : {}), scene: null, candidates: [], decisions: [], delivered: [], text: "" };
     // With nothing remembered, a reading can change nothing about the reply,
     // so the reply is not made to wait for one. What the message says is
     // still read into memory afterwards, by reflection.
@@ -416,7 +418,7 @@ export const attend = {
           let use = d.use;
           if (round.sensitive && use === "silent") { use = "mention"; base.decisions.at(-1).adjusted = "mention: a sensitive record is only used in the open"; }
           if (base.passages.length >= 3) { base.decisions.at(-1).dropped = "over cap"; continue; }
-          base.passages.push({ id: round.id, round: round.round, at: round.at, use, said: round.said, replied: round.replied, events: round.events, ...(round.sensitive ? { sensitive: true } : {}),
+          base.passages.push({ id: round.id, round: round.round, at: round.at, use, said: round.said, replied: round.replied, ...(round.cutSaid ? { cutSaid: true } : {}), events: round.events, ...(round.sensitive ? { sensitive: true } : {}),
             ...(judged ? { by: "judge", confidence: d.confidence } : { relevance: d.reason, anchor: d.anchor }) });
           continue;
         }
@@ -500,7 +502,8 @@ export const attend = {
   },
   premise(request, { text, items = [] }) {
     if (typeof text !== "string" || !text.trim()) throw Error("A short decision premise is required");
-    const shown = new Set(this.traces(request).flatMap(t => (t.delivered ?? []).map(i => i.id)));
+    // What the reply was given: memories, rounds of the record, and the standing asks in front of it.
+    const shown = new Set(this.traces(request).flatMap(t => [...(t.delivered ?? []).map(i => i.id), ...(t.passages ?? []).map(p => p.id), ...(t.inFront ?? [])]));
     if (items.some(id => !shown.has(id))) throw Error("Premise item was not delivered");
     return this.trace({ request, premise: cut(text, 500), used: items, declared: true });
   },

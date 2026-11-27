@@ -178,6 +178,126 @@ test("more standing asks than fit are not lost: the newest stand in front, and t
   assert.ok(called.candidates.length > 0 && called.candidates.every(c => ids.indexOf(c.item.id) < 6), "only the ones that do not stand in front are called up");
 });
 
+test("the panel says of a standing ask that it is in front only when it is, and shows a reply that drew on the record alone as having used it", async t => {
+  const { operations } = await import("../plugin/settings.mjs");
+  const { recallWord, inFront, standingOver, gaveNothing } = await import("../client/words.mjs");
+  const w = world(t);
+  const ids = [];
+  for (let n = 0; n < 30; n++) {
+    const e = w.say(`From now on, when I ask about topic ${n}, answer in one line`, `s${n}`); w.tick(60000);
+    ids.push(w.core.apply([{ op: "put", kind: "understanding", certainty: "explicit", standing: true, reason: "Asked", text: `Answer about topic ${n} in one line`, concrete: `The user asks about topic ${n}`,
+      general: `A question on subject ${n}`, tested: "Stated", hypothesis: "None", about: `topic ${n}`, entities: [], evidence: w.quote(e) }], [e]).applied[0].id);
+  }
+  const plainFact = w.say("The office moved to the fourth floor", "f");
+  const fact = w.core.apply([{ op: "put", kind: "understanding", certainty: "explicit", reason: "Said", text: "The office is on the fourth floor", concrete: "Someone asks where the office is",
+    general: "Finding the office", tested: "Stated", hypothesis: "None", about: "office", entities: [], evidence: w.quote(plainFact) }], [plainFact]).applied[0].id;
+  const host = { ctx: { llm: { listProviders: () => [], listModels: async () => [] } }, log: w.log, core: w.core, identity: scope, stage: "experienced",
+    config: { enabled: true, learningProvider: "", learningModel: "" }, settings() { return this.config; },
+    notice: "", lastError: "", retryAt: 0, retries: new Map(), background: null, run: p => p, drain: async () => {} };
+  const request = operations(host);
+  let s = await request("snapshot", { projectId: scope.projectId });
+  const item = id => s.memory.state.items.find(i => i.id === id), t_ = key => key;
+  const front = new Set(w.core.standingAsks({ here: scope.projectId }).map(a => a.id));
+  assert.equal(front.size, 24);
+  assert.deepEqual(ids.filter(id => item(id).inFront), ids.filter(id => front.has(id)), "the list marks as in front the ones every reply is given, and no other");
+  assert.deepEqual([recallWord(t_, item(ids[29])), recallWord(t_, item(ids[0])), recallWord(t_, item(fact))], ["recall_standing", "recall_standingOver", "recall_sometimes"]);
+  assert.deepEqual([inFront(item(ids[0])), standingOver(item(ids[0])), standingOver(item(ids[29])), "inFront" in item(fact), standingOver(item(fact))], [false, true, false, false, false]);
+  assert.deepEqual([inFront({ standing: true }), standingOver({ standing: true })], [false, true], "a list that does not say is not taken to promise it");
+
+  // A reply given a round of the record and no memory.
+  const said = w.say("The quarterly report for the board is due on the ninth", "a");
+  const answered = w.say("Noted: the board report, by the ninth. " + "I will keep it in mind. ".repeat(40), "a", "assistant");
+  await w.core.indexRecord(); w.tick(86400000);
+  const ask = w.say("When is the report for the board due?", "b");
+  const trace = await w.core.prepare({ request: ask, recent: [ask], infer: scene("Preparing a report for the board",
+    input => ({ decisions: input.record.filter(r => r.id === roundOf(said)).map(r => ({ id: r.id, use: "mention", reason: "It holds the date", anchor: "report for the board" })) })) });
+  assert.deepEqual([trace.delivered.length, trace.passages.length], [0, 1]);
+  s = await request("snapshot", { projectId: scope.projectId });
+  const shown = s.memory.delivery.passages[0];
+  assert.deepEqual([shown.said, shown.replied.startsWith("Noted: the board report, by the ninth."), shown.replied.length, shown.replied.endsWith(" …")], [said.content, true, 702, true], "what was answered then is shown beside what was said, cut where it is long");
+  assert.ok(answered.content.length > 700);
+  assert.equal(gaveNothing(s.memory.delivery), false, "the record was used: the reply is not shown as having used nothing");
+  assert.deepEqual([gaveNothing({ delivered: [] }), gaveNothing({ delivered: [], passages: [] }), gaveNothing({ delivered: [{ id: "x" }] }), gaveNothing({ delivered: [], error: "x" })], [true, true, false, false]);
+});
+
+test("what was in front of a reply is recorded and shown with it; where memory is off nothing is said to be in front; a premise may rest on what the reply was given", async t => {
+  const { operations } = await import("../plugin/settings.mjs");
+  const { recallWord, gaveNothing } = await import("../client/words.mjs");
+  const w = world(t);
+  const asked = w.say("Whenever I ask for a recipe, check it for peanuts and tell me.", "ask");
+  const ask = w.core.apply([{ op: "put", kind: "understanding", certainty: "explicit", standing: true, reason: "Asked for in so many words", text: "Check any recipe for peanuts and say so",
+    concrete: "The user asks for a recipe or a meal idea", general: "Suggesting food to someone with an allergy", tested: "Stated", hypothesis: "None", about: "peanut allergy", entities: [], evidence: w.quote(asked) }], [asked]).applied[0].id;
+  const said = w.say("The quarterly report for the board is due on the ninth", "a");
+  await w.core.indexRecord(); w.tick(86400000);
+  const request = w.say("Give me a recipe for dinner", "later");
+  const trace = await w.core.prepare({ request, recent: [request], infer: scene("Choosing a recipe for dinner", { decisions: [] }) });
+  assert.deepEqual([trace.inFront, trace.delivered.length, trace.passages], [[ask], 0, undefined]);
+  const host = { ctx: { llm: { listProviders: () => [], listModels: async () => [] } }, log: w.log, core: w.core, identity: scope, stage: "experienced",
+    config: { enabled: true, learningProvider: "", learningModel: "" }, settings() { return this.config; },
+    notice: "", lastError: "", retryAt: 0, retries: new Map(), background: null, run: p => p, drain: async () => {} };
+  const request_ = operations(host), t_ = key => key;
+  let s = await request_("snapshot", { projectId: scope.projectId });
+  assert.deepEqual([s.memory.delivery.inFront, gaveNothing(s.memory.delivery)], [[ask], false], "the reply had the ask in front: it is not shown as having had nothing");
+  assert.match(s.prompt, /Check any recipe for peanuts/);
+  // A premise may rest on a standing ask in front of the reply, or on a round it was given; not on what it was not given.
+  assert.ok(w.core.premise(request.id, { text: "Checked for peanuts as asked", items: [ask] }));
+  assert.throws(() => w.core.premise(request.id, { text: "x", items: [roundOf(said)] }), /not delivered/);
+  const asked2 = w.say("When is the report for the board due?", "b");
+  const t2 = await w.core.prepare({ request: asked2, recent: [asked2], infer: scene("Preparing a report for the board",
+    input => ({ decisions: input.record.filter(r => r.id === roundOf(said)).map(r => ({ id: r.id, use: "mention", reason: "It holds the date", anchor: "report for the board" })) })) });
+  assert.deepEqual(t2.passages.map(p => p.id), [roundOf(said)]);
+  assert.ok(w.core.premise(asked2.id, { text: "The date is the ninth, as the user said", items: [roundOf(said)] }));
+  // The diary and the report count a reply that drew on the record.
+  const diary = w.core.diary({ locale: "en", timeZone: "UTC" });
+  assert.match(typeof diary === "string" ? diary : diary.markdown ?? JSON.stringify(diary), /what was said on November 10, 2026/);
+  const { data } = w.core.report();
+  assert.deepEqual([data.preparation.fromRecord, data.preparation.gaveSomething >= 1], [1, true]);
+
+  // Memory off, the project left out, or conversations private unless switched on: nothing is in front, and the panel says so.
+  for (const [name, set, unset] of [["off", () => { host.config.enabled = false; }, () => { host.config.enabled = true; }],
+    ["project", () => w.core.setProjectOff(scope.projectId, true), () => w.core.setProjectOff(scope.projectId, false)],
+    ["private by default", () => w.core.setQuietByDefault(true), () => w.core.setQuietByDefault(false)]]) {
+    set();
+    s = await request_("snapshot", { projectId: scope.projectId });
+    const item = s.memory.state.items.find(i => i.id === ask);
+    assert.deepEqual([item.inFront, item.frontOff, recallWord(t_, item)], [false, true, "recall_standingOff"], name);
+    assert.doesNotMatch(s.prompt, /Check any recipe for peanuts/, name);
+    unset();
+  }
+});
+
+test("the words of a memory the user paused or said no longer holds are not handed back through the record, unless a memory in use rests on them", async t => {
+  const w = world(t);
+  const asked = w.say("From now on, whenever I ask for a recipe, check it for peanuts", "ask");
+  w.say("Noted, I will check every recipe for peanuts.", "ask", "assistant");
+  const ask = w.core.apply([{ op: "put", kind: "understanding", certainty: "explicit", standing: true, reason: "Asked for in so many words", text: "Check any recipe for peanuts and say so",
+    concrete: "The user asks for a recipe or a meal idea", general: "Suggesting food", tested: "Stated", hypothesis: "None", about: "peanut allergy", entities: [], evidence: w.quote(asked) }], [asked]).applied[0].id;
+  await w.core.indexRecord(); w.tick(86400000);
+  const near = async () => { const q = [...(await w.core.vectors(["A satay recipe with peanuts for dinner"], "query")).values()]; return w.core.recordNear(q, { here: scope.projectId, limit: 4 }).map(r => r.round); };
+  w.core.write({ ...w.core.item(ask), paused: true, revision: w.core.item(ask).revision + 1 }, "User pause");
+  assert.ok(!(await near()).includes(asked.id), "paused");
+  w.core.write({ ...w.core.item(ask), paused: false, revision: w.core.item(ask).revision + 1 }, "User resume");
+  assert.ok((await near()).includes(asked.id), "in use again");
+  w.core.userRetire(ask, w.core.item(ask).revision, "I outgrew it");
+  assert.ok(!(await near()).includes(asked.id), "said to no longer hold");
+  const other = w.core.apply([{ op: "put", kind: "understanding", certainty: "explicit", reason: "Said", text: "They cook dinner at home most days",
+    concrete: "Planning dinner", general: "Cooking at home", tested: "Stated", hypothesis: "None", about: "cooking", entities: [], evidence: w.quote(asked) }], [asked]).applied[0].id;
+  assert.ok(other && (await near()).includes(asked.id), "a memory in use rests on the same words");
+});
+
+test("the library without a generative model still makes what was said findable when it rests, and gives a round with what was answered", async t => {
+  const { openBrain } = await import("../standalone/brain.mjs");
+  let clock = Date.parse("2026-11-10T09:00:00Z");
+  const brain = openBrain({ embed: situationEmbedder(), now: () => (clock += 60000) });
+  t.after(() => brain.close());
+  await brain.recall({ session: "a", message: "The quarterly report for the board is due on the ninth" });
+  brain.observe({ session: "a", reply: "Noted: the board report, by the ninth." });
+  const rested = await brain.rest();
+  assert.deepEqual([rested.indexed, rested.errors], [2, []]);
+  const found = await brain.search("board report deadline");
+  assert.ok(found.rounds.some(r => r.said === "The quarterly report for the board is due on the ninth"));
+});
+
 test("how a use was received is kept to be read and does not move what is recalled: a memory that was taken up does not come before one that was not", async t => {
   const w = world(t);
   const a = w.learn(w.say("The director only reads the first three lines", "seed"), DIRECTOR);

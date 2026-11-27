@@ -944,6 +944,8 @@ export function openMind({
           id: said.id,
           ...with_,
           used: trace.delivered.map((i) => ({ id: i.id, use: i.use, text: cut(i.text, 200) })),
+          // Rounds of earlier conversation it was given: what was said, and when.
+          ...(trace.passages?.length ? { record: trace.passages.map((p) => ({ at: p.at, said: cut(p.said || p.replied, 200) })) } : {}),
         });
         // What it says right after, each a message of its own, a moment apart. Stopped in between, the rest is not said.
         if (more.length) {

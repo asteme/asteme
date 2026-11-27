@@ -13,6 +13,7 @@
 import { cut } from "./log.mjs";
 import { identityKey } from "./log.mjs";
 import { secret, categories } from "./policy.mjs";
+import { LIVE } from "./memory.mjs";
 
 export const RECORD = {
   chars: 1400,       // how much of a message its vector is made from (the embedding model reads about this much)
@@ -206,6 +207,10 @@ export const record = {
     // What a memory kept to another project rests on stays there with it: the words it was learned from are not handed over where it is not.
     // Where the present project is not given, a wall is not open: what is kept to a project is shown only to someone known to be in it.
     const fenced = new Set(all.filter(i => { const home = this.confinedTo(i); return home && home !== here; }).flatMap(i => (i.evidence ?? []).map(e => e.id)));
+    // Nor are the words of one the user paused or said no longer holds: a paused ask would otherwise be applied all the same from what was said.
+    // Where a memory in use rests on the same words, they stay open: what it says is still so.
+    const inUse = new Set(all.filter(i => LIVE.includes(i.status) && !i.paused).flatMap(i => (i.evidence ?? []).map(e => e.id)));
+    for (const i of all) if (i.paused || i.status === "retired") for (const e of i.evidence ?? []) if (!inUse.has(e.id)) fenced.add(e.id);
     for (const r of [...best.values()].sort((a, b) => b.score - a.score)) {
       if (out.length >= limit) break;
       if (r.score < floor) break;

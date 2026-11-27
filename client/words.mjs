@@ -27,8 +27,17 @@ export function recallLevel(item) {
   const s = item.stats ?? {}, up = s.helped ?? 0, down = (s.irrelevant ?? 0) + (s.wrong ?? 0);
   return up > down ? "easily" : down > up ? "rarely" : "sometimes";
 }
-/** The few words a row says about a memory in use: a standing ask is in front always, whatever its uses were. */
-export const recallWord = (t, item) => t(item.standing ? "recall_standing" : "recall_" + recallLevel(item));
+/**
+ * A standing ask that is in front of every reply here. Only so many fit in front (the most recent come first); one that does not fit is
+ * still a standing ask, and is recalled like any other memory. Whoever lists the memories says which it is (inFront): the panel does not guess.
+ */
+export const inFront = item => item.standing === true && item.inFront === true;
+/** A standing ask that is not in front because nothing is, here: memory is off, the project is left out, or conversations are private by default. */
+export const standingOff = item => item.standing === true && item.inFront !== true && item.frontOff === true;
+/** A standing ask that did not fit in front. */
+export const standingOver = item => item.standing === true && item.inFront !== true && item.frontOff !== true;
+/** The few words a row says about a memory in use: a standing ask in front is in front always, whatever its uses were. */
+export const recallWord = (t, item) => t(inFront(item) ? "recall_standing" : standingOff(item) ? "recall_standingOff" : standingOver(item) ? "recall_standingOver" : "recall_" + recallLevel(item));
 /** How its uses have gone, counted out in one sentence, from the outcomes behind it. */
 export function recallReason(t, item) {
   const s = item.stats ?? {};
@@ -41,6 +50,9 @@ export function recallReason(t, item) {
   ].filter(Boolean);
   return parts.join(", ");
 }
+
+/** Whether a reply was given nothing: no memory, no round of earlier conversation and no standing ask in front of it. */
+export const gaveNothing = delivery => !(delivery.delivered ?? []).length && !(delivery.passages ?? []).length && !(delivery.inFront ?? []).length && !delivery.error;
 
 export const useWord = (t, use) => labelFor(t, "use_" + use, use);
 export const outcomeWord = (t, kind) => labelFor(t, "outcome_" + kind, kind);

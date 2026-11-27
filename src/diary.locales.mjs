@@ -4,7 +4,7 @@ export const DIARY = {
   en: {
     title: "ASTEME diary", knows: "What it knows now", you: "You", assistant: "Assistant", tools: "{n} tool steps",
     took: "What it took from the day", remembered: "Remembered", changed: "Changed", setAside: "Set aside",
-    recalled: "What it brought to mind", forMessage: "For “{message}”",
+    recalled: "What it brought to mind", forMessage: "For “{message}”", fromRecord: "what was said on {day}",
     went: "How that went", youSaid: "you said so", stood: "What stood out",
     use: { silent: "used quietly", mention: "mentioned", check: "asked about" },
     outcome: { helped: "It helped", irrelevant: "It did not belong there", wrong: "It was wrong", missed: "It should have been used", unused: "It went unused", judgment: "A judgment call" },
@@ -16,7 +16,7 @@ export const DIARY = {
   ja: {
     title: "ASTEME 日記", knows: "いま知っていること", you: "あなた", assistant: "アシスタント", tools: "ツール実行 {n} 回",
     took: "この日に受け取ったこと", remembered: "覚えた", changed: "書き換えた", setAside: "使わなくなった",
-    recalled: "思い出したこと", forMessage: "「{message}」に対して",
+    recalled: "思い出したこと", forMessage: "「{message}」に対して", fromRecord: "{day} に話したこと",
     went: "その結果", youSaid: "あなたの判定", stood: "印象に残ったこと",
     use: { silent: "黙って活かした", mention: "口に出した", check: "確認した" },
     outcome: { helped: "役に立った", irrelevant: "その場には合わなかった", wrong: "間違っていた", missed: "使うべきだった", unused: "使われなかった", judgment: "判断が分かれる" },
@@ -28,7 +28,7 @@ export const DIARY = {
   zh: {
     title: "ASTEME 日记", knows: "现在知道的事", you: "你", assistant: "助手", tools: "工具调用 {n} 次",
     took: "这一天记下的事", remembered: "记住了", changed: "改写了", setAside: "不再使用",
-    recalled: "想起来的事", forMessage: "针对“{message}”",
+    recalled: "想起来的事", forMessage: "针对“{message}”", fromRecord: "{day} 说过的话",
     went: "结果如何", youSaid: "你的判定", stood: "印象深的事",
     use: { silent: "默默用上", mention: "说了出来", check: "向你确认" },
     outcome: { helped: "帮上了忙", irrelevant: "不适合那个场合", wrong: "记错了", missed: "本该用上", unused: "没有用上", judgment: "见仁见智" },

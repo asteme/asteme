@@ -4,6 +4,7 @@ import { Host } from "./host.mjs";
 import { registerSettings } from "./settings.mjs";
 import { personaPrompt, experiencePrompt, withoutDefaultIdentity, withoutAsteme, mannerPrompt } from "./prompt.mjs";
 import { plain } from "../src/archive.mjs";
+import { isRound } from "../src/core.mjs";
 
 export const name = "asteme";
 // Only what Asteme cannot work without is required here. A service that may
@@ -95,7 +96,7 @@ export async function apply(ctx, input) {
           // none either (nothing is recalled for it, and the one it works for may be private): the agent that started it holds them.
           const session = context?.agent?.session, delegated = session?.origin === "subagent" || !!session?.parentSession || (session?.delegationDepth ?? 0) > 0;
           const project = host.projects?.get(id);
-          const asks = delegated || (id ? host.log.excludes(id) || host.core.quiet(id, project) : host.core.quietByDefault()) ? [] : host.core.standingAsks({ here: project });
+          const asks = host.config.enabled === false || delegated || (id ? host.log.excludes(id) || host.core.quiet(id, project) : host.core.quietByDefault()) ? [] : host.core.standingAsks({ here: project });
           return personaPrompt(host.core.core(), asks) + way; },
       }),
     "asteme.profile",
@@ -158,10 +159,13 @@ export async function apply(ctx, input) {
       isConcurrencySafe: () => true,
       execute: async (args, exec) => {
         if (hand(exec?.agent?.session?.id)) return CLOSED;
+        // A round of the record is what was said, given word for word in the note: there is nothing behind it to show.
+        if (isRound(args.id)) return plain({ id: args.id, kind: "record", rests: "This is a round of an earlier conversation, given word for word in the note. It is what was said that day; nothing else stands behind it." });
         const why = host.core.why(args.id);
         if (!why) throw new Error("Unknown item");
         const { item, history, ...rest } = why;
-        return plain({ id: item.id, text: item.text, status: item.status, level: item.level, tested: item.tested, hypothesis: item.hypothesis, ...rest, history: history.slice(-6) });
+        return plain({ id: item.id, text: item.text, status: item.status, level: item.level, tested: item.tested, hypothesis: item.hypothesis,
+          ...(host.core.isStanding(item) ? { standing: "The user asked for this to hold from now on; it is kept in front of replies, not recalled." } : {}), ...rest, history: history.slice(-6) });
       },
     }),
   );

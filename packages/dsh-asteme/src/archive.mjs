@@ -308,10 +308,12 @@ export const archive = {
     }
     for (const row of this.log.db.prepare("SELECT data FROM attention WHERE owner=? ORDER BY rowid").all(this.owner)) {
       const t = JSON.parse(row.data);
-      if (!t.delivered?.length) continue;
+      if (!t.delivered?.length && !t.passages?.length) continue;
       const asked = this.log.event(t.request);
       if (!asked || asked.erased) continue;
-      day(t.at).recalled.push({ at: t.at, asked: asked.content, items: t.delivered.map(i => ({ text: i.text, use: i.use })) });
+      // A round of the record is shown by its day only: its words are in the day it was said, above.
+      day(t.at).recalled.push({ at: t.at, asked: asked.content, items: [...(t.delivered ?? []).map(i => ({ text: i.text, use: i.use })),
+        ...(t.passages ?? []).map(p => ({ text: L.fromRecord.replace("{day}", new Intl.DateTimeFormat(lang, { timeZone, dateStyle: "long" }).format(new Date(p.at))), use: p.use }))] });
     }
     for (const f of this.feedback()) if (textOf(f.item)) day(f.at).went.push({ at: f.at, kind: f.kind, text: textOf(f.item), reason: f.reason, by: f.by });
     for (const e of this.episodes()) if (e.signals?.length && e.scene) day(e.at).stood.push({ at: e.at, scene: e.scene, signals: e.signals.map(s => s.kind) });
@@ -461,6 +463,7 @@ export const archive = {
         readings: scenes.length, messages: perRequest.size, most: counts.length ? Math.max(...counts) : 0,
         repeated: counts.filter(n => n > 1).length, failed: scenes.filter(t => t.error).length,
         withCandidates: scenes.filter(t => t.candidates?.length).length, delivered: scenes.filter(t => t.delivered?.length).length,
+        fromRecord: scenes.filter(t => t.passages?.length).length, gaveSomething: scenes.filter(t => t.delivered?.length || t.passages?.length).length,
         unanswered: scenes.filter(t => !t.error && t.candidates?.length && !t.decisions?.length).length,
         askedTwice: scenes.filter(t => t.askedTwice).length, undecided: scenes.filter(t => t.undecided?.length).length,
         sceneFromMessage: scenes.filter(t => t.scene?.from === "message").length, byJudge: scenes.filter(t => t.admittedBy === "judge").length,

@@ -44,7 +44,7 @@ A DSH session is an agent at work: tool calls and their output fill its context,
 What is in front of the model at any one moment:
 
 1. the last records of the thread (`recent`), each shown briefly, the one being answered whole;
-2. what memory brings for this scene, decided in the same call: the memories nearest to what is being said, the rounds of earlier conversation nearest to it as they were said (`record`), and, always, what the user asked to be held to (`core.standing`);
+2. what memory brings for this scene, decided in the same call: the memories nearest to what is being said, the rounds of earlier conversation nearest to it as they were said (`record`), and what the user asked to be held to (`core.standing`: in every conversation that is remembered, up to twenty-four of them, the most recent first);
 3. `earlier`: one line for each exchange before those, already read into memory, with its time;
 4. the state of work that is out, and anything searched for on purpose.
 

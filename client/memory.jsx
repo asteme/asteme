@@ -3,7 +3,7 @@
 // account. Nothing in a row is a control; every action lives in the account,
 // next to the evidence it acts on.
 import React, { useState } from "react";
-import { inUse, kindOf, recallLevel, recallWord, say, stateWord, reasonWord } from "./words.mjs";
+import { inFront, inUse, kindOf, recallLevel, recallWord, say, stateWord, reasonWord } from "./words.mjs";
 import { Button, Chip, Disclosure, Glyph, RowButton, Section, Star, TextInput } from "./ui.jsx";
 
 const matches = (item, needle) => !needle || [item.text, item.reason, item.concrete, item.general, item.about, ...(item.entities ?? [])]
@@ -13,8 +13,8 @@ const order = used => (a, b) => (b.status === "doubtful") - (a.status === "doubt
 
 function MemoryRow({ item, used, ctx }) {
   const { t, nav } = ctx, live = inUse(item);
-  // A standing ask is in front always: its star is full, as a habit's is.
-  const level = live && item.standing ? "easily" : recallLevel(item);
+  // A standing ask in front of every reply has a full star, as a habit has. One that did not fit in front has the star its uses gave it.
+  const level = live && inFront(item) ? "easily" : recallLevel(item);
   return (
     <li>
       <RowButton

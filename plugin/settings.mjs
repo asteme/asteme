@@ -28,8 +28,12 @@ export function operations(host) {
   const carried = (projectId) => {
     // How each item's uses have gone so far, and from which outcomes: derived, never stored.
     const recall = host.core.recallState();
+    // Which standing asks are in front of every reply in this project: only so many fit, and the list must not promise it of one that did not.
+    // Nothing is in front where memory is off, where this project is left out, or where conversations are private unless one is switched on.
+    const off = host.config.enabled === false || host.core.projectOff(projectId) || host.core.quietByDefault();
+    const front = new Set(off ? [] : host.core.standingAsks({ here: projectId }).map(a => a.id));
     const items = host.core.items({ closed: true }).filter(i => i.projectId === projectId)
-      .map(i => ({ ...i, grounds: host.core.grounds(i), ...recall.get(i.id) }));
+      .map(i => ({ ...i, grounds: host.core.grounds(i), ...recall.get(i.id), ...(i.standing ? { inFront: front.has(i.id), ...(off ? { frontOff: true } : {}) } : {}) }));
     const trace = host.log.db.prepare(`SELECT a.data FROM attention a
       JOIN (SELECT id, data FROM events WHERE erased=0 UNION ALL SELECT id, data FROM received) e
         ON e.id=a.request
@@ -38,18 +42,21 @@ export function operations(host) {
         AND json_extract(e.data,'$.sessionId') NOT IN (SELECT value FROM json_each(?))
       ORDER BY a.rowid DESC LIMIT 1`).get(host.core.owner, projectId, JSON.stringify(host.log.state("excluded-sessions", [])));
     const delivery = trace && JSON.parse(trace.data);
+    // A round about a private matter said in another project is named, not shown, as a private memory from elsewhere is.
+    const roundShown = p => { const from = host.log.event(p.events?.[0])?.scope?.projectId ?? null;
+      return p.sensitive && from !== projectId ? { ...p, private: true, said: "", replied: "" } : { ...p, said: p.said ? p.said + (p.cutSaid ? " …" : "") : p.said }; };
     // A reply here can use what was learned somewhere else: in another project, or in the conversation with Asteme itself.
     // Those memories are not in this project's list, and they exist: they are named with the reply, so that it does not call them gone.
-    const here = new Set(items.map(i => i.id)), named = delivery ? [...(delivery.delivered ?? []), ...(delivery.decisions ?? []), ...(delivery.heldBack?.suppressed ?? [])].map(x => x.id).concat(delivery.undecided ?? []).filter(id => id && !here.has(id)) : [];
+    const here = new Set(items.map(i => i.id)), named = delivery ? [...(delivery.delivered ?? []), ...(delivery.decisions ?? []), ...(delivery.heldBack?.suppressed ?? [])].map(x => x.id).concat(delivery.undecided ?? [], delivery.inFront ?? []).filter(id => id && !here.has(id)) : [];
     const elsewhere = named.length ? host.core.items({ closed: true }).filter(i => named.includes(i.id)).map(i => ({ id: i.id, text: i.sensitive?.length ? "" : i.text, private: !!i.sensitive?.length, projectId: i.projectId, where: host.log.state(`project-label:${i.projectId}`, null) ?? (i.projectId === "asteme" ? "Asteme" : null) })) : [];
     return {
       state: { items, sources: [...new Set(items.flatMap(i => i.evidence.map(e => e.id)))] },
       delivery: delivery ? { request: delivery.request, session: host.log.event(delivery.request)?.scope?.projectId === "asteme" ? null : host.log.event(delivery.request)?.sessionId ?? null,
         sessionPrivate: host.log.state(`private:${host.core.owner}:${host.log.event(delivery.request)?.sessionId}`, false) === true, asked: (host.log.event(delivery.request)?.content ?? "").slice(0, 400),
         scene: delivery.scene, decisions: delivery.decisions, delivered: delivery.delivered, heldBack: delivery.heldBack,
-        // Rounds of earlier conversation the reply was given, as they were said.
-        passages: (delivery.passages ?? []).map(p => ({ id: p.id, at: p.at, use: p.use, said: p.said, relevance: p.relevance, anchor: p.anchor, by: p.by, confidence: p.confidence })),
-        undecided: delivery.undecided, askedTwice: delivery.askedTwice, admittedBy: delivery.admittedBy, private: delivery.private,
+        // Rounds of earlier conversation the reply was given, as they were said: what the user said, and what was answered then.
+        passages: (delivery.passages ?? []).map(p => ({ ...roundShown(p) })).map(p => ({ id: p.id, at: p.at, use: p.use, private: p.private, said: p.said, replied: p.replied && (p.replied.length > 700 ? `${p.replied.slice(0, 700)} …` : p.replied), relevance: p.relevance, anchor: p.anchor, by: p.by, confidence: p.confidence })),
+        inFront: delivery.inFront ?? [], undecided: delivery.undecided, askedTwice: delivery.askedTwice, admittedBy: delivery.admittedBy, private: delivery.private,
         // What is already known about how this reply's memories did, the user's own verdicts included.
         outcomes: host.core.feedback().filter(f => f.request === delivery.request).map(f => ({ item: f.item, kind: f.kind, by: f.by ?? "model", reason: f.reason })),
         elsewhere, text: delivery.text, error: delivery.error, at: delivery.at } : null,
@@ -113,7 +120,7 @@ export function operations(host) {
       })(),
       // Why background work is or is not running, in counts.
       diagnosis: host.core.diagnose(host.log.now(), { delay: host.config.outcomeDelayMs ?? 60000 }),
-      prompt: [personaPrompt(core, host.core.standingAsks({ here: projectId })), experiencePrompt].join("\n\n"),
+      prompt: [personaPrompt(core, host.config.enabled === false || host.core.projectOff(projectId) || host.core.quietByDefault() ? [] : host.core.standingAsks({ here: projectId })), experiencePrompt].join("\n\n"),
       settings: host.settings(),
       usage: host.log.usage(host.identity),
       ...(await catalog()),

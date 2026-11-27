@@ -23,6 +23,10 @@ import { salienceOf } from "./reflect.mjs";
 import { replayPrompt, reconcilePrompt, revisePrompt, lessonPrompt, imaginePrompt } from "./prompts.mjs";
 
 const DAY = 86400000;
+// Two descriptions written the same way (two scenes, or two memories' own words) are compared here with each other, and "alike" is measured against
+// scenes that say nothing: a description must be nearer to the other than to any of these. Recall does not use this measure (see recall.mjs).
+const EMPTY = TUNING.nullScenes;
+const ALIKE = 0.5;
 // Reasons are read by people in the panel, so they are written as sentences.
 const STOOD_OUT = { correction: "the user corrected something", surprise: "something went against what was expected", failure: "something failed",
   explicit: "the user asked for something to be remembered", commitment: "a promise was made", recurrence: "the same kind of situation had come up before" };
@@ -70,12 +74,12 @@ export const sleep = {
     const all = this.episodes(), unchecked = all.filter(e => !e.recurrenceChecked && e.scene);
     if (unchecked.length && all.length >= 2 && this.embed) {
       const vectors = await this.vectors(all.filter(e => e.scene).map(e => e.scene), "passage");
-      const nulls = await this.vectors(TUNING.nullScenes, "query");
+      const nulls = await this.vectors(EMPTY, "query");
       if (vectors && nulls) for (const e of unchecked.sort((a, b) => a.at - b.at)) {
         const mine = vectors.get(e.scene), floor = Math.max(...[...nulls.values()].map(n => cosine(n, mine)));
         const informative = [...nulls.values()].some(n => cosine(n, mine) < 0.999);
         const earlier = !informative ? [] : all.filter(o => o.id !== e.id && o.sessionId !== e.sessionId && o.scene && o.at <= e.at &&
-          (cosine(mine, vectors.get(o.scene)) - floor) / Math.max(1e-6, 1 - floor) >= TUNING.fit.strong);
+          (cosine(mine, vectors.get(o.scene)) - floor) / Math.max(1e-6, 1 - floor) >= ALIKE);
         // Once per situation: when an earlier exchange like this one was already
         // read again, or already marked as recurring, the cross-reading has
         // been done. From then on only what stands out brings it back.
@@ -117,7 +121,7 @@ export const sleep = {
     if (fresh.length && understandings.length >= 2 && this.embed) {
       const live = understandings.filter(i => LIVE.includes(i.status) && i.text).slice(-SAME.against);
       const vectors = await this.vectors(live.map(i => i.text), "passage");
-      const nulls = await this.vectors(TUNING.nullScenes, "query");
+      const nulls = await this.vectors(EMPTY, "query");
       if (vectors && nulls) {
         let put = 0;
         for (const a of fresh) {
@@ -144,7 +148,7 @@ export const sleep = {
     const cases = understandings.filter(i => i.level === "case" && i.status === "active" && !i.sensitive?.length && !inLesson.has(i.id) && i.general).slice(-200);
     if (cases.length >= 2 && this.embed) {
       const vectors = await this.vectors(cases.map(c => c.general), "passage");
-      const nulls = await this.vectors(TUNING.nullScenes, "query");
+      const nulls = await this.vectors(EMPTY, "query");
       if (vectors && nulls) {
         const v = c => vectors.get(c.general), floor = c => Math.max(...[...nulls.values()].map(n => cosine(n, v(c))));
         const sessions = c => new Set(c.evidence.map(e => this.log.event(e.id)?.sessionId));
@@ -158,12 +162,11 @@ export const sleep = {
         }
       }
     }
-    // Future scenes are imagined for what has proved itself or stood out.
+    // Future scenes are imagined for a lesson and for what stood out.
     const feedback = this.feedback();
     for (const i of understandings) {
       if (i.imagined?.length || i.status !== "active" || i.sensitive?.length || this.log.state(this.judgedKey("imagine", [i]))) continue;
-      const helped = useStats(feedback.filter(f => f.item === i.id), i.revision).helped;
-      if (i.level === "lesson" || helped >= 1 || (i.salience ?? 0) >= 0.5) this.enqueue("imagine", i.id, 0.2, { reasons: ["It has proved itself, so situations it has not met yet should be able to call it up"] });
+      if (i.level === "lesson" || (i.salience ?? 0) >= 0.5) this.enqueue("imagine", i.id, 0.2, { reasons: ["It is a lesson or it stood out, so situations it has not met yet should be able to call it up"] });
     }
     this.log.save(`plan-at:${this.owner}`, now);
   },
@@ -200,7 +203,7 @@ export const sleep = {
       else if (!episodes.some(e => e.salience >= 0.3)) say("nothing-stood-out", `no exchange stood out (highest salience ${highest}, replay starts at 0.3)`, { highest });
       else if (episodes.every(e => e.salience < 0.3 || e.replays > 0)) say("all-reread", "every exchange that stood out has been read again");
       if (cases.length < 2) say("few-cases", "a lesson needs two cases from different conversations");
-      if (!feedback.some(f => f.kind === "helped")) say("no-success", "no memory has a recorded success yet, so nothing is imagined or promoted");
+      if (!feedback.some(f => f.kind === "helped")) say("no-success", "no memory has a recorded success yet, so nothing is promoted to always present");
     }
     // Turns that ended and have not been read into memory yet. While any are
     // waiting, something the user said there (a correction, say) is not known.
@@ -221,6 +224,8 @@ export const sleep = {
     };
   },
   async sleepDue(now = this.log.now()) {
+    // While idle, a little more of the record is made searchable, until all of it is.
+    try { await this.indexRecord(); } catch { /* the embedder is not there now: it is tried again next time */ }
     await this.plan(now);
     return this.jobs().length > 0 || this.promotable(now).length > 0 || this.demotable(now).length > 0;
   },
@@ -271,7 +276,7 @@ export const sleep = {
     if (!value || !verdicts.includes(value.verdict) || !Array.isArray(value.changes ?? [])) throw Error("Invalid reconcile response");
     // Only the two memories on the table, or a new question to the user.
     const allowed = (value.changes ?? []).filter(op => op.op !== "core" && (!op.id || op.id === a.id || op.id === b.id));
-    const report = this.apply(allowed, events);
+    const report = this.apply(allowed, events, { idle: true });
     // Judged as they were, and as they are now: a repair is not a new dispute.
     const after = [this.item(a.id), this.item(b.id)];
     for (const pair of [[a, b], ...(after.every(Boolean) ? [after] : [])]) this.log.save(this.judgedKey("reconcile", pair), { at: now, verdict: value.verdict });
@@ -292,7 +297,7 @@ export const sleep = {
     const value = await infer("asteme-revise", revisePrompt({ now: iso(now), core: this.charter(),
       item: this.detail(item), why: job.reasons ?? [], outcomes, premises, RAW: pageRaw(events, 1000) }), 2400);
     if (!value || !Array.isArray(value.changes)) throw Error("Invalid revise response");
-    const report = this.apply(value.changes.filter(op => op.op !== "core" && op.id === item.id), events);
+    const report = this.apply(value.changes.filter(op => op.op !== "core" && op.id === item.id), events, { idle: true });
     // Remember what this answer covered, so the same evidence does not ask again.
     const after = this.item(item.id), mine = this.feedback().filter(f => f.item === item.id);
     this.log.save(`revised:${this.owner}:${item.id}`, { at: now, revision: after?.revision ?? item.revision,

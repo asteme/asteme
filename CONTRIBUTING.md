@@ -29,10 +29,11 @@ The panel is previewed without a host: `client/preview/preview.html` (see `clien
 ```
 src/core.mjs        the Asteme class; each module below adds its methods to it
 src/memory.mjs      write path: validation, exact evidence, revisions, links, sleep queue
-src/recall.mjs      activation: scene cues, null floor, learned silence, association; TUNING
+src/recall.mjs      activation: what a memory answers to, the nearest few, the scenes it stays out of; TUNING
+src/record.mjs      the record itself, searchable: the rounds of earlier conversations nearest to the present
 src/attend.mjs      one turn: read the scene, recall, admit, record the trace
 src/reflect.mjs     after the turn: what the records support; episodes and salience
-src/outcome.mjs     what happened next, and what it changes; accessibility
+src/outcome.mjs     what happened next, and the little it may change; what the sky shows as brightness
 src/sleep.mjs       replay, reconcile, revise, integrate, imagine; planning and budget
 src/habits.mjs      always-present rules and their gates (unchanged behavior from 0.7)
 src/explain.mjs     why(id), explain(request)
@@ -48,7 +49,7 @@ plugin/             DeepSeek Harness adapter (host events, model calls, delivery
 client/             settings panel (React); client/FOUNDATION.md describes it
 test/               principles.test.mjs, adapter.test.mjs, legacy/ (the 0.7 suite, unchanged)
 sandbox/            story.mjs (two scripted weeks) and demo.mjs
-eval/               scenarios for a real model, the runner, soak.mjs and judge.mjs
+eval/               scenarios for a real model, the runner, soak.mjs and judge.mjs; measurements with their numbers (README.md there)
 standalone/         the core without a host: brain.mjs (library), mcp.mjs (MCP server), ports.mjs (HTTP model ports)
 ```
 

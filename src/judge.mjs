@@ -55,11 +55,13 @@ export async function judgeAdmission(judge, { request, recent = [], scene, candi
   return { decisions };
 }
 
+// A reading is a statement about the note that the user's words make. Being short about being told ("I know", "not now", "stop nagging") is none
+// of them: a judge that read annoyance as "did not belong" taught a reminder the user had asked for to stop coming.
 const OUTCOME = {
-  helped: "The user accepted, built on or confirmed what the note led to",
-  irrelevant: "The user indicated it did not belong in this situation, though it may be true elsewhere",
-  wrong: "The user said the note itself is false or out of date",
-  unclear: "What the user wrote afterwards does not show how it turned out",
+  helped: "The user said in words that what the note led to was right or useful, or built on it by name",
+  irrelevant: "The user said the note does not apply to this kind of situation: a statement about the situation, not annoyance at being told",
+  wrong: "The user said what the note states is false or no longer true",
+  unclear: "None of the above: the user went on, was merely short or annoyed about being told, or said nothing that shows how it turned out",
 };
 /** How each delivered memory turned out, read from what the user wrote next. Only confident readings are returned. */
 const ENDED = { aborted: "was stopped before it finished", error: "failed before it finished", "max-tokens": "was cut off by a length limit",

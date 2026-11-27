@@ -8,26 +8,27 @@ import { world, scripted, scope, DIRECTOR } from "./helpers.mjs";
 
 const HANDOVER = { text: "Took over the XTool ad project from Mika", about: "XTool handover", concrete: "Preparing a pitch for the board", general: "Writing a report for a busy decision maker", entities: ["A", "Mika"] };
 
-test("finding 1: an empty answer to a strong match is asked once more, about those candidates only; the model is given reasons, not scores", async t => {
+test("finding 1: an empty answer about a candidate the message names is asked once more, about those only; the model is given reasons and an order, not scores", async t => {
   const { core, say, learn } = world(t);
-  const a = learn(say("The director only reads the first three lines", "seed"), DIRECTOR);
-  const weak = learn(say("The team wants meeting notes in order", "seed"), { text: "Keep team notes in order", about: "team notes", concrete: "Writing meeting notes for the team", general: "Drafting minutes of a team discussion" });
+  const a = learn(say("The director only reads the first three lines", "seed"), { ...DIRECTOR, entities: ["the director"] });
+  const other = learn(say("The team wants meeting notes in order", "seed"), { text: "Keep team notes in order", about: "team notes", concrete: "Writing meeting notes for the team", general: "Drafting minutes of a team discussion" });
   const request = say("Wrap up that memo for the director", "ask");
   const calls = [];
   const pass = { decisions: [{ id: a.id, use: "silent", reason: "It changes the opening", anchor: "memo for the director" }] };
   const run = second => core.prepare({ request, recent: [request], infer: scripted({
-    scene: { scene: "Writing a memo for the director", need: "", entities: [] },
+    scene: { scene: "Writing a memo for the director", need: "", entities: ["director"] },
     select: input => input.required ? second : { decisions: [] },
   }, calls) });
 
   const trace = await run(pass);
   const [first, again] = calls.filter(c => c.purpose === "asteme-select").map(c => c.input);
-  assert.deepEqual(first.candidates.map(c => [c.id, c.calledBy.fit]), [[a.id, "strong"], [weak.id, "moderate"]]);
-  assert.equal(first.candidates[0].calledBy.because, "the present scene resembles the scene it was learned in");
-  assert.ok(!("score" in first.candidates[0]), "a bare number is not what admission is asked to judge");
+  assert.deepEqual(first.candidates.map(c => c.id), [a.id, other.id], "nearest first");
+  assert.equal(first.candidates[0].calledBy.because, "the present resembles the scene it was learned in");
+  assert.ok(!("score" in first.candidates[0]) && !("fit" in first.candidates[0].calledBy), "neither a bare number nor a word for how near is what admission is asked to judge");
+  assert.equal(first.candidates[0].learned, "2026-11-10", "and it is told when each was learned");
   assert.equal(first.required, undefined);
-  assert.deepEqual([again.required, again.candidates.map(c => c.id)], [true, [a.id]], "the second question is about the strong match only");
-  assert.deepEqual([trace.askedTwice, trace.delivered.map(i => i.id)], [true, [a.id]]);
+  assert.deepEqual([again.required, again.candidates.map(c => c.id)], [true, [a.id]], "the second question is about the one the message names, only");
+  assert.deepEqual([trace.askedTwice, trace.delivered.map(i => i.id), trace.admittedBy], [true, [a.id], "model"]);
 
   // Still nothing: admission stays the only path to delivery, and the gap is on record.
   calls.length = 0;
@@ -35,8 +36,8 @@ test("finding 1: an empty answer to a strong match is asked once more, about tho
   assert.deepEqual([silent.delivered.length, silent.undecided.includes(a.id)], [0, true]);
   // An explicit "not now" is an answer and is not asked again.
   calls.length = 0;
-  const held = await core.prepare({ request, recent: [request], infer: scripted({ scene: { scene: "Writing a memo for the director", need: "", entities: [] },
-    select: { decisions: [{ id: a.id, use: "not-now", reason: "The memo is already written" }] } }, calls) });
+  const held = await core.prepare({ request, recent: [request], infer: scripted({ scene: { scene: "Writing a memo for the director", need: "", entities: ["director"] },
+    select: { decisions: [{ id: a.id, use: "not-now", reason: "The memo is already written" }, { id: other.id, use: "not-now", reason: "Not about notes" }] } }, calls) });
   assert.equal(calls.filter(c => c.purpose === "asteme-select").length, 1);
   // Every candidate is owed an answer: the one that got none is on record as such.
   assert.deepEqual([held.askedTwice, (held.undecided ?? []).includes(a.id)], [undefined, false]);
@@ -105,33 +106,36 @@ test("finding 3: a name matches across phrase and word forms, and never through 
   const { core, say, learn } = world(t);
   const h = learn(say("I took over the XTool ad project from Mika", "seed"), HANDOVER);
   const called = scene => core.candidates({ scene: "Fixing a bug in a database migration", need: "", entities: scene }, undefined, say("Fix it", "s" + scene.length));
-  assert.deepEqual((await called(["project A"])).map(c => [c.item.id, c.entity]), [[h.id, true]], "an unrelated scene that names it still calls it");
-  assert.deepEqual(await called(["a database"]), []);
-  assert.deepEqual(await called([]), []);
+  assert.deepEqual((await called(["project A"])).map(c => [c.item.id, c.entity]), [[h.id, true]], "a scene that names it says so");
+  assert.deepEqual((await called(["a database"])).map(c => c.entity), [false], "the article is not the name");
+  assert.deepEqual((await called([])).map(c => c.entity), [false]);
 });
 
-test("finding 4: a marginal fit does not pass the floor on its own; it passes when the message also shares content words", async t => {
-  // An embedder in which the scene fits the memory 0.001 better than an empty scene does.
-  const at = { null: [1, 0, 0], cue: [0.8, 0.6, 0], scene: [0.8, 0.26833, 0.53666], close: [0.8, 0.58, 0.153] };
-  const embed = async texts => texts.map(text => TUNING.nullScenes.includes(text) ? at.null : text.startsWith("SCENE") ? at.scene : text.startsWith("CLOSE") ? at.close : at.cue);
-  embed.model = "margins";
+test("finding 4: nothing is held back for not being near enough in absolute terms: a message in another language than the stored scene still calls the nearest", async t => {
+  // An embedder with the bias real multilingual ones have: two English texts are nearer to each other than a Japanese message is to the English
+  // scene that means the same. Under a floor measured with English "empty scenes" the message called nothing (found in 0.12.2); the order was right.
+  const at = { right: [0.9, 0.42, 0.1, 0], other: [0.9, 0.05, 0.43, 0], unrelated: [0.9, 0, 0, 0.43], message: [0.15, 0.9, 0.2, 0.1] };
+  const embed = async texts => texts.map(text => /[\u3040-\u30ff\u4e00-\u9fff]/.test(text) ? at.message : /budget|income/i.test(text) ? at.right : /notes|minutes/i.test(text) ? at.other : at.unrelated);
+  embed.model = "bias";
   const { core, say, learn } = world(t, { embed });
-  const h = learn(say("I took over the XTool ad project from Mika", "seed"), { ...HANDOVER, entities: [] });
-  const candidate = async (scene, text) => (await core.activate({ scene, need: "", entities: [] }, undefined, say(text, text)));
-
-  const bare = await candidate("SCENE an instruction with no subject", "Take over this session");
-  assert.deepEqual([bare.candidates.length, bare.below], [0, 1], "an instruction alone calls nothing");
-  const worded = await candidate("SCENE an instruction with no subject", "Take over the XTool work");
-  assert.deepEqual(worded.candidates.map(c => [c.item.id, c.words, c.fit, Number(c.closeness.toFixed(3))]), [[h.id, true, "weak", 0.005]], "two weak signals that agree are enough to be considered");
-  const clear = await candidate("CLOSE a scene that resembles it", "Do the usual");
-  assert.deepEqual(clear.candidates.map(c => [c.words, c.fit]), [[false, "strong"]], "a clear fit needs no shared word");
+  const right = learn(say("来月から家計を見直したい", "seed"), { text: "Start a budget review from the fixed costs", about: "budget", concrete: "Planning a budget", general: "Anything that depends on the user's income" });
+  const other = learn(say("議事録は発言順で", "seed2"), { text: "Write minutes in the order things were said", about: "minutes", concrete: "Writing meeting notes for the team", general: "Drafting minutes of a team discussion" });
+  const called = await core.activate({ scene: "今月の家計を見直したい", need: "", entities: [] }, undefined, say("今月の家計を見直したい", "ask"));
+  assert.deepEqual(called.candidates.map(c => [c.item.id, c.rank]), [[right.id, 1], [other.id, 2]], "nearest first, whatever the absolute nearness");
+  assert.ok(called.candidates[0].sim < 0.6, "the nearest is not near in absolute terms, and is called all the same");
+  assert.deepEqual([called.below, "fit" in called.candidates[0], "closeness" in called.candidates[0]], [0, false, false]);
+  // A memory's own words are a key too, in the language they were written in: one written in the user's language is found by them outright.
+  assert.equal(core.why(right.id).recall.answersTo[0].because, "words");
+  const own = learn(say("固定費は毎月見直す", "seed3"), { text: "固定費は毎月見直すと決めている", about: "家計", concrete: "Reviewing recurring costs", general: "Keeping regular spending in check" });
+  const again = await core.activate({ scene: "今月の家計を見直したい", need: "", entities: [] }, undefined, say("今月の家計を見直したい", "ask2"));
+  assert.deepEqual([again.candidates[0].item.id, again.candidates[0].origin, again.candidates[0].sim > 0.99], [own.id, "words", true]);
 });
 
 test("finding 5: the core can say why background work is idle, and what each waiting delivery is waiting for", async t => {
   const { core, say, tick, learn, attend } = world(t);
   const a = learn(say("The director only reads the first three lines", "seed"), DIRECTOR);
   assert.deepEqual(core.diagnose().sleep.idleBecause, ["no turn has been reflected on yet", "a lesson needs two cases from different conversations",
-    "no memory has a recorded success yet, so nothing is imagined or promoted"]);
+    "no memory has a recorded success yet, so nothing is promoted to always present"]);
   await attend("Write the memo for the director", { session: "memo", scene: "Writing a memo for the director", admit: [{ id: a.id, anchor: "memo for the director" }] });
   const because = () => core.diagnose().outcomes.waiting.map(w => w.because);
   assert.deepEqual(because(), ["too recent to judge"]);
@@ -224,7 +228,7 @@ test("the user can confirm, close, and settle; each is recorded as theirs and re
   assert.throws(() => core.userReopen(coffee.id, core.item(coffee.id).revision), /Only a memory that was closed/);
 });
 
-test("an old database with the degenerate fixture embedder still behaves as before: no floor, no second question", async t => {
+test("with an embedder that cannot tell anything apart, what is remembered is still put before admission once, and no second question follows", async t => {
   const log = new Log(":memory:", () => Date.parse("2026-11-13T10:00:00Z"));
   t.after(() => log.close());
   const embed = async texts => texts.map(() => [1, 0]); embed.model = "fixture";
@@ -236,7 +240,7 @@ test("an old database with the degenerate fixture embedder still behaves as befo
   log.ingest(scope, "later", [{ seq: 0, role: "user", kind: "user/message", content: "Write the memo", occurredAt: log.now() }]);
   const ask = log.events(scope, "later")[0];
   const trace = await core.prepare({ request: ask, recent: [ask], infer: scripted({ scene: { scene: "anything", need: "", entities: [] }, select: { decisions: [] } }, calls) });
-  assert.deepEqual([trace.candidates.length, trace.candidates[0].fit, trace.askedTwice, calls.length], [1, null, undefined, 2]);
+  assert.deepEqual([trace.candidates.length, trace.candidates[0].rank, trace.askedTwice, calls.length], [1, 1, undefined, 2]);
 });
 
 test("what the conversation in view already holds is not recalled into it; the same memory comes up once its source is out of view", async t => {

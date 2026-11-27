@@ -6,7 +6,7 @@
 // each takes one click.
 import React, { useState } from "react";
 import { formatDateTime } from "./format.mjs";
-import { say, useWord, outcomeWord, calledWord, decisionWord } from "./words.mjs";
+import { say, useWord, outcomeWord, calledWord, decisionWord, gaveNothing } from "./words.mjs";
 import { Button, Disclosure, Notice, Section, Star, TextLink, Trace, TracePoint } from "./ui.jsx";
 
 // --- A verdict on one memory in the last reply --------------------------------
@@ -93,8 +93,28 @@ function LastReply({ delivery, items, ctx }) {
             {(byId.has(item.id) || away.has(item.id)) && <Verdict request={delivery.request} item={item.id} used outcome={outcomeOf(item.id)} ctx={ctx} />}
           </TracePoint>
         ))}
+        {(delivery.inFront ?? []).filter(id => byId.has(id) || away.has(id)).length > 0 && (
+          <TracePoint mark="lit">
+            <p className="ast-trace__label">{t("keptInFront")}</p>
+            <ul className="ast-plain-list">{delivery.inFront.filter(id => byId.has(id) || away.has(id)).map(id => <li key={id}>{open(id)}</li>)}</ul>
+          </TracePoint>
+        )}
+        {(delivery.passages ?? []).map(p => (
+          <TracePoint key={p.id} mark="lit">
+            <p className="ast-trace__label">{useWord(t, p.use)}: {say(t, p.said ? "fromRecord" : "fromRecordReply", { when: formatDateTime(p.at) ?? "" })}</p>
+            {p.private && <p>{t("private")} <span className="ast-soft">({t("memoryElsewhere")})</span></p>}
+            {p.said && <p className="ast-quote">{p.said}</p>}
+            {p.said && p.replied && <p className="ast-soft">{t("answeredThen")}</p>}
+            {p.replied && <p className="ast-quote">{p.replied}</p>}
+            <dl className="ast-used__facts">
+              {p.relevance && <div><dt>{t("because")}</dt><dd>{p.relevance}</dd></div>}
+              {p.by === "judge" && <div><dt>{t("because")}</dt><dd>{say(t, "byJudge", { n: Math.round((p.confidence ?? 0) * 100) })}</dd></div>}
+              {p.anchor && <div><dt>{t("yourWords")}</dt><dd className="ast-quote">{p.anchor}</dd></div>}
+            </dl>
+          </TracePoint>
+        ))}
 
-        {!used.length && !delivery.error && (
+        {gaveNothing(delivery) && (
           <TracePoint mark="hollow">
             <p className="ast-trace__label">{t("usedNothing")}</p>
             <p className="ast-soft">{t(held.length || passed.length ? "usedNothingHeld" : "usedNothingNone")}</p>
@@ -137,6 +157,7 @@ function LastReply({ delivery, items, ctx }) {
       {delivery.text && (
         <Disclosure label={t("exactNote")}>
           <p className="ast-hint">{t("exactNoteHint")}</p>
+          {(delivery.inFront ?? []).length > 0 && <p className="ast-hint">{t("exactNoteInFront")}</p>}
           <pre className="ast-pre" tabIndex={0}>{delivery.text}</pre>
         </Disclosure>
       )}

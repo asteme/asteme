@@ -1,11 +1,17 @@
 // Outcomes: what happened after a memory was used, and what that does to the
-// memory. This is the half of the loop that "store and retrieve" leaves out.
+// memory.
 //
-// An outcome is a fact about one scene, grounded in a later record. From the
-// set of outcomes the code derives, every time it is asked:
-//   - the scenes a memory answers to and stays out of   (recall.mjs: cues)
-//   - how easily it comes to mind                        (accessibility)
-//   - whether its content has to be looked at again      (queued for sleep)
+// An outcome is a fact about one scene, grounded in a later record. What may
+// change a memory is narrow, on purpose:
+//   - the user said it is wrong or no longer true       (its content is looked at again)
+//   - the user said it does not belong in a kind of scene (it stays out of scenes like that one)
+//   - it was needed and did not come                      (it answers to that scene from then on)
+// How a reply was received otherwise (taken up, passed over, met with
+// annoyance) is recorded where it can be read, and changes nothing about what
+// is recalled. A memory that goes quiet whenever its use was unwelcome learns
+// to say only what pleases, and that was measured here (2026-11): a reminder
+// the user had asked for stopped coming after one irritated reply. Displeasure
+// is evidence about the moment, not about the memory.
 // Nothing is counted twice, and nothing fades because time passed.
 import { cut } from "./log.mjs";
 import { JUDGE, judgeOutcome } from "./judge.mjs";
@@ -20,6 +26,8 @@ import { outcomePrompt } from "./prompts.mjs";
 export const OUTCOMES = ["helped", "irrelevant", "missed", "judgment", "wrong", "unused"];
 const EXTERNAL = ["helped", "irrelevant", "judgment", "wrong"];
 export const NEGATIVE = ["irrelevant", "wrong"];
+/** Whether an outcome is the user having said a memory does not belong in that scene. */
+export const bounds = f => f.kind === "irrelevant";
 
 /** Distinct scenes per outcome kind. A repeated scene is one piece of evidence. */
 export function useStats(feedback, revision) {
@@ -30,11 +38,12 @@ export function useStats(feedback, revision) {
 }
 
 /**
- * How easily a memory comes to mind, in (0, 1]. It starts undecided at 0.5,
- * rises with scenes where it helped or was missed, and falls with scenes where
- * it did not belong, was wrong, or was ignored. A salient memory resists the
- * fall. It never reaches zero: a hard-to-recall memory is still there for a
- * strong enough cue and for deliberate search. Age is not an input.
+ * How a memory's uses have gone so far, in (0, 1]: what the sky shows as
+ * brightness. It starts undecided at 0.5, rises with scenes where it helped or
+ * was missed, and falls with scenes where it did not belong, was wrong, or was
+ * ignored. Age is not an input. Recall does not read this number: what comes
+ * to mind is decided by nearness alone (see `standing` and recall.mjs), so
+ * that how a use was received cannot make a memory harder to find.
  */
 export function accessibility(item, stats) {
   const up = stats.helped + stats.missed, down = stats.irrelevant + 2 * stats.wrong + 0.5 * stats.unused;
@@ -43,6 +52,9 @@ export function accessibility(item, stats) {
   const standing = { active: 1, doubtful: 0.7 }[item.status] ?? 0.15;
   return Math.max(0.02, Number((kept * standing).toFixed(4)));
 }
+
+/** A memory in doubt comes to mind a little less readily than one in use. Nothing else about its past changes its place. */
+export const standing = item => item.status === "doubtful" ? 0.9 : 1;
 
 export const outcome = {
   feedback() {
@@ -57,6 +69,10 @@ export const outcome = {
       const delivered = trace.delivered?.some(i => i.id === f.item);
       if (f.kind === "missed" ? delivered : !delivered) throw Error("outcome contradicts actual delivery");
       if (f.kind === "helped" && f.applied === "no") throw Error("credit needs use: the reply did not apply this item");
+      // What the user asked to be held to is ended or narrowed by the user's own words to that effect, read with the whole exchange in view
+      // (a change made by reflection), or by the user directly (userOutcome, which does not come through here). A reading of how one reply was
+      // received does not narrow it or put it in doubt, whoever the reading says it is by.
+      if (NEGATIVE.includes(f.kind) && this.isStanding(item)) throw Error("a standing ask is changed only by the user's own words to that effect");
       const request = this.log.event(trace.request);
       const created = this.log.db.prepare("SELECT data FROM experience_history WHERE owner=? AND id=? ORDER BY seq LIMIT 1").get(this.owner, item.id);
       if (!request || !created || JSON.parse(created.data).at > trace.at) throw Error("no subsequent external outcome");
@@ -75,20 +91,22 @@ export const outcome = {
       const previous = old && JSON.parse(old.data);
       if (previous && at <= previous.at) continue; // One scene/outcome, never a growing success counter.
       if (previous?.by === "user") continue; // What the user said about this use stands.
-      const value = { ...f, evidence: f.kind === "unused" ? [] : f.evidence, request: trace.request, scene: trace.scene, at, revision: item.revision };
+      // Who read it is said by the code that asked (the judge's readings are marked where they are taken), never by the answer itself.
+      const value = { ...f, by: f.by === "judge" ? "judge" : "model", evidence: f.kind === "unused" ? [] : f.evidence, request: trace.request, scene: trace.scene, at, revision: item.revision };
       this.log.db.prepare("INSERT INTO experience_feedback VALUES (?,?,?,?) ON CONFLICT(owner,request,item) DO UPDATE SET data=excluded.data").run(this.owner, trace.request, f.item, JSON.stringify(value));
       this.reconsolidate(value, item, trace);
       report.applied.push(value);
     } catch (e) { report.rejected.push({ feedback: f, reason: e.message }); }
     return report;
   },
-  // What one outcome changes beyond its own row. The scene itself already
-  // counts: cues and accessibility are derived from the outcome table. Here the
-  // code decides only whether the content has to be read again, and by whom.
+  // What one outcome changes beyond its own row. The scenes a memory answers to and stays out of are derived from the outcome table (recall.mjs: cues).
+  // Here the code decides only whether the content has to be read again, and by whom.
   reconsolidate(f, item, trace) {
     const reason = cut(f.reason, 200);
     if (f.kind === "wrong") {
       const current = this.item(item.id);
+      // In doubt, a memory is not asserted and not dropped: where it applies it is asked about ("is this still so?"), which is also the right
+      // thing to happen when the reading of the user's words was itself mistaken.
       if (current && current.revision === item.revision && LIVE.includes(current.status) && !current.paused) {
         this.write({ ...current, status: "doubtful", revision: current.revision + 1,
           // Why it is in doubt, in words, whoever said so: a later record or the user directly.
@@ -96,8 +114,8 @@ export const outcome = {
           against: [...(current.against ?? []), ...f.evidence.map(e => ({ id: e.id, quote: e.quote, reason }))] }, `Outcome showed it was wrong: ${reason}`);
         this.propagate(item.id, "was contradicted by what happened next");
       }
-      this.enqueue("revise", item.id, 0.9, { reasons: [`Its use was shown to be wrong: ${reason}`] });
-      this.stir(trace.request, 0.3, "A delivered memory turned out to be wrong");
+      this.enqueue("revise", item.id, 0.9, { reasons: [`Its use was said to be wrong: ${reason}`] });
+      this.stir(trace.request, 0.3, "A delivered memory was said to be wrong");
     } else if (f.kind === "irrelevant") {
       // Asked when it has been out of place in two scenes, then again only
       // when that number has doubled since the last answer: the scenes it
@@ -105,22 +123,9 @@ export const outcome = {
       const mine = this.feedback().filter(x => x.item === item.id && x.kind === "irrelevant");
       const count = new Set(mine.map(x => x.scene?.scene ?? x.request)).size, last = this.log.state(`revised:${this.owner}:${item.id}`, null);
       if (count >= 2 && count >= 2 * (last?.irrelevant ?? 0))
-        this.enqueue("revise", item.id, 0.6, { reasons: [`It did not belong in ${count} different scenes; its stated scope may be too wide`] });
-    } else if (f.kind === "helped") {
-      // Success outside the scenes it was learned in is the evidence that a
-      // hypothesis has become established scope.
-      const origin = trace.candidates?.find(c => c.item?.id === item.id)?.origin;
-      const last = this.log.state(`revised:${this.owner}:${item.id}`, null);
-      if (["anticipated", "imagined"].includes(origin) && !(last?.widened ?? []).includes(trace.scene?.scene))
-        this.enqueue("revise", item.id, 0.3, { reasons: [`It helped in a scene beyond where it was learned: ${cut(trace.scene?.scene, 160)}`] });
-      // Memories that help together come to mind together.
-      const helped = new Set(this.feedback().filter(x => x.request === trace.request && x.kind === "helped").map(x => x.item));
-      for (const other of helped) if (other !== item.id) {
-        const [a, b] = [item.id, other].sort();
-        const tie = this.links(a).find(l => l.type === "coactive" && l.src === a && l.dst === b);
-        this.link(a, b, "coactive", { weight: (tie?.weight ?? 0) + 1, at: f.at });
-      }
+        this.enqueue("revise", item.id, 0.6, { reasons: [`The user said it did not belong in ${count} different scenes; its stated scope may be too wide`] });
     }
+    // "helped" changes nothing but its own row: it is there to be read ("used, and taken up"), not to make the memory easier to find.
     // An expectation that failed is a surprise; surprises are looked at first.
     if (f.surprise === true) {
       this.raiseSalience(item.id, (this.dynamics(item.id).salience ?? 0) + 0.2, "Its use did not go as expected");
@@ -179,7 +184,8 @@ export const outcome = {
           asked: cut(c.request.content, 800), replied: cut(c.reply?.content, 1200),
           later: c.later.map(evidenceOf),
         }), 1600);
-        return Array.isArray(value?.feedback) ? value.feedback : [];
+        // A model's answer does not get to say who it is by.
+        return Array.isArray(value?.feedback) ? value.feedback.filter(f => f && typeof f === "object").map(({ by, confidence, ...f }) => f) : [];
       };
       // A judge's reading is recorded only when it is confident, and never as
       // "unclear": no record is better than a guessed one.

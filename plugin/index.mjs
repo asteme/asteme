@@ -4,6 +4,7 @@ import { Host } from "./host.mjs";
 import { registerSettings } from "./settings.mjs";
 import { personaPrompt, experiencePrompt, withoutDefaultIdentity, withoutAsteme, mannerPrompt } from "./prompt.mjs";
 import { plain } from "../src/archive.mjs";
+import { isRound } from "../src/core.mjs";
 
 export const name = "asteme";
 // Only what Asteme cannot work without is required here. A service that may
@@ -83,13 +84,24 @@ export async function apply(ctx, input) {
     if (hand(context?.agent?.session?.id)) return { ...assembly, sections: withoutAsteme(assembly.sections) };
     return { ...assembly, sections: withoutDefaultIdentity(assembly.sections) };
   });
+  // What the user asked to be held to is in front of the agent in every session, like its name and its agreements: a private session is
+  // given none of it, nor is any session while memory is off, and one kept to a project is shown only there. A session another agent started
+  // for a piece of its work is given none either (nothing is recalled for it, and the one it works for may be private): the agent that started
+  // it holds them. The persona and asteme_why both go by this.
+  const asksFor = session => {
+    const id = session?.id, delegated = session?.origin === "subagent" || !!session?.parentSession || (session?.delegationDepth ?? 0) > 0;
+    const project = host.projects?.get(id);
+    return host.config.enabled === false || delegated || (id ? host.log.excludes(id) || host.core.quiet(id, project) : host.core.quietByDefault()) ? [] : host.core.standingAsks({ here: project });
+  };
   ctx.effect(
     () =>
       ctx.systemPrompt.section({
         name: "asteme:adopted-persona",
         order: ctx.systemPrompt.getSectionOrder("HARNESS_IDENTITY"),
         interpolate: false,
-        text: (context) => { const way = mannerPrompt(host.log), id = context?.agent?.session?.id; if (!hand(id)) host.spoke(id, !!way); return personaPrompt(host.core.core()) + way; },
+        text: (context) => { const way = mannerPrompt(host.log), id = context?.agent?.session?.id; if (!hand(id)) host.spoke(id, !!way);
+          // The standing asks for this session (asksFor, above).
+          return personaPrompt(host.core.core(), asksFor(context?.agent?.session)) + way; },
       }),
     "asteme.profile",
   );
@@ -151,10 +163,17 @@ export async function apply(ctx, input) {
       isConcurrencySafe: () => true,
       execute: async (args, exec) => {
         if (hand(exec?.agent?.session?.id)) return CLOSED;
+        // A round of the record is what was said, given word for word in the note: there is nothing behind it to show.
+        if (isRound(args.id)) return plain({ id: args.id, kind: "record", rests: "This is a round of an earlier conversation, given word for word in the note. It is what was said that day; nothing else stands behind it." });
         const why = host.core.why(args.id);
         if (!why) throw new Error("Unknown item");
         const { item, history, ...rest } = why;
-        return plain({ id: item.id, text: item.text, status: item.status, level: item.level, tested: item.tested, hypothesis: item.hypothesis, ...rest, history: history.slice(-6) });
+        // Whether it is in front of this session's replies, by the rule the persona is written by: only so many fit, and none where nothing is.
+        const front = host.core.isStanding(item) && asksFor(exec?.agent?.session).some(a => a.id === item.id);
+        return plain({ id: item.id, text: item.text, status: item.status, level: item.level, tested: item.tested, hypothesis: item.hypothesis,
+          ...(host.core.isStanding(item) ? { standing: front ? "The user asked for this to hold from now on; it is kept in front of replies here, not recalled."
+            : "The user asked for this to hold from now on. It is not in front of replies here (more such asks than fit, or none is put in front in this conversation); it is recalled like any memory." } : {}),
+          ...rest, history: history.slice(-6) });
       },
     }),
   );

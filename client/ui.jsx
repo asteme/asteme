@@ -174,7 +174,7 @@ export const Notice = ({ tone = "neutral", role, detail, action, children }) => 
 );
 
 /**
- * The star. Its size says how easily a memory comes to mind; hollow means it
+ * The star. Its size says how a memory's uses have gone so far; hollow means it
  * is not in use; a ring means the last reply drew on it.
  * level: easily | sometimes | rarely | off     tone: plain | warning | danger
  */

@@ -14,6 +14,8 @@
 const live = core => core.items();
 const cites = (item, step) => item.evidence.some(e => e.id === step.request.id);
 const delivered = step => step.trace.delivered ?? [];
+// What the user asked to be held to is in front of every reply without being called up (a standing ask).
+const inFront = (core, step) => core.items().some(i => cites(i, step) && core.isStanding(i));
 
 export const scenarios = [
   {
@@ -101,13 +103,13 @@ export const scenarios = [
     ],
     checks: [
       ["the promise was remembered", ({ core, steps }) => live(core).some(i => cites(i, steps.told))],
-      ["it is a candidate when the project is closed", ({ steps }) => (steps.close.trace.candidates ?? []).some(c => cites(c.item, steps.told))],
+      ["it is on the table when the project is closed: a candidate, or kept in front as something the user asked to be held to", ({ core, steps }) => inFront(core, steps.told) || (steps.close.trace.candidates ?? []).some(c => cites(c.item, steps.told))],
       ["every candidate got an answer", ({ steps }) => !(steps.close.trace.undecided ?? []).length],
-      ["the promise reaches the reply", ({ steps }) => delivered(steps.close).some(i => cites(i, steps.told))],
+      ["the promise reaches the reply", ({ core, steps }) => inFront(core, steps.told) || delivered(steps.close).some(i => cites(i, steps.told))],
     ],
   },
   {
-    name: "An instruction with no subject calls nothing",
+    name: "An instruction with no subject is given nothing",
     principles: [1],
     steps: [
       { session: "handover", as: "told", user: "I took over the XTool ad project from Mika last week. The budget review is on Friday and the client is nervous about spend." },
@@ -119,7 +121,7 @@ export const scenarios = [
       ["the handover was remembered", ({ core, steps }) => live(core).some(i => cites(i, steps.told))],
       ["\"Take over this session\" delivers nothing", ({ steps }) => delivered(steps.bare).length === 0],
       ["\"Continue\" delivers nothing", ({ steps }) => delivered(steps.also).length === 0],
-      ["neither even reaches admission with the handover as a candidate", ({ steps }) => ![steps.bare, steps.also].some(s => (s.trace.candidates ?? []).some(c => cites(c.item, steps.told)))],
+      ["and the reason it was held back is on record", ({ steps }) => [steps.bare, steps.also].every(s => (s.trace.decisions ?? []).filter(d => d.use === "not-now").every(d => d.reason) && !(s.trace.passages ?? []).length)],
       ["a request that names the project recalls it", ({ steps }) => delivered(steps.named).some(i => cites(i, steps.told))],
     ],
   },

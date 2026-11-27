@@ -59,7 +59,7 @@ test("a judge beside the model is recorded for comparison; in judge mode the mod
     select: { decisions: [{ id: item.id, use: "silent", reason: "The memo is for the director", anchor: "memo for the director" }] } }, calls);
   const judge = judgeWith(() => ({ mention: 0, silent: 0.1, leave: 0.9 }));
   const shadow = await w.core.prepare({ request, recent: [request], infer, judge, admission: "shadow" });
-  assert.deepEqual([shadow.delivered.length, shadow.admittedBy], [1, undefined], "the model's decision stands");
+  assert.deepEqual([shadow.delivered.length, shadow.admittedBy], [1, "model"], "the model's decision stands, and the reading says who decided");
   assert.deepEqual(shadow.shadow.decisions, [{ id: item.id, use: "not-now", confidence: 0.9 }], "the judge's answer is kept beside it");
   const report = w.core.report();
   assert.deepEqual(report.data.preparation.shadow, { compared: 1, agree: 0, rate: 0 });
@@ -325,10 +325,12 @@ test("settings from the panel are checked against their bounds; exports go where
   assert.equal(host.log.state("secret:judge"), "must never leave", "the store itself keeps it");
 });
 
-test("one call before the reply reads the scene and decides; a second is made only when the scene calls up something the message did not", async t => {
+test("one call before the reply reads the scene and decides; a second is made only when what was said before names something the message refers to without naming", async t => {
   const w = world(t), calls = [];
   const item = w.learn(w.say(DIRECTOR.text), DIRECTOR);
-  const tea = w.learn(w.say("I have a peanut allergy"), { text: "The user has a peanut allergy", about: "allergy", concrete: "Choosing a recipe for dinner", general: "Cooking a meal for the user" });
+  // Enough other memories that the nearest eight to a message that names nothing do not include the one the scene will name.
+  for (let n = 0; n < 8; n++) w.learn(w.say(`Note ${n} about the build`, `f${n}`), { text: `Build note ${n}`, about: `build ${n}`, concrete: `Fixing bug ${n} in the code`, general: `Reviewing a patch, case ${n}` });
+  const tea = w.learn(w.say("Mika has a peanut allergy"), { text: "Mika has a peanut allergy", about: "allergy", concrete: "Choosing a recipe for dinner", general: "Cooking a meal for a guest", entities: ["Mika"] });
   w.tick();
   // The message itself calls the memory up: one call, no second.
   const request = w.say("Writing a memo for the director about the budget", "s2");
@@ -339,13 +341,28 @@ test("one call before the reply reads the scene and decides; a second is made on
   }, calls);
   const trace = await w.core.prepare({ request, recent: [request], infer, reading: "one" });
   assert.deepEqual([calls.map(c => c.purpose), trace.reading, trace.scene.scene, trace.delivered.map(i => i.id)], [["asteme-read"], "one", "Writing a memo for the director", [item.id]]);
-  // The message alone calls nothing; the scene read from it does: that one is asked about afterwards.
+  // The message alone does not bring it; the scene read from it and from what was said just before names whom it is about: that one, which the
+  // model has not seen yet, is asked about afterwards. What it was shown and gave no answer for is let go, not asked about again.
   calls.length = 0;
-  const vague = w.say("Get me the usual for tonight", "s3");
-  const reads = scripted({ read: { scene: "Choosing a recipe for dinner", need: "", entities: [], decisions: [] },
-    select: input => ({ decisions: input.candidates.map(c => ({ id: c.id, use: "mention", reason: "Food is being chosen", anchor: "the usual" })) }) }, calls);
-  const second = await w.core.prepare({ request: vague, recent: [vague], infer: reads, reading: "one" });
-  assert.deepEqual([calls.map(c => c.purpose), second.askedMore, second.delivered.map(i => i.id)], [["asteme-read", "asteme-select"], 1, [tea.id]]);
+  const before = w.say("Mika is coming over tonight", "s3"); w.say("Lovely. What shall we make?", "s3", "assistant");
+  const vague = w.say("Get her the usual for tonight", "s3");
+  const reads = scripted({ read: { scene: "Choosing a recipe for dinner", need: "", entities: ["Mika"], decisions: [] },
+    select: input => ({ decisions: input.candidates.map(c => ({ id: c.id, use: "mention", reason: "Food is being chosen for her", anchor: "the usual" })) }) }, calls);
+  const second = await w.core.prepare({ request: vague, recent: [before, vague], infer: reads, reading: "one" });
+  assert.ok(!calls[0].input.candidates.some(c => c.id === tea.id), "the message alone did not bring it");
+  assert.deepEqual([calls.map(c => c.purpose), calls[1].input.candidates.map(c => c.id), second.askedMore, second.delivered.map(i => i.id)], [["asteme-read", "asteme-select"], [tea.id], 1, [tea.id]]);
+  assert.equal(second.undecided.length, 8, "what was shown and left unanswered is counted");
+  // A scene that merely resembles something the message did not bring asks for no second call.
+  calls.length = 0;
+  const plain = w.say("Get me the usual for tonight", "s4");
+  const none = await w.core.prepare({ request: plain, recent: [plain], infer: scripted({ read: { scene: "Choosing a recipe for dinner", need: "", entities: [], decisions: [] }, select: { decisions: [] } }, calls), reading: "one" });
+  assert.deepEqual([calls.map(c => c.purpose), none.delivered.length], [["asteme-read"], 0]);
+  // Nor does a name the scene gives that nothing said before this message holds: a model asked for names also gives ones it was not given, and
+  // each used to cost the reply a second call.
+  calls.length = 0;
+  const cold = w.say("Get them the usual for tonight", "s5");
+  const guessed = await w.core.prepare({ request: cold, recent: [cold], infer: scripted({ read: { scene: "Choosing a recipe for dinner", need: "", entities: ["Mika", "user"], decisions: [] }, select: { decisions: [] } }, calls), reading: "one" });
+  assert.deepEqual([calls.map(c => c.purpose), guessed.delivered.length], [["asteme-read"], 0]);
 });
 
 test("when the judge decides, the reply waits for no model at all, and the scene is read afterwards", async t => {
@@ -494,8 +511,9 @@ test("the scenario harness runs with any model ports and reports per scenario; a
   const seen = [];
   const out = await runAll(scenarios.slice(0, 2), { infer, embed, chat: async () => "Understood." }, { onScenario: r => seen.push(r.name) });
   assert.deepEqual([out.scenarios.length, seen.length, out.total > 0, out.passed <= out.total], [2, 2, true, true]);
-  // This scripted model never learns anything, so there is nothing to recall and the reply never waits for a reading.
-  assert.ok(!purposes.includes("asteme-read") && !purposes.includes("asteme-scene") && purposes.includes("asteme-reflect"), "with nothing remembered no reading is made before a reply");
+  // This scripted model never learns anything. The first reply waits for nothing: there is no memory and no record yet. From then on what was
+  // said before can be found as it was said, so a reading is made although nothing was learned.
+  assert.deepEqual([purposes[0], purposes.includes("asteme-read"), purposes.includes("asteme-scene")], ["asteme-reflect", true, false], "with nothing remembered and nothing said before, no reading is made before a reply");
   const w = world(t);
   const item = w.learn(w.say(DIRECTOR.text), DIRECTOR);
   w.core.write({ ...w.core.item(item.id), paused: true, revision: 2 }, "User pause");
@@ -552,9 +570,10 @@ test("a candidate the model left unanswered is not asked about again when a judg
   assert.deepEqual(sure.purposes, ["asteme-read"], "one call, and the reply goes on");
   assert.deepEqual([sure.trace.delivered.map(i => i.id), sure.trace.settledByJudge], [[a.id], 1]);
   assert.equal(sure.trace.decisions.find(d => d.id === b.id).by, "judge");
-  // A judge that is not sure, or that would pass it, does not decide: the model is asked.
+  // A judge that would not use it, only not surely enough to settle it, does not keep the reply waiting either: it is let go, and counted.
   const unsure = await run({ mention: 0.2, silent: 0.15, leave: 0.65 });
-  assert.deepEqual(unsure.purposes, ["asteme-read", "asteme-select"]);
+  assert.deepEqual(unsure.purposes, ["asteme-read"]);
+  // A judge that would pass it does not decide: the model is asked.
   const would = await run({ mention: 0.1, silent: 0.8, leave: 0.1 });
   assert.deepEqual(would.purposes, ["asteme-read", "asteme-select"]);
   assert.deepEqual(would.trace.delivered.map(i => i.id), [a.id], "the judge's yes passes nothing by itself");
@@ -569,7 +588,7 @@ test("a judge is asked a stricter question about a private record: whether the m
   assert.match(asked[0].c2.instructions, /note_2 is about a private matter\. Does the message itself raise that matter, or does the note say the user wants it/);
 });
 
-test("with a judge beside it, a weak match the model said nothing about is asked about again unless the judge is sure it does not belong", async t => {
+test("with a judge beside it, a candidate the model said nothing about is asked about again unless the judge is sure it does not belong", async t => {
   // Seen with a real model: the lesson was a candidate with a weak fit, the
   // one-call answer carried no decision for it, and nothing was delivered.
   const embed = async texts => texts.map(text => /greeting|small talk|acknowledgement|continue whatever/i.test(text) ? [1, 0, 0] : /CUE/.test(text) ? [0.8, 0.6, 0] : [0.8, 0.3, 0.5196]);
@@ -587,13 +606,13 @@ test("with a judge beside it, a weak match the model said nothing about is asked
   };
   const says = p => async (state, questions) => Object.fromEntries(Object.keys(questions).map(k => [k, { probabilities: p }]));
   const none = await run(undefined);
-  assert.equal(none.trace.candidates[0].fit, "weak");
-  assert.deepEqual([none.purposes, none.trace.delivered.length], [["asteme-read"], 0], "without a judge a weak match left unanswered is let go");
+  assert.deepEqual([none.trace.candidates[0].rank, "fit" in none.trace.candidates[0]], [1, false]);
+  assert.deepEqual([none.purposes, none.trace.delivered.length, none.trace.undecided], [["asteme-read"], 0, [a.id]], "without a judge what the model saw and left unanswered is let go, and counted");
   const open = await run(says({ mention: 0.1, silent: 0.8, leave: 0.1 }));
   assert.deepEqual([open.purposes, open.trace.delivered.map(i => i.id)], [["asteme-read", "asteme-select"], [a.id]], "the judge does not rule it out, so the model is asked, and the model's answer is what delivers");
   const shut = await run(says({ mention: 0.02, silent: 0.03, leave: 0.95 }));
   assert.deepEqual([shut.purposes, shut.trace.delivered.length, shut.trace.settledByJudge], [["asteme-read"], 0, 1]);
-  // A weak match the judge would not use either, only not surely enough to settle it, does not keep the reply waiting for a second call.
+  // One the judge would not use either, only not surely enough to settle it, does not keep the reply waiting for a second call.
   const away = await run(says({ mention: 0.2, silent: 0.15, leave: 0.65 }));
   assert.deepEqual([away.purposes, away.trace.delivered.length, away.trace.letGo], [["asteme-read"], 0, 1]);
 });
@@ -762,12 +781,14 @@ test("taking back the record a use was read from takes what was learned from it 
   const theirs = w.learn(w.say("Reports for the clinic go out on Monday", "b"), { text: "Clinic reports go out on Monday", about: "clinic", concrete: "Writing the clinic report for a busy board", general: "Writing a report for a busy executive" });
   const scene = "memo";
   // The same four-letter scene, learned from two separate uses: one of each memory.
+  // A scene is learned from a use where the memory was needed and did not come.
   const use = async (item, session, word) => {
     w.tick(86400000);
-    await w.attend(`Handle ${word}`, { session, scene, admit: [{ id: item.id, anchor: word }] });
+    const { trace } = await w.attend(`Handle ${word}`, { session, scene, admit: [] });
     w.say("Done.", session, "assistant"); w.tick(120000);
-    const later = w.say(`That worked for ${word}`, session);
-    await w.settle(later, { kind: "helped", applied: "yes", reply_quote: "Done" });
+    const later = w.say(`You should have remembered that for ${word}`, session);
+    const read = w.core.assess([{ trace: trace.id, item: item.id, kind: "missed", reason: "It was needed there", evidence: w.quote(later) }], [later], w.core.items(), [trace]);
+    assert.equal(read.applied.length, 1, JSON.stringify(read.rejected));
     return later;
   };
   const mineLater = await use(mine, "m1", "mine");

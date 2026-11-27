@@ -475,6 +475,18 @@ const message = (m, fresh) => {
       }
     });
   }
+  if (m.record?.length) {
+    const more = el("button", "used muted", say("brainUsedRecord", { n: m.record.length }));
+    more.type = "button";
+    more.onclick = () => {
+      const open = said.querySelector(".record-list");
+      if (open) return open.remove();
+      const list = el("ul", "used-list record-list muted");
+      for (const r of m.record) list.append(el("li", null, `${when(r.at)}: ${r.said}`));
+      said.append(list);
+    };
+    said.append(more);
+  }
   if (m.used?.length) {
     const more = el("button", "used muted", say("brainUsed", { n: m.used.length }));
     more.type = "button";

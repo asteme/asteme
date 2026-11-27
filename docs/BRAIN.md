@@ -44,7 +44,7 @@ A DSH session is an agent at work: tool calls and their output fill its context,
 What is in front of the model at any one moment:
 
 1. the last records of the thread (`recent`), each shown briefly, the one being answered whole;
-2. what memory brings for this scene, decided in the same call;
+2. what memory brings for this scene, decided in the same call: the memories nearest to what is being said, the rounds of earlier conversation nearest to it as they were said (`record`), and what the user asked to be held to (`core.standing`: in every conversation that is remembered, up to twenty-four of them, the most recent first);
 3. `earlier`: one line for each exchange before those, already read into memory, with its time;
 4. the state of work that is out, and anything searched for on purpose.
 
@@ -84,7 +84,7 @@ What cannot be removed: a change in the world that nobody announces (a mail arri
 
 ## The page
 
-The page is a sky, and nothing on it is decoration. Each star is one memory in the store, placed by its id, as bright as it comes to mind. A lesson is joined to the cases it was drawn from. When a reply used memories, those stars light and a line is drawn to them from where the words appear. Work that is out is a point going round until it comes back. Asleep, the sky dims and turns slowly about its pole. A new memory comes in as a shooting star and lands in its place (`comets`; three at most at a time, none with motion turned down or with `look.comet` off, when it simply appears). A private memory is a star without words until it is clicked.
+The page is a sky, and nothing on it is decoration. Each star is one memory in the store, placed by its id, as bright as its uses have gone. A lesson is joined to the cases it was drawn from. When a reply used memories, those stars light and a line is drawn to them from where the words appear. Work that is out is a point going round until it comes back. Asleep, the sky dims and turns slowly about its pole. A new memory comes in as a shooting star and lands in its place (`comets`; three at most at a time, none with motion turned down or with `look.comet` off, when it simply appears). A private memory is a star without words until it is clicked.
 
 There are no pages to go to. What is on the page opens what lies behind it, beside the conversation and never instead of it: a star opens that memory (its words, what it rests on, and what can be done with it); the count opens all of them with a search; its name opens who it is; the word for its state opens what it has been doing. What it would like settled is asked in the conversation itself, one question at a time.
 
@@ -100,7 +100,7 @@ What is drawn there is every memory in use, and each choice says something that 
 
 - **Where**: all around you, by when it was learned. The newest are nearest the middle and the oldest furthest out, in every direction and at an even density, so the sky grows with what is learned instead of getting crowded, and looking further out is looking further back whichever way you look. You are set down inside it (a young sky, too thin to stand in, is met from just outside). It is not a galaxy seen from above: that is a picture of somebody else's sky.
 - **Together**: a lesson holds the cases it was drawn from around it, joined by lines.
-- **How bright**: how easily it comes to mind (the same number recall uses). How near is only where you stand: the sky is seen in perspective, with a wide eye, and what is far is small but does not go out.
+- **How bright**: how its uses have gone so far (taken up, needed and missed, said to be out of place or wrong). Recall does not read this number: what comes to mind is decided by nearness, so that how a use was received cannot make a memory harder to find. How near is only where you stand: the sky is seen in perspective, with a wide eye, and what is far is small but does not go out.
 - **What shape**: a ring is a matter still open, a cross is a lesson.
 
 This was designed for this data and not taken from a graph view. A force-directed graph places things by their links and means nothing where there are few links, which is most memories; here the place itself carries when, and the links carry what was learned from what.

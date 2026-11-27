@@ -5,7 +5,7 @@
 // messages.
 import React, { useEffect, useState } from "react";
 import { formatDateTime } from "./format.mjs";
-import { calledWord, inUse, keepsWord, kindWord, outcomeTitle, recallLevel, recallReason, say, sharesSources, stateWord, verdictWord, reasonWord } from "./words.mjs";
+import { calledWord, inFront, inUse, standingOff, standingOver, keepsWord, kindWord, outcomeTitle, recallLevel, recallReason, say, sharesSources, stateWord, verdictWord, reasonWord } from "./words.mjs";
 import { Button, Chip, Confirm, Disclosure, Facts, Notice, Section, Skeleton, Star, TextLink, Trace, TracePoint, useConfirm } from "./ui.jsx";
 
 /** Loads the full account. The snapshot already holds enough to show the page at once; this fills in the rest. */
@@ -35,7 +35,7 @@ function Sources({ item, why, ctx }) {
   const supports = why?.supports ?? item.evidence.map(e => ({ id: e.id, quote: e.quote }));
   const who = role => role === "user" ? t("you") : role === "assistant" ? t("theAssistant") : role === "tool" ? t("aTool") : "";
   return (
-    <Section title={t("restsOn")} lead={t(item.level === "lesson" ? "restsOnLessonLead" : "restsOnLead")}>
+    <Section title={t("restsOn")} lead={t(inFront(item) ? "restsOnStandingLead" : item.level === "lesson" ? "restsOnLessonLead" : "restsOnLead")}>
       <Trace>
         {full?.status === "ready"
           ? full.events.map(e => (
@@ -124,7 +124,7 @@ export function MemoryDetail({ id, snapshot: s, ctx }) {
     <article className="ast-account">
       <header className="ast-account__head">
         <p className="ast-account__kind">
-          <Star level={level} tone={item.status === "doubtful" && live ? "warning" : "plain"} lit={used} />
+          <Star level={live && inFront(item) ? "easily" : level} tone={item.status === "doubtful" && live ? "warning" : "plain"} lit={used} />
           {kindWord(t, item)}
           <Chip tone={item.status === "doubtful" && live ? "warning" : "neutral"}>{stateWord(t, item)}</Chip>
           {used && <Chip tone="lit">{t("usedLast")}</Chip>}
@@ -153,8 +153,8 @@ export function MemoryDetail({ id, snapshot: s, ctx }) {
         ]} />
       </Section>
 
-      <Section title={t("comesToMind")} lead={!live ? t("notRecalled") : recallReason(t, item) ? `${t("recall_" + level)}: ${recallReason(t, item)}.` : `${t("recall_" + level)}.`}>
-        {pending ? <Skeleton lines={3} /> : why && (
+      <Section title={t("comesToMind")} lead={!live ? t("notRecalled") : inFront(item) ? t("comesStanding") : standingOff(item) ? t("comesStandingOff") : standingOver(item) ? t("comesStandingOver") : t("comesNear")}>
+        {pending ? <Skeleton lines={3} /> : why && !(live && inFront(item)) && (
           <ul className="ast-scenes">
             {why.recall.answersTo.map(c => <li key={"+" + c.scene}><span className="ast-scenes__mark" aria-hidden="true" />{c.scene}<span className="ast-soft"> ({calledWord(t, c.because)})</span></li>)}
             {why.recall.staysOutOf.map(c => <li key={"-" + c.scene} className="ast-scenes__out"><span className="ast-scenes__mark" aria-hidden="true" />{say(t, "staysOut", { scene: c.scene })}</li>)}
@@ -162,7 +162,7 @@ export function MemoryDetail({ id, snapshot: s, ctx }) {
         )}
       </Section>
 
-      <Section title={t("useSoFar")}>
+      <Section title={t("useSoFar")} lead={live && recallReason(t, item) ? `${t("recall_" + level)}: ${recallReason(t, item)}.` : undefined}>
         {pending ? <Skeleton lines={2} /> : !why?.outcomes.length ? <p className="ast-empty">{t("noUseYet")}</p> : (
           <Trace>
             {why.outcomes.map((o, n) => (

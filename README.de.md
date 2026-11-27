@@ -48,7 +48,11 @@ Gedächtnis für ein Sprachmodell ist meistens eine Suche: Text, der der Nachric
 
 **Die Situation erinnert, nicht der Wortlaut.** Du hast einmal ein Memo korrigiert: „Die Entscheidung zuerst, die Direktorin liest nur drei Zeilen.“ Tage später bittest du um eine Seite Präsentation für einen Investor. Kein Wort ist gemeinsam, aber es ist dieselbe Situation (ein Leser mit wenig Zeit, der entscheiden muss), und die Erinnerung kommt zurück.
 
-**Die Nutzung schreibt die Erinnerung um.** Nachdem eine Erinnerung genutzt wurde, wird aus dem, was du als Nächstes sagst, gelesen, wie es lief. Eine, die geholfen hat, kommt leichter in den Sinn. Eine, die fehl am Platz war, bleibt aus dieser Art von Situation heraus und wirkt anderswo weiter. Nichts verblasst, weil es alt ist, und nichts wird gelöscht, weil der Speicher gewachsen ist.
+**Was du gesagt hast, wird so gefunden, wie du es gesagt hast.** Neben dem, was es gelernt hat, werden auch die Gespräche selbst durchsucht, in der Sprache, in der sie geführt wurden. Ein Datum, eine Zahl, die Reihenfolge der Ereignisse, was Asteme selbst dir letzten Monat gesagt hat: Das kommt in den Worten zurück, die damals gebraucht wurden, zusammen mit dem Tag.
+
+**Was du ihm aufträgst einzuhalten, bleibt vor Augen.** „Wenn ich nach einem Rezept frage, prüfe es auf Erdnüsse.“ „Wenn ich gerade einem Kunden einen Termin versprechen will, erinnere mich daran, zuerst Mira zu fragen.“ So ein Auftrag wird nicht dem Gedächtnis überlassen: Er steht vor jeder Antwort, wird dir gezeigt und endet, wenn du es sagst.
+
+**Was du sagst, verändert die Erinnerung; wie du es aufgenommen hast, nicht.** Sag ihm, dass eine Erinnerung falsch ist, und sie wird noch einmal angesehen. Sag ihm, dass eine nicht in eine bestimmte Art von Situation gehört, und sie bleibt aus solchen Situationen heraus. Wenn etwas gebraucht wurde, aber nicht in den Sinn kam, lernt es, es dort abzurufen. Es schroff anzusprechen ändert nichts: Eine Erinnerung, um die du gebeten hast, verstummt nicht, weil sie einmal unerwünscht war. Nichts verblasst, weil es alt ist, und nichts wird gelöscht, weil der Speicher gewachsen ist.
 
 **Jede Erinnerung endet bei deinen eigenen Worten.** Jede behält den genauen Satz, aus dem sie stammt. Öffne eine Erinnerung, und du siehst, worauf sie beruht, wo sie gilt, jedes Mal, wenn sie genutzt wurde und wie das lief, und jede Änderung an ihr. Wenn du sagst, etwas sei falsch, gilt dein Wort über dem des Modells.
 
@@ -56,7 +60,7 @@ Gedächtnis für ein Sprachmodell ist meistens eine Suche: Text, der der Nachric
 
 **Es spricht von sich aus.** Etwas, das dir unangenehm war, bleibt ihm im Kopf, ohne feste Zeit. Wenn du nach einer Weile zurückkommst, kann es fragen, wie es gelaufen ist, oder nichts sagen: das entscheidet es selbst, und was es behält, siehst du, und du kannst es zurücknehmen.
 
-**Es zeigt, was es sich merkt.** Jede Erinnerung ist ein Stern an einem Himmel hinter dem Gespräch, heller, wenn sie leicht in den Sinn kommt. Pack den leeren Himmel an, und du bist mitten unter ihnen.
+**Es zeigt, was es sich merkt.** Jede Erinnerung ist ein Stern an einem Himmel hinter dem Gespräch, umso heller, je mehr sie von Nutzen war. Pack den leeren Himmel an, und du bist mitten unter ihnen.
 
 ## In einer Minute ausprobieren
 
@@ -75,9 +79,9 @@ Day 1. The user corrects a memo.
   stored as a case; the exchange stood out (salience 0.55) because it was a correction
 Day 3. A request with none of the memo's words: a one-pager for an investor.
   recalled by the scene: "Writing a memo for the director"
-  it helped; accessibility 0.7453
+  the user said it helped; that is kept to be read, and changes nothing about what is recalled
 Day 4. The same memory is used where it does not belong: notes for the team.
-  marked out of place there; accessibility 0.605
+  the user said it does not belong there; it will stay out of scenes like that one
 Night. Sleep.
   integrate: one lesson drawn from two cases
 ```
@@ -147,7 +151,7 @@ await brain.rest();                                                // when idle
 ## Das Gespräch
 
 - **Der Anfang.** Ein neuer Speicher, oder ein geleerter, hat noch niemanden darin. Einmal, vor dem Gespräch, fragt es nach einem Namen, wie es dich nennen soll und wie es mit dir sprechen soll (alles davon kann leer bleiben, oder ganz übersprungen werden), und dann wird es geweckt. Geweckt und benannt zu werden ist seine erste Erinnerung: Dieser Stern fällt in den leeren Himmel, bleibt in dessen Mitte als der hellste, und dann spricht es zuerst.
-- **Sterne.** Ein Stern ist eine Erinnerung; die neueste ist nahe der Mitte, die älteste weit draußen, und die, die leicht in den Sinn kommen, leuchten am hellsten. Zieh den leeren Himmel, zoom ihn mit zwei Fingern oder doppelklicke ihn, um hineinzugehen; Ziehen bewegt, das Rad führt zwischen ihnen hindurch (vor und zurück, so weit der Himmel reicht), Shift-Ziehen dreht. Wie weit es auch gedreht wurde, ein Ziehen bewegt weiter, was unter der Hand liegt; `0` oder „Himmel ausrichten“ stellt es wieder richtig hin. Etwas neu Gelerntes fällt als Sternschnuppe in den Himmel (das lässt sich abschalten).
+- **Sterne.** Ein Stern ist eine Erinnerung; die neueste ist nahe der Mitte, die älteste weit draußen, und die, die am meisten von Nutzen waren, leuchten am hellsten. Zieh den leeren Himmel, zoom ihn mit zwei Fingern oder doppelklicke ihn, um hineinzugehen; Ziehen bewegt, das Rad führt zwischen ihnen hindurch (vor und zurück, so weit der Himmel reicht), Shift-Ziehen dreht. Wie weit es auch gedreht wurde, ein Ziehen bewegt weiter, was unter der Hand liegt; `0` oder „Himmel ausrichten“ stellt es wieder richtig hin. Etwas neu Gelerntes fällt als Sternschnuppe in den Himmel (das lässt sich abschalten).
 - **Suche.** Tippe ins Suchfeld, und die passenden Sterne kommen einer nach dem anderen in einem lockeren Bogen herbei. Rad oder ↑↓ bewegt durch sie, Enter oder ein Klick öffnet einen, und die übrigen bleiben blass im Himmel.
 - **Eine Erinnerung.** Öffne einen Stern, um seine Worte zu sehen, worauf er beruht, wann er gelernt wurde, und um zu sagen, dass er noch gilt, nicht mehr gilt, ihn zu pausieren oder ihn mit seinen Quellen zu vergessen.
 - **Versprechen.** Ein Versprechen ist eine Zeile unter der Antwort, die es gegeben hat, beim nächsten Mal im Kopfbereich, und es lässt sich absagen, indem du es sagst.
@@ -171,7 +175,7 @@ flowchart LR
   O --> R
 ```
 
-Vor einer Antwort ruft die Nachricht Erinnerungen nach Bedeutung ab, und ein Modellaufruf liest die Situation und entscheidet, welche dazugehören. Nach der Antwort wird der Austausch in die Erinnerung gelesen, und dein Satz bleibt als Grundlage für alles Gelernte stehen. Später wird aus dem, was du als Nächstes schreibst, gelesen, wie jede genutzte Erinnerung ausgegangen ist, und das verändert, was nächstes Mal abgerufen wird. Wenn nichts zu tun ist, liest es Austausche neu, die herausgestochen sind (eine Korrektur, eine Überraschung, ein Versprechen), vergleicht Erinnerungen, die sich widersprechen oder dasselbe zweimal sagen könnten (und behält dann eine davon), und zieht Lehren aus getrennten Anlässen.
+Vor einer Antwort ruft die Nachricht ab, was ihr in der Bedeutung am nächsten liegt: Erinnerungen und Runden früherer Gespräche, so wie sie gesagt wurden. Ein Modellaufruf liest die Situation und entscheidet, was davon dazugehört. Nach der Antwort wird der Austausch in die Erinnerung gelesen, und dein Satz bleibt als Grundlage für alles Gelernte stehen. Später wird aus dem, was du als Nächstes schreibst, gelesen, was du über eine genutzte Erinnerung sagst: dass sie falsch ist oder dort nicht hingehört. Das verändert sie; ob du zufrieden warst, nicht. Wenn nichts zu tun ist, liest es Austausche neu, die herausgestochen sind (eine Korrektur, eine Überraschung, ein Versprechen), vergleicht Erinnerungen, die sich widersprechen oder dasselbe zweimal sagen könnten (und behält dann eine davon), und zieht Lehren aus getrennten Anlässen.
 
 Der Code entscheidet nie, was etwas bedeutet. Er prüft Struktur: dass ein Zitat genau ist, dass eine ID existiert, dass sich eine Revision nicht bewegt hat. Die Bedeutung bleibt beim Modell, und alles, was das Modell schreibt, muss auf einen gespeicherten Datensatz zeigen.
 

@@ -48,7 +48,11 @@ A memória para um modelo de linguagem é, na maioria das vezes, uma busca: o te
 
 **Quem lembra é a situação, não as palavras.** Certa vez você corrigiu um memorando: “coloque a decisão primeiro, a diretora só lê três linhas”. Dias depois, você pede uma página de apresentação para um investidor. Nenhuma palavra em comum, mas é a mesma situação (um leitor com pouco tempo que precisa decidir), e a lembrança volta.
 
-**O uso reescreve a memória.** Depois que uma lembrança é usada, o que você diz em seguida é lido para saber como foi. A que ajudou vem à mente com mais facilidade. A que ficou fora de lugar permanece fora desse tipo de situação e continua valendo em outros lugares. Nada se apaga por ser antigo, e nada é excluído porque o armazenamento cresceu.
+**O que você disse é encontrado do jeito que você disse.** Além do que ela aprendeu, as próprias conversas são pesquisadas, no idioma em que aconteceram. Uma data, um número, a ordem em que as coisas aconteceram, o que o próprio Asteme disse a você no mês passado: tudo volta nas palavras que foram usadas, com o dia.
+
+**O que você pede para ela seguir fica sempre à vista.** “Sempre que eu pedir uma receita, confira se tem amendoim.” “Se eu estiver prestes a prometer uma data a um cliente, me lembre de perguntar à Mira primeiro.” Um pedido assim não fica por conta da memória: ele está diante dela em toda resposta, é mostrado a você e termina quando você disser.
+
+**O que você diz muda a memória; a sua reação, não.** Diga que uma lembrança está errada e ela é examinada de novo. Diga que uma não cabe em um tipo de situação e ela fica fora de situações assim. Quando algo era necessário e não veio, ela aprende a trazê-lo nessa situação. Ser seco com ela não muda nada: um lembrete que você pediu não se cala porque uma vez incomodou. Nada se apaga por ser antigo, e nada é excluído porque o armazenamento cresceu.
 
 **Toda lembrança termina nas suas próprias palavras.** Cada uma guarda a frase exata de onde veio. Abra uma lembrança e você vê em que ela se apoia, onde se aplica, cada vez que foi usada e como foi, e cada mudança feita nela. Se você diz que algo está errado, a sua palavra vale mais que a do modelo.
 
@@ -56,7 +60,7 @@ A memória para um modelo de linguagem é, na maioria das vezes, uma busca: o te
 
 **Ela fala por conta própria.** Algo que incomodava você fica na cabeça dela sem hora marcada. Quando você volta depois de um tempo, ela pode perguntar como foi, ou não dizer nada: é ela quem decide, e o que ela guarda fica à sua vista e você pode retirar.
 
-**Ela mostra o que lembra.** Cada lembrança é uma estrela num céu atrás da conversa, mais brilhante quando vem à mente com facilidade. Segure o céu vazio e você está entre elas.
+**Ela mostra o que lembra.** Cada lembrança é uma estrela num céu atrás da conversa, mais brilhante quanto mais tiver sido útil. Segure o céu vazio e você está entre elas.
 
 ## Experimente em um minuto
 
@@ -75,9 +79,9 @@ Day 1. The user corrects a memo.
   stored as a case; the exchange stood out (salience 0.55) because it was a correction
 Day 3. A request with none of the memo's words: a one-pager for an investor.
   recalled by the scene: "Writing a memo for the director"
-  it helped; accessibility 0.7453
+  the user said it helped; that is kept to be read, and changes nothing about what is recalled
 Day 4. The same memory is used where it does not belong: notes for the team.
-  marked out of place there; accessibility 0.605
+  the user said it does not belong there; it will stay out of scenes like that one
 Night. Sleep.
   integrate: one lesson drawn from two cases
 ```
@@ -147,7 +151,7 @@ await brain.rest();                                                // when idle
 ## A conversa
 
 - **O começo.** Um armazenamento novo, ou um apagado, ainda não tem ninguém dentro. Uma vez, antes da conversa, ela pergunta um nome, como chamar você e como falar com você (qualquer parte pode ficar vazia, ou tudo pode ser pulado), e então é despertada. Ser despertada e receber um nome é a primeira lembrança dela: essa estrela cai no céu vazio, fica no meio dele como a mais brilhante, e então ela fala primeiro.
-- **Estrelas.** Uma estrela é uma lembrança; a mais nova fica perto do centro, a mais antiga longe, e as que vêm à mente com facilidade brilham mais. Arraste o céu vazio, faça pinça ou dê dois cliques para entrar; arrastar move, a roda avança por entre elas (e recua, até onde o céu vai), Shift+arrastar gira. Por mais que tenha sido girado, um puxão ainda move o que está sob a mão; `0` ou “Nivelar o céu” coloca tudo no lugar certo de novo. Algo recém-aprendido cai no céu como estrela cadente (isso pode ser desligado).
+- **Estrelas.** Uma estrela é uma lembrança; a mais nova fica perto do centro, a mais antiga longe, e as que foram mais úteis brilham mais. Arraste o céu vazio, faça pinça ou dê dois cliques para entrar; arrastar move, a roda avança por entre elas (e recua, até onde o céu vai), Shift+arrastar gira. Por mais que tenha sido girado, um puxão ainda move o que está sob a mão; `0` ou “Nivelar o céu” coloca tudo no lugar certo de novo. Algo recém-aprendido cai no céu como estrela cadente (isso pode ser desligado).
 - **Busca.** Digite na caixa de busca e as estrelas que combinam vêm até ela, uma de cada vez, num arco solto. A roda ou ↑↓ passa por elas, Enter ou um clique abre uma, e as outras ficam fracas no céu.
 - **Uma lembrança.** Abra uma estrela para ver suas palavras, em que ela se apoia, quando foi aprendida, e para dizer que ainda é verdadeira, que não é mais, pausá-la, ou esquecê-la com as fontes.
 - **Promessas.** Uma promessa é uma linha embaixo da resposta que a fez, na próxima vez no cabeçalho, e pode ser cancelada dizendo isso.
@@ -171,7 +175,7 @@ flowchart LR
   O --> R
 ```
 
-Antes de uma resposta, a mensagem chama lembranças pelo significado, e uma chamada de modelo lê a situação e decide quais pertencem a ela. Depois da resposta, a troca é lida para a memória, e a sua frase fica como base de tudo o que for aprendido. Mais tarde, o que você escreve em seguida é lido para saber como cada lembrança usada se saiu, e isso muda o que será trazido da próxima vez. Enquanto não há nada a fazer, ela relê trocas que se destacaram (uma correção, uma surpresa, uma promessa), compara lembranças que podem discordar ou dizer a mesma coisa duas vezes (e então fica com uma) e tira lições de ocasiões separadas.
+Antes de uma resposta, a mensagem chama o que está mais perto dela em significado: lembranças e rodadas de conversas anteriores nas palavras em que aconteceram. Uma chamada de modelo lê a situação e decide quais delas pertencem a ela. Depois da resposta, a troca é lida para a memória, e a sua frase fica como base de tudo o que for aprendido. Mais tarde, o que você escreve em seguida é lido para saber o que você diz sobre uma lembrança usada: que ela está errada ou que não cabe ali. Isso a muda; ter agradado você, não. Enquanto não há nada a fazer, ela relê trocas que se destacaram (uma correção, uma surpresa, uma promessa), compara lembranças que podem discordar ou dizer a mesma coisa duas vezes (e então fica com uma) e tira lições de ocasiões separadas.
 
 O código nunca decide o que algo significa. Ele confere estrutura: que uma citação seja exata, que um id exista, que uma revisão não tenha se movido. O significado fica com o modelo, e tudo o que o modelo escreve tem de apontar para um registro guardado.
 

@@ -48,7 +48,11 @@ La memoria para un modelo de lenguaje es casi siempre una búsqueda: se trae el 
 
 **Lo que recuerda es la situación, no las palabras.** Una vez corregiste un memorando: «pon la decisión primero, la directora solo lee tres líneas». Días después pides una página para un inversor. No comparten ninguna palabra, pero es la misma situación (un lector con poco tiempo que tiene que decidir), y el recuerdo vuelve.
 
-**El uso reescribe la memoria.** Después de usar un recuerdo, se lee lo que dices a continuación para saber cómo fue. El que ayudó viene a la mente con más facilidad. El que estuvo fuera de lugar no vuelve a aparecer en ese tipo de situación y sigue sirviendo en las demás. Nada se desvanece por ser antiguo, y nada se borra porque el almacén haya crecido.
+**Lo que dijiste se encuentra tal como lo dijiste.** Junto a lo que ha aprendido, se buscan las propias conversaciones, en el idioma en que se mantuvieron. Una fecha, un número, el orden en que ocurrieron las cosas, lo que el propio Asteme te dijo el mes pasado: vuelven con las palabras que se usaron y con el día.
+
+**Lo que le pides que respete se mantiene a la vista.** «Siempre que te pida una receta, comprueba si lleva cacahuetes». «Si estoy a punto de prometerle una fecha a un cliente, recuérdame que pregunte primero a Mira». Una petición así no se deja en manos de la memoria: está presente antes de cada respuesta, se te muestra y termina cuando tú lo dices.
+
+**Lo que dices cambia la memoria; cómo te lo tomaste, no.** Dile que un recuerdo está mal y se vuelve a examinar. Dile que uno no corresponde a cierto tipo de situación y se mantendrá fuera de situaciones así. Cuando algo hacía falta y no vino a la mente, aprende a recordarlo en ese caso. Hablarle con brusquedad no cambia nada: un recordatorio que pediste no se calla porque una vez resultó inoportuno. Nada se desvanece por ser antiguo, y nada se borra porque el almacén haya crecido.
 
 **Cada recuerdo termina en tus propias palabras.** Cada uno conserva la frase exacta de la que salió. Abre un recuerdo y ves en qué se apoya, dónde se aplica, cada vez que se usó y cómo fue, y cada cambio que se le hizo. Si dices que algo está mal, tu palabra pesa más que la del modelo.
 
@@ -56,7 +60,7 @@ La memoria para un modelo de lenguaje es casi siempre una búsqueda: se trae el 
 
 **Habla por su cuenta.** Algo que te inquietaba se le queda en la cabeza, sin hora fijada. Cuando vuelves al cabo de un rato puede preguntarte cómo fue, o no decir nada: eso lo decide por sí mismo, y lo que guarda lo ves tú y puedes retirarlo.
 
-**Muestra lo que recuerda.** Cada recuerdo es una estrella en un cielo detrás de la conversación, más brillante cuanto más fácil viene a la mente. Agarra el cielo vacío y estarás entre ellas.
+**Muestra lo que recuerda.** Cada recuerdo es una estrella en un cielo detrás de la conversación, más brillante cuanto más ha servido. Agarra el cielo vacío y estarás entre ellas.
 
 ## Pruébalo en un minuto
 
@@ -147,7 +151,7 @@ await brain.rest();                                                // when idle
 ## La conversación
 
 - **El principio.** Un almacén nuevo, o uno borrado del todo, todavía no tiene a nadie dentro. Una vez, antes de la conversación, pide un nombre, cómo llamarte y cómo hablarte (cualquiera de las tres cosas puede quedarse vacía, o saltarse todo) y entonces se le despierta. Que lo despierten y le den un nombre es su primer recuerdo: esa estrella cae en el cielo vacío, se queda en su centro como la más brillante, y después habla primero.
-- **Estrellas.** Una estrella es un recuerdo; los más nuevos están cerca del centro, los más antiguos lejos, y los que vienen fácil a la mente brillan más. Arrastra el cielo vacío, pellizca o haz doble clic para entrar; arrastra para mover, usa la rueda para avanzar entre ellas (y retroceder, hasta donde llega el cielo) y Mayús+arrastrar para girar. Por mucho que se haya girado, un tirón sigue moviendo lo que está bajo la mano; `0` o «Nivelar el cielo» lo pone derecho otra vez. Lo que se aprende de nuevo cae al cielo como una estrella fugaz (esto se puede desactivar).
+- **Estrellas.** Una estrella es un recuerdo; los más nuevos están cerca del centro, los más antiguos lejos, y los que más han servido brillan más. Arrastra el cielo vacío, pellizca o haz doble clic para entrar; arrastra para mover, usa la rueda para avanzar entre ellas (y retroceder, hasta donde llega el cielo) y Mayús+arrastrar para girar. Por mucho que se haya girado, un tirón sigue moviendo lo que está bajo la mano; `0` o «Nivelar el cielo» lo pone derecho otra vez. Lo que se aprende de nuevo cae al cielo como una estrella fugaz (esto se puede desactivar).
 - **Búsqueda.** Escribe en el cuadro de búsqueda y las estrellas que coinciden vienen hacia él, de una en una, en un arco suelto. La rueda o ↑↓ avanza entre ellas, Intro o un clic abre una, y el resto se queda tenue en el cielo.
 - **Un recuerdo.** Abre una estrella para ver sus palabras, en qué se apoya, cuándo se aprendió, y para decir que sigue siendo cierto, que ya no lo es, ponerlo en pausa u olvidarlo con sus fuentes.
 - **Promesas.** Una promesa es una línea bajo la respuesta que la hizo, la próxima vez en la cabecera, y se puede cancelar diciéndolo.
@@ -171,7 +175,7 @@ flowchart LR
   O --> R
 ```
 
-Antes de una respuesta, el mensaje llama a los recuerdos por significado, y una llamada al modelo lee la situación y decide cuáles corresponden. Después de la respuesta, el intercambio se lee hacia la memoria, y tu frase se guarda como base de lo que se aprenda. Más tarde, lo que escribes a continuación se lee para ver cómo salió cada recuerdo usado, y eso cambia lo que se recordará la próxima vez. Cuando está libre, relee los intercambios que destacaron (una corrección, una sorpresa, una promesa), compara recuerdos que pueden contradecirse o decir dos veces lo mismo (y entonces se queda con uno) y saca lecciones de ocasiones distintas.
+Antes de una respuesta, el mensaje trae lo más cercano a él por significado: recuerdos y turnos de conversaciones anteriores tal como se dijeron. Una llamada al modelo lee la situación y decide cuáles corresponden. Después de la respuesta, el intercambio se lee hacia la memoria, y tu frase se guarda como base de lo que se aprenda. Más tarde, lo que escribes a continuación se lee para saber qué dices sobre un recuerdo que se usó: que está mal o que no corresponde ahí. Eso lo cambia; que estuvieras satisfecho, no. Cuando está libre, relee los intercambios que destacaron (una corrección, una sorpresa, una promesa), compara recuerdos que pueden contradecirse o decir dos veces lo mismo (y entonces se queda con uno) y saca lecciones de ocasiones distintas.
 
 El código nunca decide qué significa algo. Comprueba la estructura: que una cita sea exacta, que un id exista, que una revisión no se haya movido. El significado queda para el modelo, y todo lo que el modelo escribe tiene que apuntar a un registro guardado.
 

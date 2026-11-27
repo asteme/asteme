@@ -48,7 +48,11 @@ Pour un modèle de langage, la mémoire est le plus souvent une recherche : on v
 
 **C'est la situation qui rappelle, pas les mots.** Vous avez un jour corrigé une note : « mets la décision en premier, la directrice ne lit que trois lignes ». Des jours plus tard, vous demandez une page pour un investisseur. Aucun mot en commun, mais c'est la même situation (un lecteur pressé qui doit décider), et le souvenir revient.
 
-**L'usage réécrit la mémoire.** Une fois un souvenir utilisé, ce que vous dites ensuite est lu pour savoir comment cela s'est passé. Celui qui a aidé revient plus facilement. Celui qui était hors de propos ne revient plus dans ce genre de situation et continue de servir ailleurs. Rien ne s'efface parce que c'est ancien, et rien n'est supprimé parce que le magasin a grossi.
+**Ce que vous avez dit se retrouve tel que vous l'avez dit.** À côté de ce qu'elle a appris, on cherche aussi dans les conversations elles-mêmes, dans la langue où elles ont eu lieu. Une date, un nombre, l'ordre des événements, ce qu'Asteme elle-même vous a dit le mois dernier : ils reviennent dans les mots qui ont été employés, avec le jour.
+
+**Ce que vous lui demandez de respecter reste sous ses yeux.** « Chaque fois que je te demande une recette, vérifie si elle contient des cacahuètes. » « Si je m'apprête à promettre une date à un client, rappelle-moi de demander d'abord à Mira. » Une telle demande n'est pas laissée à la mémoire : elle est présente avant chaque réponse, elle vous est montrée et elle prend fin quand vous le dites.
+
+**Ce que vous dites change la mémoire ; la façon dont vous l'avez pris, non.** Dites-lui qu'un souvenir est faux et il est réexaminé. Dites-lui qu'un souvenir n'a pas sa place dans un genre de situation et il restera à l'écart des situations de ce genre. Quand quelque chose était nécessaire et n'est pas revenu à l'esprit, elle apprend à le rappeler dans cette situation. Lui parler sèchement ne change rien : un rappel que vous avez demandé ne se tait pas parce qu'il a été malvenu une fois. Rien ne s'efface parce que c'est ancien, et rien n'est supprimé parce que le magasin a grossi.
 
 **Chaque souvenir aboutit à vos propres mots.** Chacun garde la phrase exacte dont il vient. Ouvrez un souvenir et vous voyez sur quoi il repose, où il s'applique, chaque fois qu'il a été utilisé et ce que cela a donné, et chaque modification qui lui a été faite. Si vous dites que quelque chose est faux, votre parole l'emporte sur celle du modèle.
 
@@ -56,7 +60,7 @@ Pour un modèle de langage, la mémoire est le plus souvent une recherche : on v
 
 **Elle parle d'elle-même.** Ce qui vous préoccupait lui reste en tête, sans heure fixée. Quand vous revenez après un moment, elle peut vous demander comment cela s'est passé, ou ne rien dire : c'est à elle de décider, et ce qu'elle garde vous est montré, et vous pouvez le retirer.
 
-**Elle montre ce qu'elle retient.** Chaque souvenir est une étoile dans un ciel derrière la conversation, plus brillante quand il revient facilement à l'esprit. Saisissez le ciel vide et vous êtes parmi elles.
+**Elle montre ce qu'elle retient.** Chaque souvenir est une étoile dans un ciel derrière la conversation, d'autant plus brillante qu'il a été utile. Saisissez le ciel vide et vous êtes parmi elles.
 
 ## L'essayer en une minute
 
@@ -147,7 +151,7 @@ await brain.rest();                                                // when idle
 ## La conversation
 
 - **Le début.** Un magasin neuf, ou vidé, n'a encore personne dedans. Une fois, avant la conversation, elle demande un nom, comment vous appeler et comment vous parler (chacun peut rester vide, ou tout être passé), puis elle est réveillée. Être réveillée et nommée est son premier souvenir : cette étoile tombe dans le ciel vide, y reste au centre comme la plus brillante, puis elle parle la première.
-- **Les étoiles.** Une étoile est un souvenir ; les plus récents sont près du centre, les plus anciens au loin, et ceux qui reviennent facilement brillent le plus. Faites glisser le ciel vide, pincez ou double-cliquez pour y entrer ; glissez pour déplacer, molette pour avancer parmi elles (et reculer, aussi loin que va le ciel), Maj+glisser pour tourner. Quel que soit le nombre de tours, un tirage déplace toujours ce qui est sous la main ; `0` ou « Remettre le ciel d'aplomb » le remet dans le bon sens. Ce qui est nouvellement appris tombe dans le ciel comme une étoile filante (cela peut être désactivé).
+- **Les étoiles.** Une étoile est un souvenir ; les plus récents sont près du centre, les plus anciens au loin, et ceux qui ont été les plus utiles brillent le plus. Faites glisser le ciel vide, pincez ou double-cliquez pour y entrer ; glissez pour déplacer, molette pour avancer parmi elles (et reculer, aussi loin que va le ciel), Maj+glisser pour tourner. Quel que soit le nombre de tours, un tirage déplace toujours ce qui est sous la main ; `0` ou « Remettre le ciel d'aplomb » le remet dans le bon sens. Ce qui est nouvellement appris tombe dans le ciel comme une étoile filante (cela peut être désactivé).
 - **Recherche.** Tapez dans le champ de recherche et les étoiles qui correspondent viennent vers lui, une par une, en un arc lâche. La molette ou ↑↓ les parcourt, Entrée ou un clic en ouvre une, et les autres restent pâles dans le ciel.
 - **Un souvenir.** Ouvrez une étoile pour voir ses mots, sur quoi il repose, quand il a été appris, et pour dire qu'il est toujours vrai, qu'il ne l'est plus, le mettre en pause, ou l'oublier avec ses sources.
 - **Les promesses.** Une promesse est une ligne sous la réponse qui l'a faite, la prochaine fois dans l'en-tête, et elle peut être annulée en le disant.
@@ -171,7 +175,7 @@ flowchart LR
   O --> R
 ```
 
-Avant une réponse, le message rappelle les souvenirs par le sens, et un appel au modèle lit la situation et décide lesquels y ont leur place. Après la réponse, l'échange est lu vers la mémoire, votre phrase gardée comme fondement de ce qui est appris. Plus tard, ce que vous écrivez ensuite est lu pour savoir ce que chaque souvenir utilisé a donné, et cela change ce qui sera rappelé la fois suivante. Quand elle est libre, elle relit les échanges qui se sont démarqués (une correction, une surprise, une promesse), compare des souvenirs qui peuvent se contredire ou dire deux fois la même chose (et n'en garde alors qu'un) et tire des leçons d'occasions distinctes.
+Avant une réponse, le message fait revenir ce qui lui est le plus proche par le sens : des souvenirs et des tours de conversations antérieures tels qu'ils ont été dits. Un appel au modèle lit la situation et décide lesquels y ont leur place. Après la réponse, l'échange est lu vers la mémoire, votre phrase gardée comme fondement de ce qui est appris. Plus tard, ce que vous écrivez ensuite est lu pour savoir ce que vous dites d'un souvenir utilisé : qu'il est faux ou qu'il n'a pas sa place là. Cela le change ; le fait que vous ayez été satisfait, non. Quand elle est libre, elle relit les échanges qui se sont démarqués (une correction, une surprise, une promesse), compare des souvenirs qui peuvent se contredire ou dire deux fois la même chose (et n'en garde alors qu'un) et tire des leçons d'occasions distinctes.
 
 Le code ne décide jamais de ce que quelque chose veut dire. Il vérifie la structure : qu'une citation soit exacte, qu'un identifiant existe, qu'une révision n'ait pas bougé. Le sens est laissé au modèle, et tout ce que le modèle écrit doit pointer vers un enregistrement gardé.
 

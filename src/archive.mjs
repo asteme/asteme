@@ -453,7 +453,7 @@ export const archive = {
       if (!m) continue;
       compared++; if ((m.use !== "not-now" && !m.dropped) === (s.use !== "not-now")) agree++;
     }
-    const items = this.items({ closed: true }), tally = list => list.reduce((n, x) => ({ ...n, [x]: (n[x] ?? 0) + 1 }), {});
+    const scenes_ = scenes, items = this.items({ closed: true }), tally = list => list.reduce((n, x) => ({ ...n, [x]: (n[x] ?? 0) + 1 }), {});
     const data = {
       at: iso(now), version: VERSION, storeFormat: this.log.db.prepare("PRAGMA user_version").get().user_version, embed: this.embed?.model ?? null, ...extra,
       preparation: {
@@ -476,6 +476,40 @@ export const archive = {
       errors, errorsLast, reflection: d.reflection, outcomes: d.outcomes, sleep: d.sleep, health: d.health,
       memory: { total: items.length, byKind: tally(items.map(i => `${i.kind}/${i.level ?? "case"}`)), byStatus: tally(items.map(i => i.paused ? "paused" : i.status)) },
       events: this.log.db.prepare("SELECT COUNT(*) AS n FROM events").get().n,
+      // What 0.13 changed, counted, so that how it does in a real store can be read without opening the store: how far the record is indexed,
+      // the standing asks, how many model calls came before replies, and in what script the situations memories are recalled by are written.
+      // Counts only: no words of any message or memory.
+      recall: (() => {
+        const db = this.log.db, one = (q, ...a) => { try { return db.prepare(q).get(...a)?.n ?? null; } catch { return null; } };
+        const mark = this.log.state(`record-index:${this.owner}`, null), top = one("SELECT MAX(rowid) AS n FROM events") ?? 0;
+        const record = { messages: one("SELECT COUNT(*) AS n FROM events WHERE erased=0 AND json_extract(data,'$.role') IN ('user','assistant')"),
+          indexed: one("SELECT COUNT(*) AS n FROM passage WHERE owner=?", this.owner), rounds: one("SELECT COUNT(DISTINCT round) AS n FROM passage WHERE owner=?", this.owner),
+          bytes: one("SELECT SUM(LENGTH(data)) AS n FROM passage WHERE owner=?", this.owner),
+          // Looked at back to the first message, and up to the newest: then indexing is done, and what is not indexed was left out on purpose
+          // (private, a secret, what tools returned) or refused by the embedder (passedOver, still to try: retrying).
+          done: !!mark && mark.low === 0 && mark.high >= top, passedOver: mark?.passedOver ?? 0, retrying: (mark?.again ?? []).length };
+        const live = this.items(), asks = live.filter(i => this.isStanding(i));
+        const standing = { asks: asks.length, keptToAProject: asks.filter(i => this.confinedTo(i)).length, inFrontAnywhere: this.standingAsks({ here: null }).length,
+          commitments: (this.core?.()?.commitments ?? []).length };
+        const script = s => /[\u3040-\u30ff\u3400-\u9fff]/.test(String(s ?? "")), month = at => iso(at)?.slice(0, 7) ?? "unknown";
+        const scenes = {};
+        for (const i of live) { const m = scenes[month(i.learnedAt)] ??= { withKanaOrKanji: 0, without: 0 }; m[script(i.concrete) || script(i.general) ? "withKanaOrKanji" : "without"]++; }
+        const candidates = {};
+        for (const t of scenes_) for (const c of t.candidates ?? []) {
+          if (!c || typeof c !== "object") continue;
+          const m = candidates[month(t.at)] ??= { candidates: 0, origin: {}, due: 0, entity: 0, cueWithKanaOrKanji: 0, cueWithout: 0 };
+          m.candidates++; m.origin[c.origin ?? "unknown"] = (m.origin[c.origin ?? "unknown"] ?? 0) + 1;
+          if (c.due) m.due++; if (c.entity) m.entity++; m[script(c.cue) ? "cueWithKanaOrKanji" : "cueWithout"]++;
+        }
+        // Model calls before a reply, by how each message was read: "later" makes none (a judge decides, the scene is read afterwards), "one" one,
+        // "two" two; asked twice adds one. The last ten messages, and the last thirty days.
+        const byMessage = new Map();
+        for (const t of scenes_) { const m = byMessage.get(t.request) ?? { at: t.at, reading: t.reading ?? (t.error ? "failed" : "none"), twice: false }; m.twice ||= !!t.askedTwice; m.at = Math.max(m.at, t.at); byMessage.set(t.request, m); }
+        const shape = list => list.reduce((n, m) => { const k = m.reading + (m.twice ? ", asked twice" : ""); n[k] = (n[k] ?? 0) + 1; return n; }, {});
+        const all = [...byMessage.values()].sort((a, b) => b.at - a.at);
+        return { record, standing, certainty: tally(items.map(i => i.certainty ?? "unknown")), scenes, candidates,
+          readings: { last10: shape(all.slice(0, 10)), last30days: shape(all.filter(m => m.at >= now - 30 * 86400000)) } };
+      })(),
       host: this.fromHost(),
       // Failures by what failed and how, newest first: thirty rows that said the same thing three ways were mostly noise.
       failures: (() => { const groups = new Map();
@@ -508,6 +542,13 @@ export const archive = {
       `- candidates but no decision at all: ${p.unanswered}; asked twice: ${p.askedTwice}; left some candidate unanswered: ${p.undecided}`,
       `- scene taken from the message because the model failed: ${p.sceneFromMessage}; admitted by the judge: ${p.byJudge}`,
       p.shadow ? `- judge beside the model: agreed on ${p.shadow.agree} of ${p.shadow.compared} decisions (${Math.round(p.shadow.rate * 100)}%)` : "- judge beside the model: no comparison recorded",
+      "", "## The record and standing asks (counts only)", "",
+      `- record: ${data.recall.record.indexed ?? 0} of ${data.recall.record.messages ?? 0} messages said by you or the assistant are indexed, in ${data.recall.record.rounds ?? 0} rounds (${data.recall.record.bytes ?? 0} bytes of vectors); ${data.recall.record.done ? "indexing is done" : "indexing is not done yet"}; passed over: ${data.recall.record.passedOver}; to be tried again: ${data.recall.record.retrying}`,
+      `- standing asks: ${data.recall.standing.asks} (kept to a project: ${data.recall.standing.keptToAProject}; in front where no project is given: ${data.recall.standing.inFrontAnywhere}); agreements in the charter: ${data.recall.standing.commitments}`,
+      `- memories by certainty: ${JSON.stringify(data.recall.certainty)}`,
+      `- how messages were read before the reply, last 10: ${JSON.stringify(data.recall.readings.last10)}; last 30 days: ${JSON.stringify(data.recall.readings.last30days)} ("later": no model call before the reply; "one": one; "two": two; asked twice: one more)`,
+      `- memories in use by the month they were learned, whether the situations they are recalled by have kana or kanji: ${JSON.stringify(data.recall.scenes)}`,
+      `- candidates by the month they were called: ${JSON.stringify(data.recall.candidates)}`,
       "", "## Model calls, last 24 hours", "", row(["purpose", "calls", "failed", "timed out", "cut short", "asked again", "median ms", "slow (95%) ms"]), row(Array(8).fill("---")),
       ...Object.entries(data.health.purposes).map(([name, h]) => row([name, h.calls, h.failed, h.timeouts, h.cut, h.again ?? 0, h.median ?? "", h.slow ?? ""])),
       "", "## Errors recorded with readings", "", "These are from the whole life of the store, not the last day; the date says when each last happened. One that has not happened since an update that fixed it is history.", "", ...(Object.keys(errors).length ? Object.entries(errors).sort((a, b) => b[1] - a[1]).map(([k, n]) => `- ${n} × ${k} (last ${errorsLast[k]})`) : ["- none"]),

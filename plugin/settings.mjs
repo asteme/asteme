@@ -94,12 +94,13 @@ export function operations(host) {
     // is still listed for as long as what was learned in it is kept; one with
     // nothing learned and nothing recent drops out of the list (nothing is
     // deleted, and it returns when it is used again).
-    const everyProject = [...new Set(host.log.sessions(host.identity).map((s) => s.scope.projectId))];
+    // A conversation with no project (a host that does not say) is not a project of its own in the list.
+    const everyProject = [...new Set(host.log.sessions(host.identity).map((s) => s.scope.projectId))].filter(Boolean);
     const remembered = new Set(host.core.items().map(i => i.projectId));
     const recent = new Set(host.log.db.prepare("SELECT DISTINCT scope FROM events WHERE coalesce(json_extract(data,'$.occurredAt'), json_extract(data,'$.observedAt')) > ?")
       .all(host.log.now() - 30 * 86400000).map(r => JSON.parse(r.scope).projectId));
     const projects = everyProject.filter(id => id === projectId || remembered.has(id) || recent.has(id));
-    projects.sort((a,b) => (host.log.state(`project-label:${a}`, a)).localeCompare(host.log.state(`project-label:${b}`, b)));
+    projects.sort((a,b) => String(host.log.state(`project-label:${a}`, a)).localeCompare(String(host.log.state(`project-label:${b}`, b))));
     projectId = projects.includes(projectId) ? projectId : (projects.find(id => host.log.state(`project-label:${id}`) === "default-workspace") ?? projects[0] ?? "");
     const core = profile(host.log, host.identity);
     return {

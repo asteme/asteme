@@ -250,8 +250,15 @@ test("what was in front of a reply is recorded and shown with it; where memory i
   // The diary and the report count a reply that drew on the record.
   const diary = w.core.diary({ locale: "en", timeZone: "UTC" });
   assert.match(typeof diary === "string" ? diary : diary.markdown ?? JSON.stringify(diary), /what was said on November 10, 2026/);
-  const { data } = w.core.report();
+  await w.core.indexRecord();
+  const { data, markdown } = w.core.report();
   assert.deepEqual([data.preparation.fromRecord, data.preparation.gaveSomething >= 1], [1, true]);
+  // What a real store's numbers can be read from without opening it: counts, and no words.
+  const r = data.recall;
+  assert.deepEqual([r.record.done, r.record.indexed >= 2, r.standing.asks, r.certainty.explicit, r.readings.last10.two, Object.values(r.scenes)[0].without], [true, true, 1, 1, 2, 1]);
+  const section = markdown.split("## The record and standing asks (counts only)")[1].split("\n## ")[0];
+  assert.match(section, /indexing is done/);
+  assert.doesNotMatch(section, /peanut|report for the board|recipe/i, "no words of a message or a memory");
 
   // Memory off, the project left out, or conversations private unless switched on: nothing is in front, and the panel says so.
   for (const [name, set, unset] of [["off", () => { host.config.enabled = false; }, () => { host.config.enabled = true; }],

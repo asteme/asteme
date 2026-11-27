@@ -34,7 +34,7 @@ export const DEFAULTS = {
   earlier: 10,
   promptChars: 80000,
   // What every speaking call carries whatever is said: the rules, the charter, the shape of the answer. A test holds this to the real size, so the rules cannot grow past it unnoticed.
-  fixedChars: 24500,
+  fixedChars: 25600,
   candidateChars: 28000,
   fileBytes: 25000000,
   filesAtOnce: 6,
@@ -720,7 +720,7 @@ export function openMind({
     // Deliberate recall: once, and then it answers with what was found.
     const search = acts.find((a) => a?.act === "search" && typeof a.query === "string" && a.query.trim());
     if (search && !trace.error) {
-      const found = { query: cut(search.query, 200), ...core.search(search.query) };
+      const found = { query: cut(search.query, 200), ...(await core.seek(search.query, { here: scope.projectId })) };
       acts = acts.filter((a) => a !== search);
       trace = await core.prepare({
         request,
@@ -999,6 +999,8 @@ export function openMind({
       await core.outcomes({ infer: model, judge, mode: "shadow", ...(depth === "deep" ? { delay: 0 } : {}) });
       return log.pending(identity, STAGE).length > 0;
     }
+    // A little more of the record made searchable, until all of it is (a store from an earlier version has none of it indexed).
+    if (await core.indexRecord().catch(() => 0)) return true;
     if (depth === "deep" && (await core.sleepDue())) {
       await core.sleep({ infer: model, budget: 1 });
       return true;

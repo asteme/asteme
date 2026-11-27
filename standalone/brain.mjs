@@ -11,6 +11,7 @@
 // and the judge admits); learning from turns needs infer.
 import { Log } from "../src/log.mjs";
 import { Asteme, plain } from "../src/core.mjs";
+import { standingLines } from "../src/charter.mjs";
 
 const STAGE = "experienced";
 export function openBrain({ path = ":memory:", identity = { userId: "local", agentId: "assistant" }, project = "default",
@@ -40,7 +41,12 @@ export function openBrain({ path = ":memory:", identity = { userId: "local", age
       const recent = log.events(scope, session).filter(e => e.content && ["user", "assistant", "tool"].includes(e.role)).slice(-8);
       // One model call before the reply, or none when a judge decides.
       const trace = await core.prepare({ request, recent, infer: model, judge, admission, reading: "later" });
-      return plain({ request: request.id, note: trace.text, items: trace.delivered.map(i => ({ id: i.id, text: i.text, use: i.use })), error: trace.error ?? null });
+      // What the user asked to be held to does not wait to be recalled, and this host has no persona of ours to carry it: it comes with every
+      // note, ahead of what was recalled. Not in a conversation the user keeps out of memory.
+      const standing = core.quiet(session, project) ? [] : core.standingAsks({ here: project });
+      return plain({ request: request.id, note: [standingLines(standing).join("\n"), trace.text].filter(Boolean).join("\n\n"), standing,
+        items: trace.delivered.map(i => ({ id: i.id, text: i.text, use: i.use })),
+        rounds: (trace.passages ?? []).map(p => ({ id: p.id, at: p.at, use: p.use, said: p.said })), error: trace.error ?? null });
     },
     /** Records what the agent said or did, and ends the turn unless told otherwise. */
     observe({ session = "default", reply, tool, end = true }) {
@@ -61,7 +67,8 @@ export function openBrain({ path = ":memory:", identity = { userId: "local", age
       try { if (infer && await core.sleepDue()) report.slept = (await core.sleep({ infer: model, budget })).ran.length; } catch (e) { report.errors.push(`sleep: ${e.message}`); }
       return report;
     },
-    search: query => plain(core.search(query)),
+    /** Looks on purpose through what is remembered and through the record, by meaning and by words. */
+    search: async query => plain(await core.seek(query, { here: project })),
     why: id => { const why = core.why(id); if (!why) throw new Error("Unknown memory"); return plain(why); },
     /** The agent's user said how a recalled memory did: helped, irrelevant, wrong or missed. */
     feedback: ({ request, item, kind, note }) => plain(core.userOutcome(request, item, kind, note)),

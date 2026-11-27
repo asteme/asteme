@@ -46,7 +46,7 @@ export async function story(say = () => {}) {
         episode: { scene: "Preparing a pitch for an investor who skims", signals: [{ kind: "explicit", strength: "strong", evidence: quote(said) }] } }
     : { feedback: [], changes: [] } }));
   const b = core.items().find(i => i.text === "Put the ask first in a pitch");
-  say(`  it helped; accessibility ${core.why(a.id).recall.accessibility}`);
+  say("  the user said it helped; that is kept to be read, and changes nothing about what is recalled");
 
   tick(DAY);
   say("Day 4. The same memory is used where it does not belong: notes for the team.");
@@ -54,7 +54,7 @@ export async function story(say = () => {}) {
   w.say("Decision first: ship on Friday. Then the discussion.", "thu", "assistant");
   tick(120000);
   await settle(w.say("No. The team wants the discussion in the order it happened", "thu"), { kind: "irrelevant", applied: "yes", reply_quote: "Decision first" });
-  say(`  marked out of place there; accessibility ${core.why(a.id).recall.accessibility}`);
+  say("  the user said it does not belong there; it will stay out of scenes like that one");
 
   tick(DAY);
   say("Day 5. Team minutes again.");

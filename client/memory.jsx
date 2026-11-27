@@ -3,24 +3,25 @@
 // account. Nothing in a row is a control; every action lives in the account,
 // next to the evidence it acts on.
 import React, { useState } from "react";
-import { inUse, kindOf, recallLevel, say, stateWord, reasonWord } from "./words.mjs";
+import { inUse, kindOf, recallLevel, recallWord, say, stateWord, reasonWord } from "./words.mjs";
 import { Button, Chip, Disclosure, Glyph, RowButton, Section, Star, TextInput } from "./ui.jsx";
 
 const matches = (item, needle) => !needle || [item.text, item.reason, item.concrete, item.general, item.about, ...(item.entities ?? [])]
   .some(value => value?.toLowerCase().includes(needle));
-// What comes to mind first is listed first; what needs a look comes before that.
+// What needs a look comes first, then what the last reply used, then the rest by how their uses have gone.
 const order = used => (a, b) => (b.status === "doubtful") - (a.status === "doubtful") || used.has(b.id) - used.has(a.id) || (b.accessibility ?? 0.5) - (a.accessibility ?? 0.5);
 
 function MemoryRow({ item, used, ctx }) {
   const { t, nav } = ctx, live = inUse(item);
-  const level = recallLevel(item);
+  // A standing ask is in front always: its star is full, as a habit's is.
+  const level = live && item.standing ? "easily" : recallLevel(item);
   return (
     <li>
       <RowButton
         data-focus={`memory:${item.id}`}
         className={live ? undefined : "ast-row--closed"}
         lead={<Star level={level} tone={item.status === "doubtful" && live ? "warning" : "plain"} lit={used} />}
-        note={live ? t("recall_" + level) : stateWord(t, item)}
+        note={live ? recallWord(t, item) : stateWord(t, item)}
         title={item.text}
         detail={reasonWord(t, item.reason)}
         meta={(item.status === "doubtful" && live) || used || item.sensitive?.length > 0 || !live ? <>

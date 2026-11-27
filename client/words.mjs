@@ -17,13 +17,19 @@ export function stateWord(t, item) {
   return labelFor(t, "state_" + item.status, item.status);
 }
 
-/** easily | sometimes | rarely | off */
+/**
+ * How its uses have gone so far, as the size of its star: easily (it helped more often than it was out of place or wrong) | rarely (the
+ * other way round) | sometimes (neither) | off (not in use). The names are the star sizes and are older than their meaning: what comes to
+ * mind is decided by nearness, not by this.
+ */
 export function recallLevel(item) {
   if (!inUse(item)) return "off";
-  const a = item.accessibility;
-  return typeof a !== "number" ? "sometimes" : a >= 0.6 ? "easily" : a >= 0.35 ? "sometimes" : "rarely";
+  const s = item.stats ?? {}, up = s.helped ?? 0, down = (s.irrelevant ?? 0) + (s.wrong ?? 0);
+  return up > down ? "easily" : down > up ? "rarely" : "sometimes";
 }
-/** One sentence on why it comes to mind as it does, from the outcomes behind it. */
+/** The few words a row says about a memory in use: a standing ask is in front always, whatever its uses were. */
+export const recallWord = (t, item) => t(item.standing ? "recall_standing" : "recall_" + recallLevel(item));
+/** How its uses have gone, counted out in one sentence, from the outcomes behind it. */
 export function recallReason(t, item) {
   const s = item.stats ?? {};
   const parts = [

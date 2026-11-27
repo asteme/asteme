@@ -67,6 +67,9 @@ export const explain = {
       decisions: (t.decisions ?? []).map(d => ({ id: d.id, use: d.use, reason: d.reason, anchor: d.anchor, dropped: d.dropped, adjusted: d.adjusted })),
       delivered: (t.delivered ?? []).map(i => ({ id: i.id, use: i.use, text: i.text, anchor: i.anchor, because: i.relevance, expect: i.expect,
         matched: i.matched, revision: i.revision, evidence: i.evidence })),
+      // Rounds of earlier conversation it was given, as they were said.
+      record: (t.passages ?? []).map(p => ({ id: p.id, on: iso(p.at)?.slice(0, 10), use: p.use, said: p.said, because: p.relevance, anchor: p.anchor })),
+      admittedBy: t.admittedBy,
       note: t.text,
     }));
     return {

@@ -48,7 +48,11 @@ Most memory for a language model is a search: text that resembles the message is
 
 **The situation recalls, not the wording.** You once corrected a memo: "put the decision first, the director only reads three lines." Days later you ask for a one-page pitch for an investor. No word is shared, but it is the same situation (a reader with little time who has to decide), and the memory comes back.
 
-**Use rewrites memory.** After a memory is used, what you say next is read for how it went. One that helped comes to mind more easily. One that was out of place stays out of that kind of situation and keeps working elsewhere. Nothing fades because it is old, and nothing is deleted because the store grew.
+**What you said is found as you said it.** Beside what it has learned, the conversations themselves are searched, in the language they were held in. A date, a number, the order things happened in, what Asteme itself told you last month: they come back in the words that were used, with the day.
+
+**What you ask it to hold to stays in front.** "Whenever I ask for a recipe, check it for peanuts." "If I am about to promise a customer a date, remind me to ask Mira first." Such an ask is not left to memory: it is in front of every reply, it is shown to you, and it ends when you say so.
+
+**What you say changes memory; how you took it does not.** Tell it a memory is wrong and it is looked at again. Tell it one does not belong in a kind of situation and it stays out of situations like that. When something was needed and did not come, it learns to come there. Being short with it changes nothing: a reminder you asked for does not go quiet because it was unwelcome once. Nothing fades because it is old, and nothing is deleted because the store grew.
 
 **Every memory ends at your own words.** Each one keeps the exact sentence it came from. Open a memory and you see what it rests on, where it applies, every time it was used and how that went, and every change made to it. If you say something is wrong, your word stands over the model's.
 
@@ -56,7 +60,7 @@ Most memory for a language model is a search: text that resembles the message is
 
 **It speaks of its own accord.** Something you were uneasy about stays on its mind with no time set. When you come back after a while it may ask how it went, or say nothing: that is its own to decide, and what it is keeping is shown to you and can be taken back.
 
-**It shows what it remembers.** Every memory is one star on a sky behind the conversation, brighter when it comes to mind easily. Take hold of the empty sky and you are among them.
+**It shows what it remembers.** Every memory is one star on a sky behind the conversation, brighter the more it has been of use. Take hold of the empty sky and you are among them.
 
 ## Try it in a minute
 
@@ -75,9 +79,9 @@ Day 1. The user corrects a memo.
   stored as a case; the exchange stood out (salience 0.55) because it was a correction
 Day 3. A request with none of the memo's words: a one-pager for an investor.
   recalled by the scene: "Writing a memo for the director"
-  it helped; accessibility 0.7453
+  the user said it helped; that is kept to be read, and changes nothing about what is recalled
 Day 4. The same memory is used where it does not belong: notes for the team.
-  marked out of place there; accessibility 0.605
+  the user said it does not belong there; it will stay out of scenes like that one
 Night. Sleep.
   integrate: one lesson drawn from two cases
 ```
@@ -147,7 +151,7 @@ await brain.rest();                                                // when idle
 ## The conversation
 
 - **The beginning.** A new store, or one wiped clean, has nobody in it yet. Once, before the conversation, it asks for a name, what to call you and how to speak to you (any of it can be left empty, or all of it skipped), and then it is woken. Being woken and named is its first memory: that star falls into the empty sky, stays at the middle of it as the brightest, and then it speaks first.
-- **Stars.** One star is one memory; the newest is near the centre, the oldest far out, and the ones that come to mind easily shine brightest. Drag empty sky, pinch, or double-click it to go in; drag to move, wheel to go on through them (forward and back, as far as the sky goes), Shift-drag to turn. However far it has been turned, a pull still moves what is under the hand; `0` or "Level the sky" puts it the right way up again. Something newly learned falls into the sky as a shooting star (this can be turned off).
+- **Stars.** One star is one memory; the newest is near the centre, the oldest far out, and the ones that have been of most use shine brightest. Drag empty sky, pinch, or double-click it to go in; drag to move, wheel to go on through them (forward and back, as far as the sky goes), Shift-drag to turn. However far it has been turned, a pull still moves what is under the hand; `0` or "Level the sky" puts it the right way up again. Something newly learned falls into the sky as a shooting star (this can be turned off).
 - **Search.** Type in the search box and the stars that match come to it, one at a time, into a loose arc. Wheel or ↑↓ moves through them, Enter or a click opens one, and the rest stay faint in the sky.
 - **One memory.** Open a star to see its words, what it rests on, when it was learned, and to say it is still true, no longer true, to pause it, or to forget it with its sources.
 - **Promises.** A promise is a line under the reply that made it, the next time in the header, and it can be cancelled by saying so.
@@ -171,7 +175,7 @@ flowchart LR
   O --> R
 ```
 
-Before a reply, the message calls memories up by meaning, and one model call reads the situation and decides which belong. After the reply, the exchange is read into memory, your sentence kept as the ground for anything learned. Later, what you write next is read for how each used memory turned out, and that changes what is recalled next time. While idle, it rereads exchanges that stood out (a correction, a surprise, a promise), compares memories that may disagree or say the same thing twice (and keeps one of the two), and draws lessons from separate occasions.
+Before a reply, the message calls up what is nearest to it in meaning: memories, and rounds of earlier conversations as they were said. One model call reads the situation and decides which of them belong. After the reply, the exchange is read into memory, your sentence kept as the ground for anything learned. Later, what you write next is read for what you say about a memory that was used: that it is wrong, or that it does not belong there. That changes it; whether you were pleased does not. While idle, it rereads exchanges that stood out (a correction, a surprise, a promise), compares memories that may disagree or say the same thing twice (and keeps one of the two), and draws lessons from separate occasions.
 
 The code never decides what something means. It checks structure: that a quote is exact, that an id exists, that a revision has not moved. Meaning is left to the model, and everything the model writes has to point at a stored record.
 

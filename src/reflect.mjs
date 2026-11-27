@@ -77,6 +77,8 @@ export const reflect = {
     // A private conversation is passed over, not read: the cursor moves on.
     if (this.quiet(turn.sessionId, turn.scope?.projectId)) { this.log.save(turn.key, turn.end); return { private: true }; }
     if (this.log.state(turn.key, 0) >= turn.end) return;
+    // What was just said becomes findable as it was said, whatever is or is not learned from it.
+    try { await this.indexRecord(); } catch { /* without an embedder the record is not searched, and reflection goes on */ }
     const erased = this.log.state("erasure-revision", 0);
     turn = { ...turn, events: turn.events.filter(e => !this.log.event(e.id)?.erased) };
     const partKey = `experience-part:${turn.id}`;
@@ -109,14 +111,15 @@ export const reflect = {
       premise: t.premise, used: t.used, declared: t.declared, feedback: t.feedback,
     }));
     const visible = { traces: traces.length, delivered: traces.reduce((n, t) => n + (t.delivered?.length ?? 0), 0) };
-    const value = await infer("asteme-reflect", reflectionPrompt({ now: iso(this.log.now()), core: this.charter(), partial: !batch.done, ...(endedOf(turn.events) ? { turnEnded: endedOf(turn.events) } : {}),
+    const value = await infer("asteme-reflect", reflectionPrompt({ now: iso(this.log.now()), core: this.charter({ here: turn.scope?.projectId ?? null }), partial: !batch.done, ...(endedOf(turn.events) ? { turnEnded: endedOf(turn.events) } : {}),
       RAW: pageRaw(batch.events), understanding: relevant.map(compactItem), traces }), 6000);
     if (erased !== this.log.state("erasure-revision", 0)) return;
     if (!value || !Array.isArray(value.changes) || (value.feedback !== undefined && !Array.isArray(value.feedback))) {
       this.trace({ request: turn.id, stage: "reflection", error: "Invalid reflection response", response: value });
       throw Error("Invalid reflection response");
     }
-    value.feedback ??= [];
+    // What reflection read is by the model, whatever the answer says of itself.
+    value.feedback = (Array.isArray(value.feedback) ? value.feedback : []).filter(f => f && typeof f === "object").map(({ by, ...f }) => f);
     // No awaits between compare/apply/checkpoint: concurrent attention cannot be overwritten.
     if (this.log.state(turn.key, 0) >= turn.end || this.log.state(partKey, 0) !== batch.offset) return;
     return this.log.transaction(() => {

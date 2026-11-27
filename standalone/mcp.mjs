@@ -23,8 +23,8 @@ export const TOOLS = [
   { name: "asteme_observe", description: "Call after answering, with the reply as sent. This is what memory learns from.",
     inputSchema: { type: "object", properties: { reply: str("The reply as sent"), session: str("Conversation id") }, required: ["reply"] },
     run: (brain, a) => brain.observe(a) },
-  { name: "asteme_search", description: "Search everything that is kept, including what is closed or hard to bring to mind.",
-    inputSchema: { type: "object", properties: { query: str("Words to look for") }, required: ["query"] }, run: (brain, a) => brain.search(a.query) },
+  { name: "asteme_search", description: "Search everything that is kept, by meaning and by words: memories (including what is closed or hard to bring to mind) and the record of earlier conversations as it was said.",
+    inputSchema: { type: "object", properties: { query: str("What to look for") }, required: ["query"] }, run: (brain, a) => brain.search(a.query) },
   { name: "asteme_why", description: "What one memory rests on: the user's own words, what speaks against it, and how each use turned out.",
     inputSchema: { type: "object", properties: { id: str("Memory id") }, required: ["id"] }, run: (brain, a) => brain.why(a.id) },
   { name: "asteme_feedback", description: "Record the user's own verdict on a memory used in a reply: helped, irrelevant, wrong, or missed.",
@@ -39,7 +39,7 @@ export async function handle(brain, message) {
   const { id, method, params } = message ?? {};
   const reply = result => ({ jsonrpc: "2.0", id, result }), fail = (code, text) => ({ jsonrpc: "2.0", id, error: { code, message: text } });
   if (id === undefined || id === null) return null;
-  if (method === "initialize") return reply({ protocolVersion: params?.protocolVersion ?? "2024-11-05", capabilities: { tools: {} }, serverInfo: { name: "asteme", version: "0.12.2" } });
+  if (method === "initialize") return reply({ protocolVersion: params?.protocolVersion ?? "2024-11-05", capabilities: { tools: {} }, serverInfo: { name: "asteme", version: "0.13.0-rc.1" } });
   if (method === "ping") return reply({});
   if (method === "tools/list") return reply({ tools: TOOLS.map(({ run, ...tool }) => tool) });
   if (method === "tools/call") {

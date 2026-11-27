@@ -89,7 +89,14 @@ export async function apply(ctx, input) {
         name: "asteme:adopted-persona",
         order: ctx.systemPrompt.getSectionOrder("HARNESS_IDENTITY"),
         interpolate: false,
-        text: (context) => { const way = mannerPrompt(host.log), id = context?.agent?.session?.id; if (!hand(id)) host.spoke(id, !!way); return personaPrompt(host.core.core()) + way; },
+        text: (context) => { const way = mannerPrompt(host.log), id = context?.agent?.session?.id; if (!hand(id)) host.spoke(id, !!way);
+          // What the user asked to be held to is in front of the agent in every session, like its name and its agreements: a private session is
+          // given none of it, and one kept to a project is shown only there. A session another agent started for a piece of its work is given
+          // none either (nothing is recalled for it, and the one it works for may be private): the agent that started it holds them.
+          const session = context?.agent?.session, delegated = session?.origin === "subagent" || !!session?.parentSession || (session?.delegationDepth ?? 0) > 0;
+          const project = host.projects?.get(id);
+          const asks = delegated || (id ? host.log.excludes(id) || host.core.quiet(id, project) : host.core.quietByDefault()) ? [] : host.core.standingAsks({ here: project });
+          return personaPrompt(host.core.core(), asks) + way; },
       }),
     "asteme.profile",
   );

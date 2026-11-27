@@ -4,7 +4,7 @@
 // what is true.
 import { randomUUID, identityKey, digest, cut, scrubTrace } from "./log.mjs";
 import { terms, iso, isEvidence } from "./mind.mjs";
-import { sensitivity } from "./policy.mjs";
+import { sensitivity, secret, matterWord } from "./policy.mjs";
 
 export const LIVE = ["active", "doubtful"];
 const CLOSURES = ["fulfilled", "withdrawn", "expired", "retired", "superseded"];
@@ -29,6 +29,8 @@ export const compactItem = item => ({
   general: bounded(item.general, 300), certainty: item.certainty, status: item.status,
   tested: bounded(item.tested, 200), hypothesis: bounded(item.hypothesis, 200),
   about: item.about || undefined, volatility: item.volatility ?? "slow",
+  // When it was learned, so that of two things said at different times the later can be told from the earlier.
+  learned: iso(item.learnedAt)?.slice(0, 10), standing: item.standing === true || undefined,
   entities: (item.entities ?? []).slice(0, 8),
   // Reflection needs these to keep paused records untouched and to close concerns.
   paused: item.paused === true,
@@ -55,6 +57,8 @@ export const pairKey = (a, b) => [a, b].sort().join("|");
  * memories, and more than a third of them, carry it; and the names in `always`
  * (the user's and the assistant's own) are common whatever the count.
  */
+// The words for the two who are talking, which a model gives as a name when it has none ("user", "the assistant"): they name nobody.
+export const NOBODY = ["user", "the user", "assistant", "the assistant", "ai", "me", "myself", "you", "ユーザー", "アシスタント", "私", "用户", "助手", "我"];
 export function commonNames(items, always = []) {
   const count = new Map();
   for (const i of items) for (const name of new Set((i.entities ?? []).map(norm))) count.set(name, (count.get(name) ?? 0) + 1);
@@ -85,6 +89,63 @@ export function sameEntity(a, b) {
   if (s.length === 1 && [...s[0]].length === 1 && /[\p{Script=Latin}\p{N}]/u.test(s[0]))
     return /[\p{Lu}\p{N}]/u.test(short) && standsAlone(short.toUpperCase(), long);
   return true;
+}
+
+/**
+ * The names the stored memories carry that occur in a text as written: a word or a run of words standing alone, or, in scripts written without
+ * spaces, a name of two or more characters. Names that most memories carry are left out (see commonNames). This is reading, not judging: it lets a
+ * message bring what it names before any model has read it, so that a reply does not wait for a second call only because the name was found late.
+ */
+export function namesIn(text, items, common = new Set(), most = 12) {
+  const value = String(text ?? ""), lower = norm(value);
+  if (!lower) return [];
+  const found = new Map();
+  for (const i of items) for (const name of i.entities ?? []) {
+    if (typeof name !== "string") continue;
+    const key = norm(name);
+    if (key.length < 2 || found.has(key) || common.has(key)) continue;
+    const latin = /^[\p{Script=Latin}\p{N}\s._'-]+$/u.test(key);
+    // A name in katakana is a word, and is not found inside a longer one (ジョン is not in バージョン).
+    const kana = /^[\p{Script=Katakana}ー]+$/u.test(key);
+    if (!lower.includes(key)) continue;
+    if (latin ? alone(key, lower) : kana ? new RegExp(`(?<![\\p{Script=Katakana}ー])${key}(?![\\p{Script=Katakana}ー])`, "u").test(lower) : lower.includes(key)) found.set(key, name);
+    if (found.size >= most) return [...found.values()];
+  }
+  return [...found.values()];
+}
+const alone = (word, within) => new RegExp(`(^|[^\\p{L}\\p{N}])${word.replace(/[.*+?^${}()|[\]\\]/g, m => "\\" + m)}([^\\p{L}\\p{N}]|$)`, "u").test(within);
+
+/**
+ * Stored names a text uses in part, written as a name is: "Tanaka" for "Mira Tanaka", 田中 for 田中美羅. For a name of several words, one of
+ * its words that begins with a capital and is written so in the text; for a name in Han, its first or last two characters. A part that more than
+ * three stored names share points at none of them ("Project" of fourteen projects), and a word that is in every sentence is no part ("The Hague").
+ * These come after the whole names and never in their place: `whole` is what namesIn found, and at most `most` more are given. They put a memory on
+ * the table; they do not press for an answer about it (see attend).
+ */
+export function namesInPart(text, items, common = new Set(), { whole = [], most = 4 } = {}) {
+  const value = String(text ?? "");
+  if (!value.trim()) return [];
+  // A word of a name the text gives whole is that name's, and brings no other ("New York Times" does not bring "New York City").
+  const had = new Set(whole.map(norm)), taken = new Set(whole.flatMap(n => String(n).trim().split(/\s+/))), parts = new Map(), seen = new Set();
+  for (const i of items) for (const raw of i.entities ?? []) {
+    if (typeof raw !== "string") continue;
+    const name = raw.trim(), key = norm(name);
+    if (key.length < 2 || seen.has(key) || common.has(key)) continue;
+    seen.add(key);
+    const words = name.split(/\s+/);
+    const mine = words.length > 1
+      ? words.filter(w => /^\p{Lu}[\p{L}'’-]{2,}$/u.test(w) && !common.has(norm(w)) && matterWord(w))
+      : /^\p{Script=Han}[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}ー]{2,}$|^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}ー]{2,}\p{Script=Han}$/u.test(name)
+        ? [[...name].slice(0, 2).join(""), [...name].slice(-2).join("")].filter(p => /^\p{Script=Han}{2}$/u.test(p) && matterWord(p))
+        : [];
+    for (const part of new Set(mine)) { if (!parts.has(part)) parts.set(part, []); parts.get(part).push(name); }
+  }
+  const out = [];
+  for (const [part, of] of parts) {
+    if (of.length > 3 || taken.has(part) || !value.includes(part) || (/\p{Lu}/u.test(part) && !alone(part, value))) continue;
+    for (const name of of) { if (!had.has(norm(name)) && !out.includes(name)) out.push(name); if (out.length >= most) return out; }
+  }
+  return out;
 }
 
 // Literals with a shape, in any language: mail addresses, links, runs of seven
@@ -148,6 +209,25 @@ export const memory = {
   },
   revisions(id) {
     return this.log.db.prepare("SELECT data FROM experience_history WHERE owner=? AND id=? ORDER BY seq").all(this.owner, id).map(r => JSON.parse(r.data));
+  },
+
+  // --- Standing asks: what is not left to recall -------------------------------
+  // What the user asked to be held to ("whenever I ask for a recipe, check for peanuts") is put in front of the model at every reply, the way names
+  // and agreements are, instead of waiting to be called up. Measured (2026-11): left to recall, such an ask reached the first reply it applied to
+  // in 12 of 23 tries; kept in front, 4 of 5. They have a number and a size, newest first; one that does not fit is recalled like any other memory.
+  isStanding(item) { return item?.standing === true && item.kind === "understanding" && LIVE.includes(item.status) && !item.paused; },
+  standingAsks({ here = null, limit = 24, chars = 3000 } = {}) {
+    // One kept to its project is in front only there: where the project is not known, it is not shown.
+    const list = this.items().filter(i => this.isStanding(i) && (() => { const home = this.confinedTo(i); return !home || (!!here && home === here); })())
+      .sort((a, b) => (b.lastEvidenceAt ?? 0) - (a.lastEvidenceAt ?? 0));
+    const out = []; let used = 0;
+    for (const i of list) {
+      const line = { id: i.id, when: cut(i.concrete, 200), ask: cut(i.text, 400), since: iso(i.learnedAt)?.slice(0, 10), ...(i.status === "doubtful" ? { inDoubt: true } : {}) };
+      const size = line.when.length + line.ask.length + 60;
+      if (out.length >= limit || used + size > chars) break;
+      out.push(line); used += size;
+    }
+    return out;
   },
 
   // --- Dynamics: what use changes without changing the claim -----------------
@@ -254,6 +334,8 @@ export const memory = {
     // Vectors are derived from text that may now be gone; rebuild them on demand.
     this.log.db.prepare("DELETE FROM vector").run();
     this._vectors?.clear();
+    // What was indexed of the erased records goes with them; the rest of the record's index stays.
+    this.forgetPassages(references);
   },
   deletePaused(item) {
     this.log.transaction(() => {
@@ -316,7 +398,7 @@ export const memory = {
     const roles = (item?.evidence ?? []).map(r => this.log.event(r.id)?.role).filter(Boolean);
     return !roles.length || roles.includes("user") ? "said" : "seen";
   },
-  applyItem(op, old, raw, refs, at, immediate) {
+  applyItem(op, old, raw, refs, at, immediate, { idle = false, direct = false } = {}) {
     // Citing a user message beside a tool result does not make the tool's
     // content the user's. A literal someone could act on (an address, a link,
     // a long number) that stands in the memory and in none of the user's cited
@@ -332,6 +414,16 @@ export const memory = {
         (op.op === "supersede" || (op.op === "close" && ["superseded", "retired"].includes(op.as)) ||
           (op.op === "put" && (foreign || (typeof op.text === "string" && op.text.trim() !== old.text.trim())))))
       throw Error("what the user said is changed only on the user's own words");
+    // What the user asked to be held to is ended or narrowed by their own words, said after it, read with the exchange in view (reflection, or
+    // the assistant acting on their request). A reading does not put it in doubt: measured, one irritated answer ("I know, stop nagging me") had
+    // the reading doubt the ask one time in four, and a doubt has it asked about at the next reply it applies to. Idle work does not end it
+    // either: tidying two memories that say the same into one used to close the ask and keep the other.
+    if (old && this.isStanding(old)) {
+      if (op.op === "doubt" || op.op === "counter") throw Error("a standing ask is ended by the user's own words, not put in doubt");
+      const ends = op.op === "close" || op.op === "supersede" || (op.op === "put" && (op.standing === false || op.kind !== "understanding"));
+      if (ends && idle) throw Error("idle work does not end a standing ask");
+      if (ends && !direct && !raw.some(e => e.role === "user" && !(old.evidence ?? []).some(r => r.id === e.id))) throw Error("a standing ask is ended by something the user said after asking");
+    }
     const stamp = (item, evidence, previous = old) => ({ ...item, revision: (previous?.revision ?? 0) + 1, lastCheckedAt: at, lastEvidenceAt: at, evidence });
     const build = base => {
       if (immediate && (op.kind !== "concern" || op.certainty !== "explicit" || raw.some(e => !["user", "assistant"].includes(e.role)))) throw Error("interpretation waits for reflection");
@@ -351,6 +443,12 @@ export const memory = {
         ...(base?.premises ? { premises: base.premises } : {}),
         ...(base?.supersedes ? { supersedes: base.supersedes } : {}),
         grounds: user || (base && this.grounds(base) === "said") ? "said" : "seen",
+        // A standing ask: the user asked, in so many words, for this to hold from now on whenever its situation comes up. Only their own explicit
+        // words make one, and only their own words in this change end one. Anything else leaves it as it was: a rewording, a correction that
+        // replaces it, or a change that says "standing" without the user's explicit words behind it.
+        ...((op.standing === true && user && op.certainty === "explicit" && op.kind === "understanding" ? true
+          : op.standing === false && user ? false
+          : op.kind === "understanding" && (base ?? (op.op === "supersede" ? old : null))?.standing === true) ? { standing: true } : {}),
         learnedAt: base?.learnedAt ?? at, projectId: base?.projectId ?? raw[0].scope.projectId,
         // The agent preset in use when this was learned, when the host has one.
         // Recorded so that presets can be told apart later; nothing reads it yet.
@@ -385,7 +483,8 @@ export const memory = {
   },
   // Validate references and preserve every revision. This does not claim that
   // code can establish semantic truth: that is evaluated against raw evidence.
-  apply(operations, events, { immediate = false, known = this.items({ closed: true }) } = {}) {
+  // `idle`: the change comes from idle work, with no new word of the user's behind it. `direct`: the user asked for it themselves, through the assistant.
+  apply(operations, events, { immediate = false, known = this.items({ closed: true }), idle = false, direct = false } = {}) {
     const revisions = new Map(known.map(i => [i.id, i.revision]));
     const report = { applied: [], rejected: [] };
     this.log.transaction(() => {
@@ -406,7 +505,7 @@ export const memory = {
             report.applied.push({ op: "core", field: op.field }); continue;
           }
           if (!op.reason) throw Error("missing reason");
-          const written = this.applyItem(op, old, raw, refs, at, immediate), item = written.at(-1);
+          const written = this.applyItem(op, old, raw, refs, at, immediate, { idle, direct }), item = written.at(-1);
           for (const next of written) {
             if (JSON.stringify(next).length > 16000) throw Error("item too large; split independent understanding");
             this.write(next, op.reason); revisions.set(next.id, next.revision);
@@ -441,20 +540,54 @@ export const memory = {
   // is recorded there. Whole memories and whole messages made each answer
   // tens of kilobytes; it gives what is needed to recognize a hit and its id,
   // and asteme_why gives the rest.
-  search(query) {
-    const found = this.searchAll(query);
+  search(query, only) {
+    const found = this.searchAll(query, only);
     return {
       understanding: found.understanding.slice(0, 8).map(i => ({ id: i.id, kind: i.kind, level: i.level, status: i.status, text: cut(i.text, 400),
-        ...(i.about ? { about: cut(i.about, 120) } : {}), ...(i.entities?.length ? { entities: i.entities.slice(0, 6) } : {}), revision: i.revision,
+        ...(i.about ? { about: cut(i.about, 120) } : {}), ...(i.entities?.length ? { entities: i.entities.slice(0, 6) } : {}), revision: i.revision, learned: iso(i.learnedAt)?.slice(0, 10),
         evidence: (i.evidence ?? []).slice(-2).map(e => ({ id: e.id, quote: cut(e.quote, 200) })) })),
       sources: found.sources.slice(0, 8).map(e => ({ ...e, text: cut(e.text, 400) })),
     };
   },
-  searchAll(query) {
+  /**
+   * Looking on purpose, by meaning and by words, through what is remembered and through the record itself. Words alone miss what was said in other
+   * words (and across languages); meaning alone misses a name or a number. The rounds of the record come whole enough to answer from, with their day.
+   */
+  async seek(query, { here = null, limit = 8 } = {}) {
+    // What looking by words finds is kept to the same walls as what looking by meaning finds. A memory kept to another project is not given, nor
+    // the records it rests on; nor is a record of a project that keeps to itself, of a conversation the user keeps out of memory, or with the
+    // shape of a secret.
+    const fenced = new Set(this.items({ closed: true }).filter(i => { const home = this.confinedTo(i); return home && home !== here; }).flatMap(i => (i.evidence ?? []).map(e => e.id)));
+    const open = e => !fenced.has(e.id) && !secret(e.content) && !this.quiet(e.sessionId, e.scope?.projectId) && !(e.scope?.projectId && e.scope.projectId !== here && this.walled(e.scope.projectId));
+    const mine = i => { const home = this.confinedTo(i); return !home || home === here; };
+    const words = this.search(query, { item: mine, event: open }), out = { understanding: [...words.understanding], rounds: [], sources: words.sources };
+    if (!this.embed || typeof query !== "string" || !query.trim()) return out;
+    try {
+      const qm = await this.vectors([query], "query");
+      if (!qm) return out;
+      const qv = [...qm.values()], all = this.items({ closed: true }).filter(i => !i.paused && i.text && (() => { const home = this.confinedTo(i); return !home || home === here; })());
+      const tm = all.length ? await this.vectors(all.map(i => i.text), "passage") : new Map();
+      if (!tm) return out;
+      const dot = (a, b) => { let d = 0, x = 0, y = 0; for (let k = 0; k < a.length; k++) { d += a[k] * b[k]; x += a[k] * a[k]; y += b[k] * b[k]; } return x && y ? d / Math.sqrt(x * y) : 0; };
+      const near = all.map(i => ({ i, s: dot(qv[0], tm.get(i.text)) })).sort((a, b) => b.s - a.s).slice(0, limit).map(x => x.i);
+      const had = new Set(out.understanding.map(u => u.id));
+      out.understanding = [...near.filter(i => !had.has(i.id)).map(i => ({ id: i.id, kind: i.kind, level: i.level, status: i.status, text: cut(i.text, 400),
+        ...(i.about ? { about: cut(i.about, 120) } : {}), ...(i.entities?.length ? { entities: i.entities.slice(0, 6) } : {}), revision: i.revision, learned: iso(i.learnedAt)?.slice(0, 10),
+        evidence: (i.evidence ?? []).slice(-2).map(e => ({ id: e.id, quote: cut(e.quote, 200) })) })), ...out.understanding].slice(0, 2 * limit);
+      out.rounds = this.recordNear(qv, { here, limit }).map(r => ({ id: r.id, on: iso(r.at)?.slice(0, 10), said: r.said, answered: r.replied || undefined, ...(r.sensitive ? { sensitive: true } : {}) }));
+      // A record the rounds already carry is not given a second time, cut shorter.
+      const carried = new Set(this.recordNear(qv, { here, limit }).flatMap(r => r.events));
+      out.sources = out.sources.filter(e => !carried.has(e.id));
+    } catch { /* the embedder is not there: what the words found stands */ }
+    return out;
+  },
+  // `only`: what may be given at all ({ item, event }), asked before anything is ranked, so that what may not be given takes no place.
+  searchAll(query, only) {
+    const { item = null, event = null } = only ?? {};
     const keys = terms(query), rank = text => [...terms(text)].filter(k => keys.has(k)).length;
     return {
-      understanding: this.items({ closed: true }).filter(i => !i.paused).map(i => ({ i, score: rank([i.text, situation(i)].join(" ")) })).filter(x => x.score).sort((a, b) => b.score - a.score).slice(0, 12).map(x => x.i),
-      sources: this.log.sessions(this.identity).flatMap(s => this.log.events(s.scope, s.sessionId)).filter(isEvidence).map(e => ({ e, score: rank(e.content) })).filter(x => x.score).sort((a, b) => b.score - a.score).slice(0, 12).map(({ e }) => evidenceOf(e)),
+      understanding: this.items({ closed: true }).filter(i => !i.paused && (!item || item(i))).map(i => ({ i, score: rank([i.text, situation(i)].join(" ")) })).filter(x => x.score).sort((a, b) => b.score - a.score).slice(0, 12).map(x => x.i),
+      sources: this.log.sessions(this.identity).flatMap(s => this.log.events(s.scope, s.sessionId)).filter(isEvidence).filter(e => !event || event(e)).map(e => ({ e, score: rank(e.content) })).filter(x => x.score).sort((a, b) => b.score - a.score).slice(0, 12).map(({ e }) => evidenceOf(e)),
     };
   },
 };

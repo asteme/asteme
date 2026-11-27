@@ -29,3 +29,13 @@ export function charterOf(profile) {
     charterIsDefault: !own.purpose && !own.values.length,
   };
 }
+
+/**
+ * What the user asked to be held to, as lines for the model that writes the reply: in front of it at every reply, so that it does not depend on
+ * being recalled. `asks` is what standingAsks() gives. An empty list gives no lines.
+ */
+export function standingLines(asks = []) {
+  if (!asks.length) return [];
+  return ["Standing asks. The user asked for each of these in so many words, to hold from now on. When its situation is present, do it without being asked again, and say that you are doing it because they asked. An irritated reply is not a withdrawal: if they tell you to stop one, ask once whether they mean from now on, and keep to their answer.",
+    ...asks.map(a => `- When: ${a.when} ${JSON.stringify(a.ask)}${a.inDoubt ? " (in doubt: ask before relying on it)" : ""}`)];
+}

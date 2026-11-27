@@ -11,7 +11,7 @@ const { core, log, a, lesson, tokyo, osaka, patch } = await story(print);
 print("\nWhat is in memory now");
 for (const item of core.items({ closed: true })) {
   const recall = core.why(item.id).recall;
-  print(`  [${item.level}${item.status === "active" ? "" : ", " + item.status}] ${item.text}  (comes to mind: ${recall.accessibility})`);
+  print(`  [${item.level}${item.status === "active" ? "" : ", " + item.status}] ${item.text}  (how its uses have gone: ${recall.accessibility})`);
 }
 
 print("\nWhy does it believe the lesson?");

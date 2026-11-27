@@ -7,7 +7,7 @@
 // direction, also behind you. The newest are nearest and the oldest furthest,
 // so looking further out is looking further back, whichever way you look, as
 // it is in the real sky. A lesson holds the cases it was drawn from close
-// around it. What comes to mind easily is bright; what is fading is faint.
+// around it. What has been of use is bright; what has been out of place or wrong is faint.
 // Pulled far enough back, the whole of it is seen at once, as a ball of stars.
 // Nothing here is drawn that is not a stored memory.
 let spaceOn = false,

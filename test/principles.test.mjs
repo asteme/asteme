@@ -13,7 +13,7 @@ const understanding = (evidence, fields) => ({ op: "put", kind: "understanding",
   tested: "One occasion", hypothesis: "Other occasions are untested", entities: [], evidence, ...fields });
 const PITCH = { text: "Put the ask first in a pitch", about: "how investors read", concrete: "Preparing a pitch for the investor", general: "Preparing a pitch for an investor who skims" };
 
-test("1. the present scene recalls a memory that shares none of its words; an unrelated scene and a greeting recall nothing", async t => {
+test("1. the present scene recalls a memory that shares none of its words; in an unrelated scene and a greeting it is on the table and nothing is passed", async t => {
   const { core, say, learn, attend } = world(t);
   const a = learn(say("The director only reads the first three lines", "seed"), DIRECTOR);
 
@@ -34,12 +34,14 @@ test("1. the present scene recalls a memory that shares none of its words; an un
   const invented = await attend(ask, { session: "pitch-2", scene, admit: [{ id: a.id, anchor: "the busy director" }] });
   assert.equal(invented.trace.decisions[0].dropped, "no exact anchor");
 
+  // What is nearest is always put before admission, however far it is: whether it belongs is a judgment, and a measure of nearness cannot make it
+  // (a floor on nearness kept out true matches, and every one of them across languages). What admission holds back is on record with its reason.
   for (const [text, where] of [["Fix the bug in the database migration", "Fixing a bug in a database migration"], ["Hello again", "A greeting with no task"]]) {
     const calls = [];
-    const off = await attend(text, { session: text, scene: where, admit: [{ id: a.id, anchor: text }], calls });
-    assert.equal(off.trace.candidates.length, 0, where);
-    assert.equal(off.trace.heldBack.belowFloor, 1, "recorded as held back, not lost");
-    assert.deepEqual(calls.map(c => c.purpose), ["asteme-scene"], "nothing to admit, so no admission call");
+    const off = await attend(text, { session: text, scene: where, admit: [{ id: a.id, use: "not-now", reason: "This is about something else" }], calls });
+    assert.deepEqual([off.trace.candidates.map(c => c.item.id), off.trace.delivered.length, off.trace.text], [[a.id], 0, ""], where);
+    assert.deepEqual(off.trace.decisions.map(d => [d.id, d.use, d.reason]), [[a.id, "not-now", "This is about something else"]], "held back, with the reason, not lost");
+    assert.deepEqual(calls.map(c => c.purpose), ["asteme-scene", "asteme-select"]);
   }
 });
 
@@ -271,9 +273,12 @@ test("6. a lesson reaches a scene it never met, because sleep imagined where els
   say("Decision: approve. Reasons follow.", "memo", "assistant");
   tick(120000);
   await settle(say("Perfect, approved in one read", "memo"), { kind: "helped", applied: "yes", reply_quote: "Decision: approve" });
+  // That a use was taken up does not, by itself, send a memory to be imagined into new scenes: it has to be a lesson, or to have stood out.
+  assert.equal(await core.sleepDue(), false);
+  core.raiseSalience(a.id, 0.6, "It stood out");
 
-  const patch = { scene: "Describing a patch for a maintainer with little time", need: "", entities: [] };
-  assert.equal((await core.candidates(patch))[0].origin, "encoded");
+  const patch = { scene: "Describing a code change in a summary for a maintainer with little time", need: "", entities: [] };
+  assert.ok(["words", "encoded", "anticipated"].includes((await core.candidates(patch))[0].origin));
   const night = await core.sleep({ infer: scripted({ imagine: input => {
     assert.deepEqual(input.helpedIn, ["Writing a memo for the director"]);
     return { scenes: ["Explaining a code change to a maintainer who only reads the summary", DIRECTOR.general, "short"] };
@@ -285,17 +290,15 @@ test("6. a lesson reaches a scene it never met, because sleep imagined where els
   assert.equal(called.origin, "imagined");
   assert.ok(called.sim > 0.8);
 
-  // Met for real, and it helps: the hypothesis is ready to become established scope.
+  // Met for real, and taken up: that is kept to be read, and changes neither what the memory says nor what calls it.
   tick();
   await attend("Describe this patch for the maintainer", { session: "patch", scene: patch.scene, admit: [{ id: a.id, anchor: "patch for the maintainer" }] });
   say("Summary first: this fixes the race in the queue.", "patch", "assistant");
   tick(120000);
-  await settle(say("Merged, the summary was all they needed", "patch"), { kind: "helped", applied: "yes", reply_quote: "Summary first" });
-  const widen = core.jobs().find(j => j.type === "revise" && j.target === a.id);
-  assert.match(widen.reasons[0], /beyond where it was learned/);
-  // The first success was in the scene it was learned in, so it adds no new scene; the second does.
-  assert.deepEqual(core.why(a.id).recall.answersTo.map(c => [c.because, c.scene === patch.scene]),
-    [["encoded", false], ["anticipated", false], ["imagined", false], ["helped", true]]);
+  const taken = await settle(say("Merged, the summary was all they needed", "patch"), { kind: "helped", applied: "yes", reply_quote: "Summary first" });
+  assert.deepEqual([taken.applied.map(f => [f.kind, f.by]), core.jobs().filter(j => j.type === "revise").length], [[["helped", "model"]], 0]);
+  assert.deepEqual(core.why(a.id).recall.answersTo.map(c => c.because), ["words", "encoded", "anticipated", "imagined"]);
+  assert.deepEqual(core.why(a.id).outcomes.map(o => o.kind), ["helped", "helped"], "both uses and how they went are there to be read");
 });
 
 test("7. experience does not move the charter: only the user's own words do, and sleep cannot touch it", async t => {

@@ -75,9 +75,9 @@ Day 1. The user corrects a memo.
   stored as a case; the exchange stood out (salience 0.55) because it was a correction
 Day 3. A request with none of the memo's words: a one-pager for an investor.
   recalled by the scene: "Writing a memo for the director"
-  it helped; accessibility 0.7453
+  the user said it helped; that is kept to be read, and changes nothing about what is recalled
 Day 4. The same memory is used where it does not belong: notes for the team.
-  marked out of place there; accessibility 0.605
+  the user said it does not belong there; it will stay out of scenes like that one
 Night. Sleep.
   integrate: one lesson drawn from two cases
 ```

@@ -93,6 +93,17 @@ function LastReply({ delivery, items, ctx }) {
             {(byId.has(item.id) || away.has(item.id)) && <Verdict request={delivery.request} item={item.id} used outcome={outcomeOf(item.id)} ctx={ctx} />}
           </TracePoint>
         ))}
+        {(delivery.passages ?? []).map(p => (
+          <TracePoint key={p.id} mark="lit">
+            <p className="ast-trace__label">{useWord(t, p.use)}: {say(t, "fromRecord", { when: formatDateTime(p.at) ?? "" })}</p>
+            <p className="ast-quote">{p.said}</p>
+            <dl className="ast-used__facts">
+              {p.relevance && <div><dt>{t("because")}</dt><dd>{p.relevance}</dd></div>}
+              {p.by === "judge" && <div><dt>{t("because")}</dt><dd>{say(t, "byJudge", { n: Math.round((p.confidence ?? 0) * 100) })}</dd></div>}
+              {p.anchor && <div><dt>{t("yourWords")}</dt><dd className="ast-quote">{p.anchor}</dd></div>}
+            </dl>
+          </TracePoint>
+        ))}
 
         {!used.length && !delivery.error && (
           <TracePoint mark="hollow">

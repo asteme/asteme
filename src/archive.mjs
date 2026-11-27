@@ -23,7 +23,7 @@ export const plain = value => JSON.parse(JSON.stringify(value ?? null));
 
 // Derived and private state is not carried: vectors are recomputed, and
 // anything stored under secret: never leaves the machine.
-const PRIVATE_STATE = /^(secret:|vector:)/;
+const PRIVATE_STATE = /^(secret:|vector:|record-index:)/;
 const quote = name => `"${String(name).replace(/"/g, '""')}"`;
 const tablesOf = db => db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all().map(r => r.name);
 const columnsOf = (db, table) => db.prepare(`PRAGMA table_info(${quote(table)})`).all().map(c => c.name);
@@ -32,7 +32,8 @@ const columnsOf = (db, table) => db.prepare(`PRAGMA table_info(${quote(table)})`
 export function dumpTables(db, { vectors = false } = {}) {
   const tables = {};
   for (const name of tablesOf(db)) {
-    if (name === "vector" && !vectors) continue;
+    // The index of the record is worked out again from the records wherever they are brought in.
+    if (name === "passage" || (name === "vector" && !vectors)) continue;
     const columns = columnsOf(db, name);
     let rows = db.prepare(`SELECT * FROM ${quote(name)}`).all().map(r => columns.map(c => r[c] instanceof Uint8Array ? { $base64: Buffer.from(r[c]).toString("base64") } : r[c]));
     if (name === "state") rows = rows.filter(r => !PRIVATE_STATE.test(String(r[columns.indexOf("key")])));
@@ -228,7 +229,7 @@ export const archive = {
       const forgotten = new Set(db.prepare("SELECT id FROM forgotten").all().map(r => r.id));
       for (const name of Object.keys(tables)) {
         const t = rowsOf(name);
-        if (!t || name === "forgotten" || name === "vector") continue;
+        if (!t || name === "forgotten" || name === "vector" || name === "passage") continue;
         const col = c => t.columns.indexOf(c);
         if (name === "events") insert(name, t, { skip: r => forgotten.has(r[col("id")]) });
         else if (name === "experience") {

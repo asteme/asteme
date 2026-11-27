@@ -38,7 +38,7 @@ export async function runScenario(scenario, { infer, embed, chat, reading = "one
       const read = step.tool ? record(step.session, "tool", step.tool, "tool/result", { tool: { phase: "result", name: "read", execution: "completed" } }) : null;
       // The reply, written the way the plugin has it written: persona first, the note as context.
       const reply = await chat([
-        { role: "system", content: `${personaPrompt(core.core())}\n\n${experiencePrompt}` },
+        { role: "system", content: `${personaPrompt(core.core(), core.standingAsks({ here: scope.projectId }))}\n\n${experiencePrompt}` },
         ...history.slice(0, -1).map(e => ({ role: e.role, content: e.content })),
         { role: "user", content: [step.user, read && `<tool-result>\n${step.tool}\n</tool-result>`, trace.text && `<system-reminder>\n${trace.text}\n</system-reminder>`].filter(Boolean).join("\n\n") }], 900);
       clock += 20000;

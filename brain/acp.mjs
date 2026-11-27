@@ -121,7 +121,7 @@ export function openWorker({ name, command, args = [], env = {}, cwd = process.c
       });
       const hello = await call(
         "initialize",
-        { protocolVersion: 1, clientCapabilities: {}, clientInfo: { name: "asteme", version: "0.12.2" } },
+        { protocolVersion: 1, clientCapabilities: {}, clientInfo: { name: "asteme", version: "0.13.0-rc.1" } },
         startTimeoutMs,
       );
       return hello;

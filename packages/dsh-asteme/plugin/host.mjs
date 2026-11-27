@@ -157,6 +157,8 @@ export class Host {
             `project-label:${projectId}`,
             header.cwd ? basename(header.cwd) : (header.title ?? projectId),
           );
+          // Which project a session is in, where it can be read without waiting (the system prompt is written without waiting).
+          (this.projects ??= new Map()).set(header.id, projectId);
           return {
             header,
             scope: { ...this.identity, projectId },
@@ -452,6 +454,10 @@ export class Host {
         model: { current: () => last },
       };
       await this.keep();
+      // A little more of the record is made searchable at each pass, until all of it is. A store brought from an earlier version has all its
+      // conversations and no index of them; left to the idle work alone (asked once in ten minutes) five thousand messages would take a day,
+      // and at each pass they take a quarter of an hour. It asks no model, so it does not wait for a round.
+      try { await this.core.indexRecord(); } catch { /* the embedder is not there now: it is tried again at the next pass */ }
       if (!round.left) return;
       await this.reflectAll(agent, controller.signal, round);
       // Deferred credit runs before sleep, so what is revised or promoted
@@ -616,8 +622,8 @@ export class Host {
     try { this.core.dropUnread(); } catch (e) { this.warn(e); }
   }
   async search(agent, query) {
-    await this.track(agent.session);
-    return this.core.search(query);
+    const state = await this.track(agent.session);
+    return this.core.seek(query, { here: state?.scope?.projectId ?? null });
   }
   async start() {
     // Persisted incomplete reflection is drained when a model-bearing agent is available.

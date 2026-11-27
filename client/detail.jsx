@@ -35,7 +35,7 @@ function Sources({ item, why, ctx }) {
   const supports = why?.supports ?? item.evidence.map(e => ({ id: e.id, quote: e.quote }));
   const who = role => role === "user" ? t("you") : role === "assistant" ? t("theAssistant") : role === "tool" ? t("aTool") : "";
   return (
-    <Section title={t("restsOn")} lead={t(item.level === "lesson" ? "restsOnLessonLead" : "restsOnLead")}>
+    <Section title={t("restsOn")} lead={t(item.standing ? "restsOnStandingLead" : item.level === "lesson" ? "restsOnLessonLead" : "restsOnLead")}>
       <Trace>
         {full?.status === "ready"
           ? full.events.map(e => (
@@ -153,8 +153,8 @@ export function MemoryDetail({ id, snapshot: s, ctx }) {
         ]} />
       </Section>
 
-      <Section title={t("comesToMind")} lead={!live ? t("notRecalled") : recallReason(t, item) ? `${t("recall_" + level)}: ${recallReason(t, item)}.` : `${t("recall_" + level)}.`}>
-        {pending ? <Skeleton lines={3} /> : why && (
+      <Section title={t("comesToMind")} lead={!live ? t("notRecalled") : item.standing ? t("comesStanding") : t("comesNear")}>
+        {pending ? <Skeleton lines={3} /> : why && !(live && item.standing) && (
           <ul className="ast-scenes">
             {why.recall.answersTo.map(c => <li key={"+" + c.scene}><span className="ast-scenes__mark" aria-hidden="true" />{c.scene}<span className="ast-soft"> ({calledWord(t, c.because)})</span></li>)}
             {why.recall.staysOutOf.map(c => <li key={"-" + c.scene} className="ast-scenes__out"><span className="ast-scenes__mark" aria-hidden="true" />{say(t, "staysOut", { scene: c.scene })}</li>)}
@@ -162,7 +162,7 @@ export function MemoryDetail({ id, snapshot: s, ctx }) {
         )}
       </Section>
 
-      <Section title={t("useSoFar")}>
+      <Section title={t("useSoFar")} lead={live && recallReason(t, item) ? `${t("recall_" + level)}: ${recallReason(t, item)}.` : undefined}>
         {pending ? <Skeleton lines={2} /> : !why?.outcomes.length ? <p className="ast-empty">{t("noUseYet")}</p> : (
           <Trace>
             {why.outcomes.map((o, n) => (

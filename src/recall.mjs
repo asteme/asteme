@@ -1,27 +1,33 @@
-// Recall: the present scene calls up what is stored. Nothing here searches for
-// words. A memory answers to scenes: the one it was learned in, the ones it
-// was expected to matter in, the ones sleep imagined for it, and every scene
-// where it later helped or was missed. It also remembers the scenes where it
-// did not help, and stays quiet when the present looks more like those.
+// Recall: the present calls up what is stored. A memory answers to its own
+// words and to scenes: the one it was learned in, the ones it was expected to
+// matter in, the ones sleep imagined for it, and every scene where it was
+// later needed and missed. It also keeps the scenes the user said it does not
+// belong in, and stays quiet when the present looks more like those.
 //
-// Embeddings are the sensor, not the judge. They measure how close two scene
-// descriptions are; competition, the admission step and later outcomes decide
-// what is actually used.
+// Beside the memories, the record itself is searched (record.mjs): the rounds
+// of earlier conversations nearest to the present, in the words they were
+// said in.
+//
+// Embeddings are the sensor, not the judge. They put what is stored in order
+// of nearness; the nearest few go to admission, and admission decides what is
+// used. Nothing is held back by an absolute measure of nearness: such a floor
+// was measured (2026-11) to keep out most true matches, and all of them when
+// the message and the stored scene were in different languages, while the
+// order itself was right in every language tried.
 import { digest } from "./log.mjs";
 import { terms } from "./mind.mjs";
-import { isSpecificAnchor } from "./policy.mjs";
-import { sameEntity, commonNames, norm } from "./memory.mjs";
-import { accessibility, useStats } from "./outcome.mjs";
+import { matterWord, bareWord } from "./policy.mjs";
+import { sameEntity, commonNames, norm, NOBODY } from "./memory.mjs";
+import { accessibility, useStats, bounds, standing } from "./outcome.mjs";
 
-// Every number that shapes recall, in one place. These are defaults chosen by
-// reasoning, not fitted to data; `eval/` exists to tune them.
+// Every number that shapes recall, in one place. `eval/` measures what they do; a number here is changed with a measurement beside it.
 /**
- * The candidates one reading is given. The best by rank, then those a name or
+ * The candidates one reading is given. The nearest, then those a name or
  * a due time brought (due first), up to a number; and of all those, in that
  * order, as many as fit in the room the prompt has for them. Eight are kept
  * whatever their size.
  */
-export function fitCandidates(list, { top = TUNING.top, beside = TUNING.beside, chars = TUNING.candidateChars } = {}) {
+export function fitCandidates(list, { top = TUNING.near, beside = TUNING.beside, chars = TUNING.candidateChars } = {}) {
   const size = c => Math.min(600, c.item.text?.length ?? 0) + Math.min(300, c.item.concrete?.length ?? 0) + Math.min(300, c.item.general?.length ?? 0)
     + Math.min(200, c.item.tested?.length ?? 0) + Math.min(200, c.item.hypothesis?.length ?? 0) + Math.min(160, c.cue?.length ?? 0) + 320;
   const best = list.slice(0, top), rest = list.slice(top).sort((a, b) => (b.due ? 1 : 0) - (a.due ? 1 : 0)).slice(0, beside);
@@ -31,36 +37,27 @@ export function fitCandidates(list, { top = TUNING.top, beside = TUNING.beside, 
 }
 
 export const TUNING = {
-  // Scenes that call for nothing. A memory must fit the present scene better
-  // than it fits these, which gives a relevance floor that does not depend on
-  // the embedding model's scale.
-  nullScenes: [
-    "A greeting with no task",
-    "Small talk that asks for nothing",
-    "A short acknowledgement or thanks",
-    "A request to continue whatever was being done",
-  ],
-  // Closeness puts a match on a scale that does not depend on the embedding
-  // model: 0 is "fits no better than an empty scene", 1 is "the same scene".
-  // Raw margins differ by model (0.001 can be noise in one and signal in
-  // another); a share of the distance to identity does not.
-  minCloseness: 0.05,  // below this the scene alone does not call a memory
-  fit: { strong: 0.5, moderate: 0.2 },  // how admission is told a match looks
-  negativeMargin: 0,   // how much closer a scene of failure must be before it silences a memory
-  top: 24,             // candidates handed to admission
-  beside: 16,          // at most this many more, called by a name in the scene or by their time having come
-  candidateChars: 28000, // and no more of them than fit in this much of the prompt
-  cueWeight: { encoded: 1, anticipated: 1, helped: 1, missed: 1, imagined: 0.85 },
-  spreadFrom: 6,       // strongest candidates that pass activation on
-  spread: 0.5,         // share of a candidate's activation that reaches a linked memory
-  weights: { entity: 0.15, salience: 0.1, spread: 0.3, words: 0.1 },
+  // How many memories one reading is given: the nearest by any of their keys.
+  // Measured on 36 questions over 265 memories: a memory of the right
+  // conversation was among the nearest four for 35 of them, so eight leaves room.
+  near: 8,
+  beside: 8,           // at most this many more, called by a name in the scene or by their time having come
+  rounds: 4,           // rounds of the record given beside them
+  candidateChars: 28000, // and no more of all of it than fits in this much of the prompt
+  // A key's weight. A scene imagined for a memory and not met yet counts a little less than one it has met.
+  cueWeight: { words: 1, encoded: 1, anticipated: 1, missed: 1, imagined: 0.85 },
+  negativeMargin: 0,   // how much nearer a scene it was said not to belong in must be before it silences a memory
+  // A record about a private matter keeps the test that every memory was put to before 0.13: it comes before admission only when the present
+  // is nearer to it than to a scene that says nothing, by this share of the way to being the same scene (or when the message uses a word of
+  // its own and is nearer at all, or on its day). That test holds back true matches too, which is why nothing else is put to it any more;
+  // for a private matter, holding back is the side to err on, and it was not this version's to change.
+  privateCloseness: 0.05,
+  nullScenes: ["A greeting with no task", "Small talk that asks for nothing", "A short acknowledgement or thanks", "A request to continue whatever was being done"],
   // Age never makes a memory harder to recall. It makes a changeable fact less
   // safe to assert, so past these ages it is checked before it is relied on.
   staleDays: { state: 30, slow: 365, stable: Infinity },
   // The earlier rule: the quoted words must also appear in the memory. Off as
   // a gate, because it turns recall by scene back into recall by wording.
-  // Shared content words are still used as one signal among others (see
-  // weights.words and the floor below).
   requireSharedTerms: false,
 };
 
@@ -70,9 +67,12 @@ export function isStale(item, feedback, now) {
   const confirmed = Math.max(item.lastCheckedAt ?? item.learnedAt ?? now, ...feedback.filter(f => f.kind === "helped").map(f => f.at));
   return (now - confirmed) / DAY > (TUNING.staleDays[item.volatility ?? "slow"] ?? Infinity);
 }
-// Content words: what is left of a text once instruction words and short
-// function words are set aside.
-const contentWords = text => new Set([...terms(text)].filter(t => isSpecificAnchor(t)));
+// The words of a text that carry a matter: what is left once question words, pronouns, little verbs and grammar are set aside (policy.mjs).
+// A word in katakana is taken whole, its long-vowel mark with it (ローン). Its pairs are not: ーン is in パターン too.
+const katakanaWords = text => (String(text ?? "").match(/[\p{Script=Katakana}ー]{2,}/gu) ?? []).filter(word => /\p{Script=Katakana}/u.test(word) && !BOTH.has(word));
+// The words a model writes for the two who are talking are in most memories, and are nobody's matter.
+const BOTH = new Set(["ユーザー", "アシスタント"]);
+const contentWords = text => new Set([...[...terms(text)].filter(matterWord).map(bareWord), ...katakanaWords(text)]);
 
 const cosine = (a, b) => {
   if (a.length !== b.length) throw Error("Embedding dimensions changed");
@@ -118,8 +118,8 @@ export const recall = {
     }
     return out;
   },
-  // The scenes a memory answers to, and the scenes it has learned to stay out of.
-  // Each cue says which records it was drawn from (`from`): none for the memory's own words, and for a scene learned from a later use, that use's records.
+  // What a memory answers to, and the scenes it stays out of.
+  // Each key says which records it was drawn from (`from`): none for the memory's own words and situations, and for a scene learned from a later use, that use's records.
   // What is kept of a reading carries these ids, so that taking a record back finds exactly the entries that hold words drawn from it, and no others.
   cues(item, feedback = []) {
     const positive = [], negative = [], seen = new Map();
@@ -131,49 +131,66 @@ export const recall = {
       seen.set(sign + text, cue); list.push(cue);
     };
     const sources = f => [f.request, ...(f.evidence ?? []).map(e => e.id)].filter(Boolean);
+    // Its own words are a key too, in the language they were written in: a message in that language finds them without a scene having to be read first.
+    add(positive, "+", item.text, "words");
     add(positive, "+", item.concrete, "encoded");
     add(positive, "+", item.general, "anticipated");
     for (const text of item.imagined ?? []) add(positive, "+", text, "imagined");
     for (const f of feedback) {
       const scene = f.scene?.scene;
-      if (["helped", "missed"].includes(f.kind)) add(positive, "+", scene, f.kind, sources(f));
-      // A scene where the content was wrong stops counting once the content is revised.
-      else if (f.kind === "irrelevant" || (f.kind === "wrong" && f.revision === item.revision)) add(negative, "-", scene, f.kind, sources(f));
+      // A scene where it was needed and did not come is one it answers to from then on.
+      if (f.kind === "missed") add(positive, "+", scene, f.kind, sources(f));
+      // A scene the user said it does not belong in. One where its content was wrong stops counting once the content is revised.
+      else if (bounds(f) || (f.kind === "wrong" && f.revision === item.revision)) add(negative, "-", scene, f.kind, sources(f));
     }
-    if (!positive.length) add(positive, "+", item.text, "encoded");
     return { positive, negative };
   },
-  async activate(scene, now = this.log.now(), request = null, { purpose = "delivery", chars = TUNING.candidateChars } = {}) {
-    const empty = { candidates: [], suppressed: [], below: 0 };
+  /**
+   * What the present calls up: the memories nearest to it, and the rounds of the record nearest to it.
+   * `purpose` "delivery" is a reply about to be written; anything else (reflection, replay) is reading with nobody waiting, where what a
+   * memory was said not to belong in and what is private do not hold it back.
+   */
+  async activate(scene, now = this.log.now(), request = null, { purpose = "delivery", chars = TUNING.candidateChars, view = null } = {}) {
+    const empty = { candidates: [], suppressed: [], below: 0, rounds: [] };
     const erased = this.log.state("erasure-revision", 0);
     this.expire(now);
-    const ask = request?.content ?? "", delivery = purpose === "delivery";
-    // A memory kept to its project is not recalled in another one.
+    const delivery = purpose === "delivery";
+    // A memory kept to its project is not recalled in another one. What is always in front of the model (a standing ask) is not called up as well.
     const here = request?.scope?.projectId;
-    const items = this.items().filter(i => { const home = this.confinedTo(i); return !home || !here || home === here; });
-    if (!items.length) return empty;
+    const inFront = delivery ? new Set(this.standingAsks({ here }).map(a => a.id)) : new Set();
+    // What is kept to a project is recalled only where the present is known to be in it.
+    const items = this.items().filter(i => { const home = this.confinedTo(i); return (!home || home === here) && !inFront.has(i.id); });
     if (!this.embed) throw Error("No semantic embedding adapter");
+    const queries = [...new Set([scene.scene, scene.need].filter(Boolean))];
+    const queryMap = await this.vectors(queries.length ? queries : [""], "query");
+    if (!queryMap || erased !== this.log.state("erasure-revision", 0)) return empty;
+    const qv = [...queryMap.values()];
+    // Whether the present calls a record about a private matter (see privateCloseness). Where the embedder cannot tell this scene from one that
+    // says nothing it carries no signal, and only the message's own words can call one.
+    const asked = contentWords(request?.content ?? "");
+    const guarded = delivery && (items.some(i => i.sensitive?.length) || this.recordVectors().length > 0);
+    const nullMap = guarded ? await this.vectors(TUNING.nullScenes, "query") : new Map();
+    if (!nullMap || erased !== this.log.state("erasure-revision", 0)) return empty;
+    const nv = [...nullMap.values()], informative = nv.length > 0 && qv.some(q => nv.some(n => cosine(q, n) < 0.999));
+    const dot = (a, b) => { let d = 0, x = 0, y = 0; for (let i = 0; i < a.length; i++) { d += a[i] * b[i]; x += a[i] * a[i]; y += b[i] * b[i]; } return x && y ? d / Math.sqrt(x * y) : 0; };
+    const called = (near, vector, words) => {
+      if (!informative || !vector) return words;
+      const floor = Math.max(...nv.map(n => dot(n, vector))), lift = near - floor, room = 1 - floor;
+      return (room > 1e-6 ? Math.max(0, lift / room) : 0) >= TUNING.privateCloseness || (words && lift > 0);
+    };
+    // A round about a private matter is marked as one and comes under the same rule as a memory about one.
+    const rounds = delivery ? this.recordNear(qv, { here, view, limit: TUNING.rounds,
+      allow: (r, vector) => !r.sensitive || called(r.score, vector, (() => { const said = contentWords(r.said); return [...asked].some(t => said.has(t)); })()) }) : [];
+    if (!items.length) return { ...empty, rounds };
     const outcomes = new Map(items.map(i => [i.id, []]));
     for (const f of this.feedback()) outcomes.get(f.item)?.push(f);
     const cueSets = new Map(items.map(i => [i.id, this.cues(i, outcomes.get(i.id))]));
-    const queries = [...new Set([scene.scene, scene.need].filter(Boolean))];
-    const queryMap = await this.vectors(queries.length ? queries : [""], "query");
-    const nullMap = delivery ? await this.vectors(TUNING.nullScenes, "query") : new Map();
     const cueMap = await this.vectors([...cueSets.values()].flatMap(c => [...c.positive, ...c.negative].map(x => x.text)), "passage");
-    if (!queryMap || !nullMap || !cueMap || erased !== this.log.state("erasure-revision", 0)) return empty;
-    const qv = [...queryMap.values()], nv = [...nullMap.values()];
-    // If the embedder cannot tell this scene from an empty one it carries no
-    // signal, and the floor stands aside instead of guessing.
-    const informative = nv.length > 0 && qv.some(q => nv.some(n => cosine(q, n) < 0.999));
+    if (!cueMap || erased !== this.log.state("erasure-revision", 0)) return empty;
     const sim = text => Math.max(...qv.map(q => cosine(q, cueMap.get(text))));
-    // How near a cue is to a scene that says nothing does not depend on the
-    // present scene: it is worked out once for each cue and kept. With thirty
-    // thousand memories this was four fifths of the arithmetic of one recall.
-    if (this._floors?.model !== this.embed.model || this._floors.size > 200000) { this._floors = new Map(); this._floors.model = this.embed.model; }
-    const floors = this._floors;
-    const floor = text => { if (!nv.length) return 0; let f = floors.get(text); if (f === undefined) floors.set(text, f = Math.max(...nv.map(n => cosine(n, cueMap.get(text))))); return f; };
-    const named = scene.entities ?? [], asked = contentWords(ask);
-    const who = this.core?.() ?? {}, common = commonNames(this.items(), [who.name, who.userName]);
+    const who = this.core?.() ?? {}, common = new Set([...commonNames(this.items(), [who.name, who.userName]), ...NOBODY]);
+    // "user" names nobody, whoever gave it as a name; nor does a name most memories carry.
+    const named = (scene.entities ?? []).filter(n => typeof n === "string" && n.trim() && !common.has(norm(n)));
 
     const rows = items.map(item => {
       const { positive, negative } = cueSets.get(item.id), feedback = outcomes.get(item.id);
@@ -181,73 +198,43 @@ export const recall = {
         .sort((a, b) => b.weighted - a.weighted)[0];
       const worst = negative.map(c => ({ ...c, sim: sim(c.text) })).sort((a, b) => b.sim - a.sim)[0];
       const stats = useStats(feedback, item.revision);
-      const lift = best.sim - floor(best.text), room = 1 - floor(best.text);
-      const closeness = !informative ? null : room > 1e-6 ? Math.max(0, lift / room) : 0;
-      // A memory's own words change only when it does: worked out once for each revision, not at every recall.
-      const wordsKey = `${item.id}:${item.revision}`;
-      let mine = this._words?.get(wordsKey);
-      if (!mine) { if (!this._words || this._words.size > 60000) this._words = new Map(); this._words.set(wordsKey, mine = contentWords([item.text, item.concrete, item.general, ...(item.entities ?? [])].join(" "))); }
       const due = item.kind === "concern" && item.trigger?.at && Date.parse(item.trigger.at) <= now && (!item.trigger.until || now <= Date.parse(item.trigger.until));
+      // Whether the present message uses some of the memory's own content words: asked only of a memory about a private matter (below). Its own
+      // words are what it says, what it is about and whom it names.
+      const shares = () => { const key = `${item.id}:${item.revision}`; let mine = this._words?.get(key); if (!mine) { if (!this._words || this._words.size > 60000) this._words = new Map(); this._words.set(key, mine = contentWords([item.text, item.about, ...(item.entities ?? [])].join(" "))); } return [...asked].some(t => mine.has(t)); };
       return {
-        item, sim: best.sim, lift, closeness, cue: best.text, origin: best.origin, cueFrom: best.from ?? [],
-        fit: closeness === null ? null : closeness >= TUNING.fit.strong ? "strong" : closeness >= TUNING.fit.moderate ? "moderate" : "weak",
-        // The present message and the memory use some of the same content words.
-        words: delivery && [...asked].some(t => mine.has(t)),
-        // Closer to a scene where it failed than to any scene where it belongs.
+        item, sim: best.sim, weighted: best.weighted, cue: best.text, origin: best.origin, cueFrom: best.from ?? [],
+        // Nearer to a scene the user said it does not belong in than to anything it answers to.
         suppressed: delivery && !!worst && worst.sim > best.sim + TUNING.negativeMargin,
         ...(worst ? { against: { cue: worst.text, sim: worst.sim, from: worst.from ?? [] } } : {}),
         feedback: feedback.slice(0, 12), stats, accessibility: accessibility(item, stats),
         entity: (item.entities ?? []).some(e => !common.has(norm(e)) && named.some(n => sameEntity(e, n))), due: !!due,
         stale: isStale(item, feedback, now),
-        spread: 0,
+        ...(delivery && item.sensitive?.length ? (() => { const words = shares(); return { words, called: !!due || called(best.sim, cueMap.get(best.text), words) }; })() : {}),
       };
     });
-    // Relative to the best match in this scene, so the scale of the embedding
-    // model does not matter. Accessibility bends the ranking; it never removes.
-    const peak = Math.max(...rows.map(r => r.lift));
-    for (const r of rows)
-      r.score = (peak > 1e-9 ? r.lift / peak : 0) * (0.5 + 0.5 * r.accessibility)
-        + TUNING.weights.entity * r.entity + TUNING.weights.salience * (r.item.salience ?? 0) + TUNING.weights.words * r.words;
-
-    // The floor. The scene must fit clearly better than an empty scene would;
-    // a marginal fit counts only when the message also shares content words
-    // with the memory. Two weak signals that agree are worth one clear one.
-    const direct = r => !informative || r.closeness >= TUNING.minCloseness || (r.words && r.lift > 0);
-    const own = r => !r.suppressed && (direct(r) || r.entity || r.due);
-    // One step of association: what belongs with a strongly recalled memory
-    // comes along even if the scene alone would not have called it.
-    const byId = new Map(rows.map(r => [r.item.id, r]));
-    const ties = this.links().filter(l => l.type === "derived" || (l.type === "coactive" && (l.weight ?? 0) >= 2));
-    if (delivery && ties.length)
-      for (const source of rows.filter(own).sort((a, b) => b.score - a.score).slice(0, TUNING.spreadFrom))
-        for (const tie of ties) {
-          const other = byId.get(tie.src === source.item.id ? tie.dst : tie.dst === source.item.id ? tie.src : null);
-          const amount = TUNING.spread * Math.max(0, source.score);
-          if (other && other !== source && amount > other.spread) { other.spread = amount; other.via = source.item.id; }
-        }
-    for (const r of rows) r.score += TUNING.weights.spread * r.spread;
-
-    // A record about a private matter is put before admission only when the
-    // present scene itself calls it, or on the date the user set for it. A
-    // name alone or an association never brings it. Whether the user's message
-    // raises the matter is then admission's question, and its use is always in
-    // the open (see attend). Reflection sees every record, or it could never
-    // correct or close these.
-    // Where the embedder carries no signal the floor cannot vouch for the
-    // scene, and only the message's own words can.
-    const open = r => !r.item.sensitive?.length || r.due
-      || (informative ? r.closeness >= TUNING.minCloseness || (r.words && r.lift > 0) : r.words);
-    const eligible = r => !delivery || (!r.suppressed && (own(r) || r.spread > 0) && open(r));
-    const ranked = rows.filter(eligible).sort((a, b) => b.score - a.score);
-    const top = new Set(ranked.slice(0, TUNING.top).map(r => r.item.id));
-    // Broad, inspectable union. Admission is always the separate step's job.
-    // Beside the best: what a name in the scene calls, and what has come due.
-    // With thousands of memories one name can be in hundreds of them, so these
-    // have a number too, and all of it has a size: what is left out is counted
-    // (`crowded`), not passed over in silence.
-    const wide = ranked.filter(r => top.has(r.item.id) || r.entity || r.due);
-    const candidates = fitCandidates(wide, { chars });
+    // Nearness is put on a scale of this reading's own: 0 is the average memory, 1 the nearest one. The numbers an embedding model gives mean nothing
+    // by themselves (everything is "0.8 alike"); how far a memory stands out from the rest does. A memory in doubt ranks a little lower.
+    const mean = rows.reduce((n, r) => n + r.weighted, 0) / rows.length, peak = Math.max(...rows.map(r => r.weighted));
+    for (const r of rows) r.score = (peak - mean > 1e-9 ? Math.max(0, (r.weighted - mean) / (peak - mean)) : r.weighted === peak ? 1 : 0) * standing(r.item);
+    // Everything below the average has the same 0 on that scale; among those, the nearer still comes first.
+    const ranked = rows.filter(r => !r.suppressed).sort((a, b) => b.score - a.score || b.weighted - a.weighted);
+    ranked.forEach((r, n) => { r.rank = n + 1; });
+    // The nearest go to admission. Beside them: what a name in the scene calls, and what has come due; these have a number too, and what is left
+    // out for room is counted (`crowded`), not passed over in silence.
+    // A record about a private matter is put before admission only when the present itself calls it (privateCloseness, above) or on the date the
+    // user set for it. A name alone or being the nearest of what there is never brings it, so that the assistant does not raise a private matter
+    // first. Whether the message raises the matter is then admission's question, and its use is always in the open (see attend). Reflection sees
+    // every record, or it could never correct or close these. What the user asked to be taken into account whenever a situation comes up is a
+    // standing ask, and is in front of the model without being called.
+    const open = r => !delivery || !r.item.sensitive?.length || r.called;
+    // What may not be put forward does not take the place of something that may.
+    const allowed = ranked.filter(open), nearest = allowed.slice(0, delivery ? TUNING.near : 24);
+    const top = new Set(nearest.map(r => r.item.id));
+    const wide = allowed.filter(r => top.has(r.item.id) || r.entity || r.due);
+    const candidates = fitCandidates(wide, { top: nearest.length, chars });
     // An unsettled disagreement is recalled as a question, never as two facts.
+    const byId = new Map(rows.map(r => [r.item.id, r]));
     const present = new Set(candidates.map(r => r.item.id));
     for (const tie of this.links().filter(l => l.type === "contradicts" && l.state === "open"))
       if (present.has(tie.src) && present.has(tie.dst)) {
@@ -255,9 +242,9 @@ export const recall = {
         (byId.get(tie.dst).conflict ??= []).push(tie.src);
       }
     return {
-      candidates,
+      candidates, rounds,
       suppressed: rows.filter(r => r.suppressed).map(r => ({ id: r.item.id, cue: r.cue, from: r.cueFrom, sim: r.sim, against: r.against })),
-      below: rows.filter(r => !r.suppressed && !eligible(r)).length,
+      below: ranked.length - wide.length,
       crowded: wide.length - candidates.length,
     };
   },

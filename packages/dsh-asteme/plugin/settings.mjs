@@ -26,7 +26,7 @@ export function operations(host) {
     return { models, modelErrors: errors };
   };
   const carried = (projectId) => {
-    // How easily each item comes to mind, and from which outcomes: derived, never stored.
+    // How each item's uses have gone so far, and from which outcomes: derived, never stored.
     const recall = host.core.recallState();
     const items = host.core.items({ closed: true }).filter(i => i.projectId === projectId)
       .map(i => ({ ...i, grounds: host.core.grounds(i), ...recall.get(i.id) }));
@@ -47,6 +47,8 @@ export function operations(host) {
       delivery: delivery ? { request: delivery.request, session: host.log.event(delivery.request)?.scope?.projectId === "asteme" ? null : host.log.event(delivery.request)?.sessionId ?? null,
         sessionPrivate: host.log.state(`private:${host.core.owner}:${host.log.event(delivery.request)?.sessionId}`, false) === true, asked: (host.log.event(delivery.request)?.content ?? "").slice(0, 400),
         scene: delivery.scene, decisions: delivery.decisions, delivered: delivery.delivered, heldBack: delivery.heldBack,
+        // Rounds of earlier conversation the reply was given, as they were said.
+        passages: (delivery.passages ?? []).map(p => ({ id: p.id, at: p.at, use: p.use, said: p.said, relevance: p.relevance, anchor: p.anchor, by: p.by, confidence: p.confidence })),
         undecided: delivery.undecided, askedTwice: delivery.askedTwice, admittedBy: delivery.admittedBy, private: delivery.private,
         // What is already known about how this reply's memories did, the user's own verdicts included.
         outcomes: host.core.feedback().filter(f => f.request === delivery.request).map(f => ({ item: f.item, kind: f.kind, by: f.by ?? "model", reason: f.reason })),
@@ -111,7 +113,7 @@ export function operations(host) {
       })(),
       // Why background work is or is not running, in counts.
       diagnosis: host.core.diagnose(host.log.now(), { delay: host.config.outcomeDelayMs ?? 60000 }),
-      prompt: [personaPrompt(core), experiencePrompt].join("\n\n"),
+      prompt: [personaPrompt(core, host.core.standingAsks({ here: projectId })), experiencePrompt].join("\n\n"),
       settings: host.settings(),
       usage: host.log.usage(host.identity),
       ...(await catalog()),

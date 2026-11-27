@@ -78,7 +78,7 @@ export const user = {
     if (action !== "correct" || typeof text !== "string" || !text.trim()) throw Error("action is \"correct\" with the new text, or \"close\"");
     const { applied, rejected } = this.apply([{ op: "supersede", id, kind: item.kind, text: cut(text.trim(), 600), reason: "Corrected at the user's request in conversation",
       concrete: item.concrete, general: item.general, certainty: "explicit", tested: item.tested, hypothesis: item.hypothesis, about: item.about, entities: item.entities,
-      volatility: item.volatility, category: item.category, ...(item.closure ? { closure: item.closure } : {}), evidence: [{ id: event.id, quote: cut(event.content, 200) }] }], [event]);
+      volatility: item.volatility, category: item.category, ...(item.closure ? { closure: item.closure } : {}), evidence: [{ id: event.id, quote: cut(event.content, 200) }] }], [event], { direct: true });
     if (!applied.length) throw Error(rejected[0]?.reason ?? "The change was not accepted");
     return { corrected: true, replaced: id, id: applied.at(-1).id ?? null };
   },

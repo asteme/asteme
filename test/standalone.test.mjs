@@ -35,7 +35,7 @@ test("an agent with no host can teach it, rest, and be reminded in a later conve
   assert.match(later.note, /Lead with the decision for this director/);
   assert.equal(later.items.length, 1);
   assert.equal(brain.feedback({ request: later.request, item: later.items[0].id, kind: "helped" }).by, "user");
-  assert.equal(brain.search("director").understanding.length, 1);
+  assert.equal((await brain.search("director")).understanding.length, 1);
   assert.equal(brain.diagnose().health.calls > 0, true, "its own calls are in the journal");
 });
 

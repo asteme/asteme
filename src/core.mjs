@@ -10,7 +10,8 @@
 //   why()/explain()  explain.mjs  every answer about memory ends at a stored record
 //
 //   memory.mjs  the write path: validation, revisions, links, the sleep queue
-//   recall.mjs  activation: scene cues, the null floor, learned silence, association
+//   recall.mjs  activation: what a memory answers to, the nearest few, the scenes it stays out of
+//   record.mjs  the record itself, searchable: the rounds of earlier conversations nearest to the present
 //   habits.mjs  the always-present rules and their gates
 //   charter.mjs what experience does not move
 //   user.mjs    what the user says directly: verdicts, confirmations, settling a disagreement
@@ -24,6 +25,7 @@ import { identityKey, profile } from "./log.mjs";
 import { charterOf } from "./charter.mjs";
 import { memory } from "./memory.mjs";
 import { recall } from "./recall.mjs";
+import { record } from "./record.mjs";
 import { attend } from "./attend.mjs";
 import { reflect } from "./reflect.mjs";
 import { outcome } from "./outcome.mjs";
@@ -36,6 +38,7 @@ import { archive } from "./archive.mjs";
 
 export { renderExperience } from "./attend.mjs";
 export { TUNING, isStale } from "./recall.mjs";
+export { RECORD, isRound } from "./record.mjs";
 export { sameEntity } from "./memory.mjs";
 export { accessibility, useStats, OUTCOMES } from "./outcome.mjs";
 export { DEFAULT_CHARTER, charterOf } from "./charter.mjs";
@@ -86,8 +89,11 @@ export class Asteme {
   /** The profile as stored: names, manner, agreements, habits, and the user's own purpose and values if written. */
   core() { return profile(this.log, this.identity); }
   coreText() { return JSON.stringify(this.core()); }
-  /** The profile with the charter in force (the user's, or the defaults). */
-  charter() { return charterOf(this.core()); }
+  /**
+   * The profile with the charter in force (the user's, or the defaults), and what the user asked to be held to. `here` is the project the
+   * present conversation is in: an ask kept to its project is in front only there, so where the project is not given it is left out.
+   */
+  charter({ here = null } = {}) { const asks = this.standingAsks({ here }); return { ...charterOf(this.core()), ...(asks.length ? { standing: asks } : {}) }; }
 }
 
-Object.assign(Asteme.prototype, memory, recall, attend, reflect, outcome, habits, sleep, explain, user, journal, archive);
+Object.assign(Asteme.prototype, memory, recall, record, attend, reflect, outcome, habits, sleep, explain, user, journal, archive);
